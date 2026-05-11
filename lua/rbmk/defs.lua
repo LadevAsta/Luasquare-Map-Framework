@@ -14,8 +14,8 @@ RBMK.CellSymbols = {
     [RBMK.CELL_FUEL] = 'F',
     [RBMK.CELL_STEAM] = 'S',
     [RBMK.CELL_CONTROL] = 'C',
-    [RBMK.CELL_REFLECTOR] = 'R',
-    [RBMK.CELL_AUTOROD] = 'A',
-    [RBMK.CELL_SOURCE] = 'N'
+    [RBMK.CELL_REFLECTOR] = 'RF',
+    [RBMK.CELL_AUTOROD] = 'CA',
+    [RBMK.CELL_SOURCE] = 'NS'
 
 }

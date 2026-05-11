@@ -45,7 +45,7 @@ function RBMK.Tick()
     RBMK.CommitFlux()
     RBMK.DoHeatStep()
     RBMK.DoSteamStep()
-    --RBMK.DoControlStep()
+    RBMK.DoControlStep()
     RBMK.Debug.Tick()
 end
 

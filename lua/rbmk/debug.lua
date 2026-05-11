@@ -22,11 +22,16 @@ function RBMK.Debug.DrawCell(x, y, cell)
     table.insert(lines, symbol)
     table.insert(lines, string.format('H: %.1f', cell.heat or 0))
     if cell.type == RBMK.CELL_FUEL then
+        table.insert(lines, string.format('%s', cell.fuelType or 0))
         table.insert(lines, string.format('F: %.1f', cell.flux or 0))
         table.insert(lines, string.format('X: %.1f', cell.xenon or 0))
+    elseif cell.type == RBMK.CELL_CONTROL then
+        table.insert(lines, string.format('N: %s', cell.name or '???'))
+        table.insert(lines, string.format('I: %.2f', cell.insertion or 0))
+        table.insert(lines, string.format('> %.2f', cell.targetInsertion or 0))
     end
 
-    local text = table.concat(lines, '\n')
+    local text = table.concat(lines, ' ')
     debugoverlay.Text(pos + Vector(0, 0, 20), text, RBMK.TickInterval + 0.02, true)
     local postext = '[ ' .. tostring(x) .. ',' .. tostring(y) .. ' ]'
     debugoverlay.Text(pos + Vector(0, 0, 30), postext, RBMK.TickInterval + 0.02, true)

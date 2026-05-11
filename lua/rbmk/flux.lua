@@ -26,10 +26,12 @@ function RBMK.GetCellFluxOutput(cell)
     -- Neutron source
     if cell.type == RBMK.CELL_SOURCE then return cell.sourceStrength or 20 end
     -- Fuel only
-    if cell.type ~= RBMK.CELL_FUEL then return 0 end
+    if cell.type ~= RBMK.CELL_FUEL or cell.fuelType == 'EMPTY' then return 0 end
     local fuel = RBMK.FuelTypes[cell.fuelType]
     if not fuel then return 0 end
-    local x = math.max((cell.lastFlux or 0) - (cell.xenon or 0), 0)
+    local baseFlux = cell.lastFlux or 0
+    local xenon = cell.xenon or 0
+    local x = baseFlux * ((100 - xenon) / 100)
     return fuel.fluxFunction(x)
 end
 
@@ -70,21 +72,31 @@ function RBMK.ProcessRayCell(cell, dirX, dirY, flux)
     if cell.type == RBMK.CELL_BLANK then return true, dirX, dirY, flux end
     -- Fuel
     if cell.type == RBMK.CELL_FUEL then
+        if cell.fuelType == 'EMPTY' then return true, dirX, dirY, flux end
         cell.flux = (cell.flux or 0) + flux
         return false, dirX, dirY, flux
     end
 
     -- Steam
     if cell.type == RBMK.CELL_STEAM then return true, dirX, dirY, flux end
-    -- Reflector
-    if cell.type == RBMK.CELL_REFLECTOR then return true, -dirX, -dirY, flux end
     -- Control Rod
     if cell.type == RBMK.CELL_CONTROL then
-        local insertion = cell.insertion or 0
-        local reduction = insertion / 100
-        flux = flux * (1 - reduction)
+        local ins = math.Clamp(cell.insertion or 1, 0, 1)
+        -- Graphite tip zone
+        if cell.graphiteTip and cell.inserting and ins > 0.85 and ins < 0.95 then
+            local moveFactor = math.Clamp(cell.movingTime / 10, 0, 1)
+            local spike = 1 + ((0.95 - ins) * 4) * moveFactor
+            flux = flux * spike
+        else
+            flux = flux * (1 - ins)
+        end
+
+        if flux <= 0.001 then return false, dirX, dirY, 0 end
         return true, dirX, dirY, flux
     end
+
+    -- Reflector
+    if cell.type == RBMK.CELL_REFLECTOR then return true, -dirX, -dirY, flux end
     return false
 end
 

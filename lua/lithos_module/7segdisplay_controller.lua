@@ -1,22 +1,22 @@
-if SEG7_CORE_LOADED then return end
-SEG7_CORE_LOADED = true
+if LITHOS_SEG7_CORE_LOADED then return end
+LITHOS_SEG7_CORE_LOADED = true
 
-SEG7 = SEG7 or {}
+LITHOS_SEG7 = LITHOS_SEG7 or {}
 
-SEG7.Displays = SEG7.Displays or {}
-SEG7.Bindings = SEG7.Bindings or {}
-SEG7.EntityCache = SEG7.EntityCache or {}
+LITHOS_SEG7.Displays = LITHOS_SEG7.Displays or {}
+LITHOS_SEG7.Bindings = LITHOS_SEG7.Bindings or {}
+LITHOS_SEG7.EntityCache = LITHOS_SEG7.EntityCache or {}
 
-SEG7.BLANK = 10
-SEG7.MINUS = 11
+LITHOS_SEG7.BLANK = 10
+LITHOS_SEG7.MINUS = 11
 
 -- =========================================
 -- ENTITY CACHE
 -- =========================================
 
-function SEG7.GetEnt(name)
+function LITHOS_SEG7.GetEnt(name)
 
-    local cached = SEG7.EntityCache[name]
+    local cached = LITHOS_SEG7.EntityCache[name]
 
     if IsValid(cached) then
         return cached
@@ -25,7 +25,7 @@ function SEG7.GetEnt(name)
     local ent = ents.FindByName(name)[1]
 
     if IsValid(ent) then
-        SEG7.EntityCache[name] = ent
+        LITHOS_SEG7.EntityCache[name] = ent
     end
 
     return ent
@@ -36,22 +36,20 @@ end
 -- REGISTER DISPLAY
 -- =========================================
 
-function SEG7.RegisterDisplay(name, digits)
-
-    SEG7.Displays[name] = digits
-
+function LITHOS_SEG7.RegisterDisplay(name, digits)
+    LITHOS_SEG7.Displays[name] = digits
 end
 
 -- =========================================
 -- SET SINGLE DIGIT
 -- =========================================
 
-function SEG7.SetDigit(entName, skin)
+function LITHOS_SEG7.SetDigit(entName, skin)
 
-    local ent = SEG7.GetEnt(entName)
+    local ent = LITHOS_SEG7.GetEnt(entName)
 
     if not IsValid(ent) then
-        print('[SEG7] Missing entity: ' .. entName)
+        print('[LITHOS_SEG7] Missing entity: ' .. entName)
         return
     end
 
@@ -63,12 +61,12 @@ end
 -- MAIN DISPLAY FUNCTION
 -- =========================================
 
-function SEG7.SetDisplay(name, value)
+function LITHOS_SEG7.SetDisplay(name, value)
 
-    local digits = SEG7.Displays[name]
+    local digits = LITHOS_SEG7.Displays[name]
 
     if not digits then
-        print('[SEG7] Unknown display: ' .. tostring(name))
+        print('[LITHOS_SEG7] Unknown display: ' .. tostring(name))
         return
     end
 
@@ -82,7 +80,7 @@ function SEG7.SetDisplay(name, value)
 
     -- Clear display
     for i = 1, #digits do
-        SEG7.SetDigit(digits[i], SEG7.BLANK)
+        LITHOS_SEG7.SetDigit(digits[i], LITHOS_SEG7.BLANK)
     end
 
     local digitIndex = 1
@@ -93,7 +91,7 @@ function SEG7.SetDisplay(name, value)
         local num = tonumber(str:sub(i, i))
 
         if digits[digitIndex] then
-            SEG7.SetDigit(digits[digitIndex], num)
+            LITHOS_SEG7.SetDigit(digits[digitIndex], num)
         end
 
         digitIndex = digitIndex + 1
@@ -102,7 +100,7 @@ function SEG7.SetDisplay(name, value)
 
     -- Minus sign
     if negative and digits[digitIndex] then
-        SEG7.SetDigit(digits[digitIndex], SEG7.MINUS)
+        LITHOS_SEG7.SetDigit(digits[digitIndex], LITHOS_SEG7.MINUS)
     end
 
 end
@@ -111,9 +109,9 @@ end
 -- BIND LIVE VALUE
 -- =========================================
 
-function SEG7.BindDisplay(name, getter)
+function LITHOS_SEG7.BindDisplay(name, getter)
 
-    SEG7.Bindings[name] = getter
+    LITHOS_SEG7.Bindings[name] = getter
 
 end
 
@@ -121,16 +119,16 @@ end
 -- AUTO UPDATE LOOP
 -- =========================================
 
-function SEG7.UpdateAll()
+function LITHOS_SEG7.UpdateAll()
 
-    for displayName, getter in pairs(SEG7.Bindings) do
+    for displayName, getter in pairs(LITHOS_SEG7.Bindings) do
 
         local ok, value = pcall(getter)
 
         if ok then
-            SEG7.SetDisplay(displayName, value)
+            LITHOS_SEG7.SetDisplay(displayName, value)
         else
-            print('[SEG7] Getter failed for ' .. displayName)
+            print('[LITHOS_SEG7] Getter failed for ' .. displayName)
             print(value)
         end
 
@@ -142,23 +140,23 @@ end
 -- START UPDATE TIMER
 -- =========================================
 
-function SEG7.Start()
+function LITHOS_SEG7.Start()
 
-    if timer.Exists('SEG7_UpdateTimer') then
-        timer.Remove('SEG7_UpdateTimer')
+    if timer.Exists('LITHOS_SEG7_UpdateTimer') then
+        timer.Remove('LITHOS_SEG7_UpdateTimer')
     end
 
     timer.Create(
-        'SEG7_UpdateTimer',
+        'LITHOS_SEG7_UpdateTimer',
         0.1,
         0,
         function()
 
-            SEG7.UpdateAll()
+            LITHOS_SEG7.UpdateAll()
 
         end
     )
 
-    print('[SEG7] Started')
+    print('[LITHOS_SEG7] Started')
 
 end
