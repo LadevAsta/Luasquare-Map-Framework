@@ -20,11 +20,10 @@ RBMK.SetCell(9, 5, RBMK.CreateFuelChannel('MOX'))
 RBMK.SetCell(5, 9, RBMK.CreateFuelChannel())
 RBMK.SetCell(5, 11, RBMK.CreateFuelChannel('EMPTY')) --Empty fuel rod acts like blank
 
--- Neutron Sources (constantFlux:float)
-RBMK.SetCell(1, 5, RBMK.CreateNeutronSource(26))
+-- Neutron Sources (constantFlux:float, closedSource(become reflector):bool[false])
+RBMK.SetCell(3, 5, RBMK.CreateNeutronSource(26, true))
 
 -- Control rods (Name:string, Group:string, visualEnt:func_movelinear targetname string[nil], graphiteTip:bool[true], reflectorCore:bool[false], startingInsertion:float[1.0])
-RBMK.SetCell(3, 5, RBMK.CreateControlRod('NS', 'white', 'ctlRod_lid_NS'))
 RBMK.SetCell(5, 7, RBMK.CreateControlRod('U1', 'red', 'ctlRod_lid_U1'))
 RBMK.SetCell(7, 5, RBMK.CreateControlRod('U2', 'red', 'ctlRod_lid_U2'))
 RBMK.SetCell(9, 7, RBMK.CreateControlRod('U3', 'red', 'ctlRod_lid_U3'))
@@ -39,12 +38,26 @@ RBMK.SetCell(10, 9, RBMK.CreateControlRod('R6', 'yellow', 'ctlRod_lid_R6'))
 RBMK.SetCell(5, 10, RBMK.CreateControlRod('R7', 'yellow', 'ctlRod_lid_R7'))
 RBMK.SetCell(4, 9, RBMK.CreateControlRod('R8', 'yellow', 'ctlRod_lid_R8'))
 
+-- Control rod selection indicators
+LITHOS_ROD_SELECTOR.RegisterIndicator('U1', 'sel_U1')
+LITHOS_ROD_SELECTOR.RegisterIndicator('U2', 'sel_U2')
+LITHOS_ROD_SELECTOR.RegisterIndicator('U3', 'sel_U3')
+LITHOS_ROD_SELECTOR.RegisterIndicator('U4', 'sel_U4')
+
+LITHOS_ROD_SELECTOR.RegisterIndicator('R1', 'sel_R1')
+LITHOS_ROD_SELECTOR.RegisterIndicator('R2', 'sel_R2')
+LITHOS_ROD_SELECTOR.RegisterIndicator('R3', 'sel_R3')
+LITHOS_ROD_SELECTOR.RegisterIndicator('R4', 'sel_R4')
+LITHOS_ROD_SELECTOR.RegisterIndicator('R5', 'sel_R5')
+LITHOS_ROD_SELECTOR.RegisterIndicator('R6', 'sel_R6')
+LITHOS_ROD_SELECTOR.RegisterIndicator('R7', 'sel_R7')
+LITHOS_ROD_SELECTOR.RegisterIndicator('R8', 'sel_R8')
+
 
 -- Reflectors (isIn:bool[true])
-RBMK.SetCell(2, 5, RBMK.CreateReflector(false))
 RBMK.SetCell(2, 9, RBMK.CreateReflector())
 RBMK.SetCell(5, 12, RBMK.CreateReflector())
-RBMK.SetCell(5, 2, RBMK.CreateReflector())
+RBMK.SetCell(5, 2, RBMK.CreateReflector(true))
 RBMK.SetCell(9, 2, RBMK.CreateReflector())
 RBMK.SetCell(12, 5, RBMK.CreateReflector())
 RBMK.SetCell(12, 9, RBMK.CreateReflector())

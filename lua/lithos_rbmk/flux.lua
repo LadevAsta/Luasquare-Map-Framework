@@ -26,7 +26,11 @@ end
 -- Flux Output
 function RBMK.GetCellFluxOutput(cell)
     -- Neutron source
-    if cell.type == RBMK.CELL_SOURCE then return cell.sourceStrength or 20 end
+    if cell.type == RBMK.CELL_SOURCE then
+        if cell.closedSource then return 0 end
+        return cell.sourceStrength or 20
+    end
+
     -- Fuel only
     if cell.type ~= RBMK.CELL_FUEL or cell.fuelType == 'EMPTY' then return 0 end
     local fuel = RBMK.FuelTypes[cell.fuelType]
@@ -98,6 +102,12 @@ function RBMK.ProcessRayCell(cell, dirX, dirY, flux)
         if flux <= 0.001 then return false, dirX, dirY, 0 end
         if cell.reflector then return true, -dirX, -dirY, flux end
         return true, dirX, dirY, flux
+    end
+
+    -- Neutron Source
+    if cell.type == RBMK.CELL_SOURCE then
+        if cell.closedSource then return true, -dirX, -dirY, flux end
+        return false, dirX, dirY, flux
     end
 
     -- Reflector

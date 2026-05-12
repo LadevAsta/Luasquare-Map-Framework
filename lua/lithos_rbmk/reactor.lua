@@ -10,6 +10,9 @@ RBMK.Steam = 0
 RBMK.MaxWater = 0
 RBMK.MaxSteam = 0
 
+RBMK.AverageHeat = 20
+RBMK.MaxHeat = 20
+
 -- =========================================
 -- MATRIX
 -- =========================================
@@ -48,6 +51,7 @@ function RBMK.Tick()
     RBMK.DoHeatStep()
     RBMK.DoSteamStep()
     RBMK.DoControlStep()
+    RBMK.UpdateTelemetry()
     RBMK.Debug.Tick()
 end
 
@@ -102,4 +106,24 @@ end
 -- =========================================
 function RBMK.CellToWorld(x, y)
     return RBMK.WorldOrigin + Vector((x - 1) * RBMK.CellSpacing, (y - 1) * RBMK.CellSpacing, 0)
+end
+
+function RBMK.UpdateTelemetry()
+    local totalHeat = 0
+    local validCells = 0
+    local maxHeat = 0
+    for x = 1, RBMK.Width do
+        for y = 1, RBMK.Height do
+            local cell = RBMK.Matrix[x][y]
+            if cell.type ~= RBMK.CELL_VOID then
+                totalHeat = totalHeat + (cell.heat or 0)
+                validCells = validCells + 1
+                if cell.heat > maxHeat then maxHeat = cell.heat end
+            end
+        end
+    end
+
+    RBMK.AverageHeat = 0
+    if validCells > 0 then RBMK.AverageHeat = totalHeat / validCells end
+    RBMK.MaxHeat = maxHeat
 end

@@ -9,7 +9,7 @@ LITHOSQUARE_RBMK_BOOTSTRAPPED = true
 
 -- This is orchestration script to set up map integration.
 -- Deploy using a lua_run in the map :
--- include('rbmk/map/experiment_rbmk.lua')
+-- include('lithos_rbmk/map/experiment_rbmk.lua')
 
 -- =========================================
 -- CORE MODULES
@@ -104,19 +104,6 @@ LITHOS_KEYPAD.RegisterKeypad('rodctrl',
         end
     }
 )
-LITHOS_ROD_SELECTOR.RegisterIndicator('NS', 'sel_NS')
-LITHOS_ROD_SELECTOR.RegisterIndicator('U1', 'sel_U1')
-LITHOS_ROD_SELECTOR.RegisterIndicator('U2', 'sel_U2')
-LITHOS_ROD_SELECTOR.RegisterIndicator('U3', 'sel_U3')
-LITHOS_ROD_SELECTOR.RegisterIndicator('U4', 'sel_U4')
-LITHOS_ROD_SELECTOR.RegisterIndicator('R1', 'sel_R1')
-LITHOS_ROD_SELECTOR.RegisterIndicator('R2', 'sel_R2')
-LITHOS_ROD_SELECTOR.RegisterIndicator('R3', 'sel_R3')
-LITHOS_ROD_SELECTOR.RegisterIndicator('R4', 'sel_R4')
-LITHOS_ROD_SELECTOR.RegisterIndicator('R5', 'sel_R5')
-LITHOS_ROD_SELECTOR.RegisterIndicator('R6', 'sel_R6')
-LITHOS_ROD_SELECTOR.RegisterIndicator('R7', 'sel_R7')
-LITHOS_ROD_SELECTOR.RegisterIndicator('R8', 'sel_R8')
 
 
 -- =========================================

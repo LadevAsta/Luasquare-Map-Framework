@@ -1,5 +1,4 @@
 RBMK = RBMK or {}
-
 function RBMK.DoControlStep()
     for x = 1, RBMK.Width do
         for y = 1, RBMK.Height do
@@ -79,6 +78,22 @@ function RBMK.ToggleReflector(x, y)
     if not cell then return false end
     if cell.type ~= RBMK.CELL_REFLECTOR then return false end
     cell.reflectorIn = not cell.reflectorIn
+    return true
+end
+
+function RBMK.SetNeutronSourceState(x, y, closed)
+    local cell = RBMK.GetCell(x, y)
+    if not cell then return false end
+    if cell.type ~= RBMK.CELL_SOURCE then return false end
+    cell.closedSource = closed and true or false
+    return true
+end
+
+function RBMK.ToggleNeutronSource(x, y)
+    local cell = RBMK.GetCell(x, y)
+    if not cell then return false end
+    if cell.type ~= RBMK.CELL_SOURCE then return false end
+    cell.closedSource = not cell.closedSource
     return true
 end
 

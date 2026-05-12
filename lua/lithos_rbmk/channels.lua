@@ -1,6 +1,5 @@
 RBMK = RBMK or {}
 RBMK.Rods = RBMK.Rods or {}
-
 function RBMK.CreateBlank()
     return {
         type = RBMK.CELL_BLANK,
@@ -12,9 +11,9 @@ function RBMK.CreateFuelChannel(fuelType)
     return {
         type = RBMK.CELL_FUEL,
         fuelType = fuelType or 'MEU',
-        heat = 20,       -- channel temp
-        skinHeat = 20,   -- fuel skin temp
-        coreHeat = 20,   -- fuel core temp
+        heat = 20, -- channel temp
+        skinHeat = 20, -- fuel skin temp
+        coreHeat = 20, -- fuel core temp
         flux = 0,
         lastFlux = 0,
         xenon = 0
@@ -25,7 +24,8 @@ function RBMK.CreateSteamChannel()
     return {
         type = RBMK.CELL_STEAM,
         heat = 20,
-        coolingRate = 1.0,
+        coolingRate = 0.05,
+        waterUseRate = 0.01
     }
 end
 
@@ -80,12 +80,14 @@ function RBMK.CreateVoid()
     }
 end
 
-function RBMK.CreateNeutronSource(strength)
+function RBMK.CreateNeutronSource(strength, closedSource)
+    closedSource = closedSource or false
     return {
         type = RBMK.CELL_SOURCE,
         heat = 20,
         flux = 0,
         lastFlux = 0,
-        sourceStrength = strength or 20
+        sourceStrength = strength or 20,
+        closedSource = closedSource --If true, Stop emitting Flux and act as Reflector instead
     }
 end

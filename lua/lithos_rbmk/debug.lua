@@ -1,6 +1,5 @@
 RBMK = RBMK or {}
 RBMK.Debug = RBMK.Debug or {}
-
 RBMK.Debug.FluxLines = {}
 function RBMK.Debug.DrawCells()
     for x = 1, RBMK.Width do
@@ -104,8 +103,25 @@ function RBMK.Debug.DrawFluxLines()
     end
 end
 
+function RBMK.Debug.DrawVesselInfo()
+    local base = RBMK.WorldOrigin + Vector(0, 0, 128)
+    local duration = RBMK.TickInterval + 0.01
+    local lines = {string.format(
+        'MODEL: %s', RBMK.ModelName or 'UNKNOWN'),
+        string.format('AVG H: %.1f', RBMK.AverageHeat or 0),
+        string.format('MAX H: %.1f', RBMK.MaxHeat or 0),
+        string.format('FLUX: %.1f', RBMK.TotalFlux or 0),
+        string.format('WATER: %.1f', RBMK.Water or 0),
+        string.format('STEAM: %.1f', RBMK.Steam or 0)}
+    for i, line in ipairs(lines) do
+        local pos = base + Vector(0, 0, -(i - 1) * 8)
+        debugoverlay.Text(pos, line, duration, true)
+    end
+end
+
 function RBMK.Debug.Tick()
     if not RBMK.Debug.Enabled then return end
     RBMK.Debug.DrawCells()
     RBMK.Debug.DrawFluxLines()
+    RBMK.Debug.DrawVesselInfo()
 end
