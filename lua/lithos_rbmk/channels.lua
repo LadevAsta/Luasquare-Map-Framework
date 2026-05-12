@@ -12,7 +12,9 @@ function RBMK.CreateFuelChannel(fuelType)
     return {
         type = RBMK.CELL_FUEL,
         fuelType = fuelType or 'MEU',
-        heat = 20,
+        heat = 20,       -- channel temp
+        skinHeat = 20,   -- fuel skin temp
+        coreHeat = 20,   -- fuel core temp
         flux = 0,
         lastFlux = 0,
         xenon = 0
@@ -23,7 +25,7 @@ function RBMK.CreateSteamChannel()
     return {
         type = RBMK.CELL_STEAM,
         heat = 20,
-        coolingRate = 1.0
+        coolingRate = 1.0,
     }
 end
 

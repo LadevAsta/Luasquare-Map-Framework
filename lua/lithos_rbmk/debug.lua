@@ -19,6 +19,8 @@ function RBMK.Debug.DrawCell(x, y, cell)
     table.insert(lines, symbol)
     table.insert(lines, string.format('H: %.1f', cell.heat or 0))
     if cell.type == RBMK.CELL_FUEL then
+        table.insert(lines, string.format('sH: %.1f', cell.skinHeat or 0))
+        table.insert(lines, string.format('cH: %.1f', cell.coreHeat or 0))
         table.insert(lines, string.format('%s', cell.fuelType or 0))
         table.insert(lines, string.format('F: %.1f', cell.flux or 0))
         table.insert(lines, string.format('X: %.1f', cell.xenon or 0))

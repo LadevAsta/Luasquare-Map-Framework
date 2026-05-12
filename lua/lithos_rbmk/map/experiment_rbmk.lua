@@ -18,7 +18,7 @@ LITHOSQUARE_RBMK_BOOTSTRAPPED = true
 include('lithos_module/7segdisplay_controller.lua') -- Pseudo 7-Segments numeric display
 include('lithos_module/keypad_controller.lua') -- Numeric Keypads
 include('lithos_module/rod_selector.lua') -- RBMK Control Rod Selector
-include('rbmk/init.lua') -- RBMK Core
+include('lithos_rbmk/init.lua') -- RBMK Core
 
 -- =========================================
 -- WORLD SETTINGS
@@ -54,7 +54,7 @@ RBMK.Debug.ShowBlank = false
 -- REACTOR LAYOUT
 -- =========================================
 
-include('rbmk/layouts/test.lua')
+include('lithos_rbmk/layouts/test.lua')
 
 -- =========================================
 -- DISPLAYS

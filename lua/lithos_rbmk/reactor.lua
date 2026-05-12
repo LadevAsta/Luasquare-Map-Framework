@@ -7,6 +7,7 @@ RBMK.TickInterval = 0.1
 
 RBMK.Water = 0
 RBMK.Steam = 0
+RBMK.MaxWater = 0
 RBMK.MaxSteam = 0
 
 -- =========================================
@@ -93,7 +94,7 @@ end
 function RBMK.Start()
     if timer.Exists('RBMK_Tick') then timer.Remove('RBMK_Tick') end
     timer.Create('RBMK_Tick', RBMK.TickInterval, 0, function() RBMK.Tick() end)
-    print('[RBMK] Started')
+    print('[LITHOS_RBMK] Started')
 end
 
 -- =========================================

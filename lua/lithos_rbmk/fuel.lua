@@ -19,7 +19,24 @@ function RBMK.DoFuelHeat()
             local cell = RBMK.Matrix[x][y]
             if cell.type == RBMK.CELL_FUEL then
                 local fuel = RBMK.FuelTypes[cell.fuelType]
-                if fuel then cell.heat = cell.heat + cell.flux * fuel.heatFactor end
+                local outputFlux = RBMK.GetCellFluxOutput(cell)
+                if fuel then cell.coreHeat = cell.coreHeat + outputFlux * fuel.heatFactor end
+                -- Unholy internal heat diffusion
+                local coreDiff = cell.coreHeat - cell.skinHeat
+                local coreTransfer = (coreDiff / 2) * fuel.diffusion
+                cell.coreHeat = cell.coreHeat - coreTransfer
+                cell.skinHeat = cell.skinHeat + coreTransfer
+                local vesselDiff = cell.skinHeat - cell.heat
+                local vesselTransfer = vesselDiff / 2
+                cell.skinHeat = cell.skinHeat - vesselTransfer
+                cell.heat = cell.heat + vesselTransfer
+                -- MELT!
+                if cell.skinHeat >= fuel.meltingPoint then
+                    local pulse = (cell.coreHeat + cell.skinHeat) / 3
+                    cell.coreHeat = cell.coreHeat + pulse
+                    cell.skinHeat = cell.skinHeat + pulse
+                    cell.heat = cell.heat + pulse
+                end
             end
         end
     end

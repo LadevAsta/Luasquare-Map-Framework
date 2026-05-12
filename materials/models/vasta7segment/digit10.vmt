@@ -1,5 +1,5 @@
-"VertexLitGeneric"
+"UnlitGeneric"
 {
 	"$basetexture" "models/vasta7segment/digit10"
-	"$selfillum" "1"
+	//"$selfillum" "1"
 }

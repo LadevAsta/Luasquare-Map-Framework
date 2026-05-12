@@ -43,7 +43,7 @@ end
 function RBMK.SetRodInsertionByName(name, insertion)
     local rod = RBMK.GetRod(name)
     if not rod then
-        print('[%s] Unknown rod: ' .. tostring(name), RBMK.ModelName or 'RBMK')
+        print('[' .. RBMK.ModelName .. '] Unknown rod: ' .. tostring(name))
         return
     end
 
@@ -63,7 +63,7 @@ function RBMK.SetGroupInsertion(group, insertion)
         end
     end
 
-    if not movedSomeRods then print('[%s] No existing rods in group : ' .. tostring(group), RBMK.ModelName or 'RBMK') end
+    if not movedSomeRods then print('[' .. RBMK.ModelName .. '] No existing rods in group : ' .. tostring(group)) end
 end
 
 function RBMK.SetReflectorState(x, y, enabled)
