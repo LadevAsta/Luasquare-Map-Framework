@@ -1,7 +1,9 @@
 RBMK = RBMK or {}
 local dirs4 = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}
-RBMK.FluxRange = 5
+RBMK.TotalFlux = 0
+RBMK.TotalFluxSubtracted = 0
 function RBMK.DoFluxStep()
+    RBMK.TotalFlux = 0
     if RBMK.Debug.DrawFluxRays then RBMK.Debug.FluxLines = {} end
     RBMK.ClearFlux()
     for x = 1, RBMK.Width do
@@ -44,6 +46,8 @@ function RBMK.EmitCellFlux(x, y, cell)
 end
 
 function RBMK.EmitRay(startX, startY, dirX, dirY, strength)
+    RBMK.TotalFlux = RBMK.TotalFlux + strength
+    RBMK.TotalFluxSubtracted = RBMK.TotalFlux - RBMK.TotalFluxSubtractDefine
     local x = startX
     local y = startY
     local dx = dirX
@@ -92,11 +96,20 @@ function RBMK.ProcessRayCell(cell, dirX, dirY, flux)
         end
 
         if flux <= 0.001 then return false, dirX, dirY, 0 end
+        if cell.reflector then return true, -dirX, -dirY, flux end
         return true, dirX, dirY, flux
     end
 
     -- Reflector
-    if cell.type == RBMK.CELL_REFLECTOR then return true, -dirX, -dirY, flux end
+    if cell.type == RBMK.CELL_REFLECTOR then
+        if cell.reflectorIn then
+            return true, -dirX, -dirY, flux
+        else
+            return true, dirX, dirY, flux
+        end
+    end
+
+    if cell.type == RBMK.CELL_ABSORBER then return false, dirX, dirY, flux end
     return false
 end
 

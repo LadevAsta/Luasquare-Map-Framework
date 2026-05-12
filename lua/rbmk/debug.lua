@@ -1,10 +1,6 @@
 RBMK = RBMK or {}
 RBMK.Debug = RBMK.Debug or {}
-RBMK.Debug.Enabled = false
-RBMK.Debug.DrawHeat = true
-RBMK.Debug.DrawFlux = true
-RBMK.Debug.DrawXenon = false
-RBMK.Debug.DrawFluxRays = false
+
 RBMK.Debug.FluxLines = {}
 function RBMK.Debug.DrawCells()
     for x = 1, RBMK.Width do
@@ -16,6 +12,7 @@ function RBMK.Debug.DrawCells()
 end
 
 function RBMK.Debug.DrawCell(x, y, cell)
+    if cell.type == RBMK.CELL_VOID or not RBMK.Debug.ShowBlank and cell.type == RBMK.CELL_BLANK then return end
     local pos = RBMK.CellToWorld(x, y)
     local lines = {}
     local symbol = RBMK.CellSymbols[cell.type] or '?'
@@ -29,6 +26,8 @@ function RBMK.Debug.DrawCell(x, y, cell)
         table.insert(lines, string.format('N: %s', cell.name or '???'))
         table.insert(lines, string.format('I: %.2f', cell.insertion or 0))
         table.insert(lines, string.format('> %.2f', cell.targetInsertion or 0))
+    elseif cell.type == RBMK.CELL_REFLECTOR then
+        table.insert(lines, string.format('RE: %s', tostring(cell.reflectorIn) or '???'))
     end
 
     local text = table.concat(lines, ' ')

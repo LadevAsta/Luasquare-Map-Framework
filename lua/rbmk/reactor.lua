@@ -1,4 +1,5 @@
 RBMK = RBMK or {}
+RBMK.ModelName = 'Unknown RBMK'
 RBMK.Width = 0
 RBMK.Height = 0
 RBMK.Matrix = {}

@@ -1,14 +1,6 @@
 RBMK = RBMK or {}
 -- 8-direction offsets
-local dirs8 = {
-    {-1, -1},
-    {0, -1},
-    {1, -1},
-    {-1, 0},
-    {1, 0},
-    {-1, 1},
-    {0, 1},
-    {1, 1}}
+local dirs8 = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}}
 -- Delta buffer
 function RBMK.DoHeatStep()
     local delta = {}
@@ -26,7 +18,7 @@ function RBMK.DoHeatStep()
                 local nx = x + dir[1]
                 local ny = y + dir[2]
                 local other = RBMK.GetCell(nx, ny)
-                if other then
+                if other and cell.type ~= RBMK.CELL_VOID and other.type ~= RBMK.CELL_VOID then
                     local diff = cell.heat - other.heat
                     local transfer = diff * 0.01
                     delta[x][y] = delta[x][y] - transfer
@@ -38,7 +30,8 @@ function RBMK.DoHeatStep()
 
     for x = 1, RBMK.Width do
         for y = 1, RBMK.Height do
-            RBMK.Matrix[x][y].heat = RBMK.Matrix[x][y].heat + delta[x][y]
+            local cell = RBMK.Matrix[x][y]
+            if cell.type ~= RBMK.CELL_VOID then cell.heat = cell.heat + delta[x][y] end
         end
     end
 end

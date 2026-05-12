@@ -27,11 +27,14 @@ function RBMK.CreateSteamChannel()
     }
 end
 
--- Creates control rod column (insertion, name, group)
-function RBMK.CreateControlRod(insertion, name, group)
+-- Creates control rod column (name, group, visualEnt, graphiteTipped, reflectorFunctionality, insertion)
+function RBMK.CreateControlRod(name, group, visualEnt, graphiteTip, reflector, insertion)
     insertion = insertion or 1.0
     name = name or 'unnamed'
     group = group or 'nocolor'
+    visualEnt = visualEnt
+    graphiteTip = graphiteTip or true
+    reflector = reflector or false
     local rod = {
         type = RBMK.CELL_CONTROL,
         heat = 20,
@@ -42,7 +45,9 @@ function RBMK.CreateControlRod(insertion, name, group)
         stationaryTime = 0,
         movingTime = 0,
         moveSpeed = 0.005,
-        graphiteTip = true,
+        visualEnt = visualEnt,
+        graphiteTip = graphiteTip,
+        reflector = reflector,
         name = name,
         group = group
     }
@@ -51,10 +56,25 @@ function RBMK.CreateControlRod(insertion, name, group)
     return rod
 end
 
-function RBMK.CreateReflector()
+function RBMK.CreateReflector(reflectorIn)
+    if reflectorIn == nil then reflectorIn = true end
     return {
         type = RBMK.CELL_REFLECTOR,
+        reflectorIn = reflectorIn,
         heat = 20
+    }
+end
+
+function RBMK.CreateAbsorber()
+    return {
+        type = RBMK.CELL_ABSORBER,
+        heat = 20
+    }
+end
+
+function RBMK.CreateVoid()
+    return {
+        type = RBMK.CELL_VOID
     }
 end
 

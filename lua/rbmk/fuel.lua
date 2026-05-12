@@ -35,8 +35,8 @@ function RBMK.DoXenonStep()
                 if fuel then
                     local gen = fuel.xenonGen(cell.flux)
                     local burn = fuel.xenonBurn(cell.flux)
-                    cell.xenon = cell.xenon * 0.999999
-                    cell.xenon = math.max(0, math.Clamp(cell.xenon + gen - burn, 0, 99.999))
+                    cell.xenon = cell.xenon * 0.9999
+                    cell.xenon = math.max(0, math.Clamp(cell.xenon + gen - burn, 0, 99))
                 end
             end
         end
