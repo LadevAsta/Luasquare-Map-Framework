@@ -4,7 +4,7 @@ RBMK.TotalFlux = 0
 RBMK.TotalFluxSubtracted = 0
 function RBMK.DoFluxStep()
     RBMK.TotalFlux = 0
-    if RBMK.Debug.DrawFluxRays then RBMK.Debug.FluxLines = {} end
+    RBMK.Debug.FluxLines = {}
     RBMK.ClearFlux()
     for x = 1, RBMK.Width do
         for y = 1, RBMK.Height do
@@ -68,7 +68,7 @@ function RBMK.EmitRay(startX, startY, dirX, dirY, strength)
         dy = newDy or dy
         flux = newFlux or flux
         local endPos = RBMK.CellToWorld(x, y)
-        if RBMK.Debug.DrawFluxRays then RBMK.Debug.AddFluxLine(startPos, endPos, flux, dx, dy) end
+        RBMK.Debug.AddFluxLine(startPos, endPos, flux, dx, dy)
         if not raycontinue then break end
         if flux <= 0.001 then break end
     end

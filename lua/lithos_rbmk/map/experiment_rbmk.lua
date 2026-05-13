@@ -1,21 +1,20 @@
-if LITHOSQUARE_RBMK_BOOTSTRAPPED then
+if LITHOSQUARE_RBMK_INITIALIZED then
     print('[LITHOSQUARE RBMK] BOOTSTRAP FAILED!\n[LITHOSQUARE RBMK] It already happened once in this session. Reload map.')
 return end
-LITHOSQUARE_RBMK_BOOTSTRAPPED = true
 
 -- =========================================
 -- MAP DEFINITION AND BOOTSTRAP
 -- =========================================
 
 -- This is orchestration script to set up map integration.
--- Deploy using a lua_run in the map :
+-- Deploy THIS SCRIPT using a lua_run in the map :
 -- include('lithos_rbmk/map/experiment_rbmk.lua')
 
 -- =========================================
 -- CORE MODULES
 -- =========================================
 
-include('lithos_module/7segdisplay_controller.lua') -- Pseudo 7-Segments numeric display
+include('lithos_module/seg7display.lua') -- Pseudo 7-Segments numeric display
 include('lithos_module/keypad_controller.lua') -- Numeric Keypads
 include('lithos_module/rod_selector.lua') -- RBMK Control Rod Selector
 include('lithos_rbmk/init.lua') -- RBMK Core
@@ -41,20 +40,16 @@ RBMK.ControlrodScramBoost = 2
 --Control rod func_movelinear's move distance you set in Hammer (inches)
 RBMK.RodMoveDistance = 64
 
--- DEBUGS
-RBMK.Debug.Enabled = true
-
-RBMK.Debug.DrawHeat = true
-RBMK.Debug.DrawFlux = true
-RBMK.Debug.DrawXenon = true
-RBMK.Debug.DrawFluxRays = true
-RBMK.Debug.ShowBlank = false
 
 -- =========================================
--- REACTOR LAYOUT
+-- REACTOR
 -- =========================================
 
-include('lithos_rbmk/layouts/test.lua')
+-- Layout orchestrator
+include('lithos_rbmk/layouts/LRBMKP-400.lua')
+
+--Starting Water inside the reactor pressure vessel
+RBMK.Water = 5000
 
 -- =========================================
 -- DISPLAYS
@@ -114,4 +109,6 @@ RBMK.Start()
 
 LITHOS_SEG7.Start()
 
-print('[LITHOSQUARE RBMK] Map Bootstrap Finished.')
+print('[LITHOSQUARE RBMK] RBMK Reactor Initialization Finished.')
+LITHOSQUARE_RBMK_INITIALIZED = true
+SetGlobal2Bool('LITHOSQUARE_RBMK_INITIALIZED_GLOBAL', LITHOSQUARE_RBMK_INITIALIZED)

@@ -1,6 +1,10 @@
 if LITHOS_RBMK_CORE_LOADED then return end
 LITHOS_RBMK_CORE_LOADED = true
 
+if true then
+    util.AddNetworkString('RBMK_DebugState')
+end
+
 include('lithos_rbmk/defs.lua')
 include('lithos_rbmk/fueltypes.lua')
 include('lithos_rbmk/channels.lua')

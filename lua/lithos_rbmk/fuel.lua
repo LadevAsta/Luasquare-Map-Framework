@@ -44,18 +44,24 @@ end
 
 -- Xenon
 function RBMK.DoXenonStep()
+    RBMK.AverageXenon = 0
+    local xenonSum = 0
+    local fuelrodCount = 0
     for x = 1, RBMK.Width do
         for y = 1, RBMK.Height do
             local cell = RBMK.Matrix[x][y]
             if cell.type == RBMK.CELL_FUEL then
                 local fuel = RBMK.FuelTypes[cell.fuelType]
-                if fuel then
+                if fuel and fuel ~= RBMK.FuelTypes.EMPTY then
                     local gen = fuel.xenonGen(cell.flux)
                     local burn = fuel.xenonBurn(cell.flux)
                     cell.xenon = cell.xenon * 0.9999
                     cell.xenon = math.max(0, math.Clamp(cell.xenon + gen - burn, 0, 99))
+                    fuelrodCount = fuelrodCount + 1
+                    xenonSum = xenonSum + cell.xenon
                 end
             end
         end
     end
+    RBMK.AverageXenon = xenonSum / fuelrodCount
 end

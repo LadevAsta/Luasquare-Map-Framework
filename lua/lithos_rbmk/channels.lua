@@ -29,8 +29,8 @@ function RBMK.CreateSteamChannel()
     }
 end
 
--- Creates control rod column (name, group, visualEnt, graphiteTipped, reflectorFunctionality, insertion)
-function RBMK.CreateControlRod(name, group, visualEnt, graphiteTip, reflector, insertion)
+-- Creates control rod column (name, group, indicatorSpriteEnt, visualEnt, graphiteTipped, reflectorFunctionality, insertion)
+function RBMK.CreateControlRod(name, group, indicatorSpriteEnt, visualEnt, graphiteTip, reflector, insertion)
     insertion = insertion or 1.0
     name = name or 'unnamed'
     group = group or 'nocolor'
@@ -55,6 +55,7 @@ function RBMK.CreateControlRod(name, group, visualEnt, graphiteTip, reflector, i
     }
 
     RBMK.Rods[name] = rod
+    if indicatorSpriteEnt ~= nil then LITHOS_ROD_SELECTOR.RegisterIndicator(name, indicatorSpriteEnt) end
     return rod
 end
 
@@ -90,4 +91,38 @@ function RBMK.CreateNeutronSource(strength, closedSource)
         sourceStrength = strength or 20,
         closedSource = closedSource --If true, Stop emitting Flux and act as Reflector instead
     }
+end
+
+-- Layout Utils
+function RBMK.FillBlanksWithSteam(opts)
+    opts = opts or {}
+    local ignoreEdge = opts.ignoreEdge
+    local ignoreNearVoid = opts.ignoreNearVoid
+    local dirs4 = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}
+    for x = 1, RBMK.Width do
+        for y = 1, RBMK.Height do
+            local cell = RBMK.GetCell(x, y)
+            if not cell then continue end
+            if cell.type ~= RBMK.CELL_BLANK then continue end
+            -- Ignore outer edge
+            if ignoreEdge and x == 1 or y == 1 or x == RBMK.Width or y == RBMK.Height then continue end
+            -- Ignore touching void
+            if ignoreNearVoid then
+                local touchingVoid = false
+                for _, dir in ipairs(dirs4) do
+                    local other = RBMK.GetCell(x + dir[1], y + dir[2])
+                    if other and other.type == RBMK.CELL_VOID then
+                        touchingVoid = true
+                        break
+                    end
+                end
+
+                if touchingVoid then continue end
+            end
+
+            RBMK.SetCell(x, y, RBMK.CreateSteamChannel())
+        end
+    end
+
+    RBMK.RecalculatePools()
 end

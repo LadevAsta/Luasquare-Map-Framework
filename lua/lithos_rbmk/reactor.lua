@@ -13,6 +13,8 @@ RBMK.MaxSteam = 0
 RBMK.AverageHeat = 20
 RBMK.MaxHeat = 20
 
+RBMK.AverageXenon = 0
+
 -- =========================================
 -- MATRIX
 -- =========================================
@@ -90,8 +92,8 @@ function RBMK.RecalculatePools()
         end
     end
 
-    RBMK.Water = steamChannels * 1000
-    RBMK.MaxSteam = steamChannels * 16000
+    RBMK.MaxWater = steamChannels * 1000
+    RBMK.MaxSteam = steamChannels * 160000
 end
 
 -- Start loop

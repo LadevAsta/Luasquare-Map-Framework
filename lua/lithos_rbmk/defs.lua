@@ -26,13 +26,6 @@ RBMK.CellSymbols = {
 
 }
 
--- config variables
-RBMK.Debug.Enabled = false
-RBMK.Debug.DrawHeat = true
-RBMK.Debug.DrawFlux = true
-RBMK.Debug.DrawXenon = false
-RBMK.Debug.DrawFluxRays = false
-RBMK.Debug.ShowBlank = true
 
 RBMK.WorldOrigin = Vector(0, 0, 0)
 RBMK.CellSpacing = 64
