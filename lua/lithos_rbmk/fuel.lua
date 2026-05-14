@@ -32,7 +32,7 @@ function RBMK.DoFuelHeat()
                 cell.heat = cell.heat + vesselTransfer
                 -- MELT!
                 if cell.skinHeat >= fuel.meltingPoint then
-                    local pulse = (cell.coreHeat + cell.skinHeat) / 3
+                    local pulse = (cell.coreHeat + cell.skinHeat) / 30
                     cell.coreHeat = cell.coreHeat + pulse
                     cell.skinHeat = cell.skinHeat + pulse
                     cell.heat = cell.heat + pulse

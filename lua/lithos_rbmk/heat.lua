@@ -20,7 +20,7 @@ function RBMK.DoHeatStep()
                 local other = RBMK.GetCell(nx, ny)
                 if other and cell.type ~= RBMK.CELL_VOID and other.type ~= RBMK.CELL_VOID then
                     local diff = cell.heat - other.heat
-                    local transfer = diff * 0.01
+                    local transfer = diff * RBMK.RPVHeatDiffusion
                     delta[x][y] = delta[x][y] - transfer
                     delta[nx][ny] = delta[nx][ny] + transfer
                 end

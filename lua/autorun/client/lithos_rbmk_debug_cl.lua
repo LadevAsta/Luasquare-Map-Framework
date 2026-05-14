@@ -28,14 +28,23 @@ RBMK.CellSymbols = RBMK.CellSymbols or {
     [RBMK.CELL_VOID] = 'X'
 }
 
+RBMK.Debug.CellFilterSettings = {
+    [RBMK.CELL_BLANK] = {'show_blank', false},
+    [RBMK.CELL_FUEL] = {'show_fuel', true},
+    [RBMK.CELL_STEAM] = {'show_steam', true},
+    [RBMK.CELL_CONTROL] = {'show_control', true},
+    [RBMK.CELL_AUTOROD] = {'show_autorod', true},
+    [RBMK.CELL_REFLECTOR] = {'show_reflector', true},
+    [RBMK.CELL_ABSORBER] = {'show_absorber', true},
+    [RBMK.CELL_SOURCE] = {'show_neutronsource', true}
+}
+
 -- Client Debug module
-timer.Simple(5, function()
+timer.Simple(10, function()
     if not GetGlobal2Bool('LITHOSQUARE_RBMK_INITIALIZED_GLOBAL', false) then
-        print('[Lithosquare RBMK Debug Module] No RBMK detected after 5 seconds, terminating')
+        print('[Lithosquare RBMK Debug Client] No RBMK detected after 10 seconds, terminating')
         return
     end
-
-    print('[Lithosquare RBMK Debug Module] Client initialized')
 
     net.Receive('RBMK_DebugState', function()
         RBMK = RBMK or {}
@@ -54,6 +63,7 @@ timer.Simple(5, function()
         RBMK.Debug.RenderFluxLines()
         RBMK.Debug.RenderVesselInfo()
     end)
+    print('[Lithosquare RBMK Debug Client] Client initialized')
 end)
 
 function RBMK.Debug.GetSetting(name, default)
@@ -79,16 +89,22 @@ function RBMK.Debug.GetCellWorldPos(x, y)
     return origin + Vector((x - 1) * spacing, (y - 1) * spacing, 0)
 end
 
-function RBMK.Debug.DrawWorldText(pos, text, color)
-    cam.Start3D2D(pos, Angle(0, LocalPlayer():EyeAngles().y - 90, 90), RBMK.Debug.GetSettingNumber('debug_textscale', 1.0))
+function RBMK.Debug.DrawWorldText(pos, text, color, sizeOverride)
+    sizeOverride = sizeOverride or RBMK.Debug.GetSettingNumber('debug_textscale', 1.0)
+    cam.Start3D2D(pos, Angle(0, LocalPlayer():EyeAngles().y - 90, 90), sizeOverride)
     draw.SimpleTextOutlined(text, 'DermaDefault', -10, 0, color or color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 1.2, color_black)
     cam.End3D2D()
 end
 
+function RBMK.Debug.ShouldRenderCell(cell)
+    if not cell or cell.type == RBMK.CELL_VOID then return false end
+    local filter = RBMK.Debug.CellFilterSettings[cell.type]
+    if not filter then return true end
+    return RBMK.Debug.GetSetting(filter[1], filter[2])
+end
+
 function RBMK.Debug.RenderCell(x, y, cell)
-    if cell.type == RBMK.CELL_VOID or
-    (not RBMK.Debug.GetSetting('show_blank', false) and cell.type == RBMK.CELL_BLANK) or
-    (not RBMK.Debug.GetSetting('show_steam', true) and cell.type == RBMK.CELL_STEAM) then return end
+    if not RBMK.Debug.ShouldRenderCell(cell) then return end
     local pos = RBMK.Debug.GetCellWorldPos(x, y)
     local lines = {}
     local symbol = RBMK.CellSymbols[cell.type] or '?'
@@ -130,7 +146,8 @@ function RBMK.Debug.RenderCells()
 end
 
 function RBMK.Debug.RenderFluxLines()
-    if not RBMK.Debug.GetSetting('draw_flux_rays', true) then return end
+    if not RBMK.Debug.GetSetting('debug_enabled', true) then return end
+    if not RBMK.Debug.GetSetting('draw_flux_rays', true)  then return end
     local state = RBMK.Debug.ClientState
     if not state.FluxLines then return end
     render.SetColorMaterial()
@@ -149,7 +166,7 @@ function RBMK.Debug.RenderFluxLines()
             -- West
             if line.dx < 0 then
                 offset = Vector(0, -6, 0)
-                color = Color(0, 88, 0)
+                color = Color(0, 167, 0)
             end
         end
 
@@ -164,7 +181,7 @@ function RBMK.Debug.RenderFluxLines()
             -- South
             if line.dy < 0 then
                 offset = Vector(6, 0, 0)
-                color = Color(0, 88, 0)
+                color = Color(0, 167, 0)
             end
         end
 
@@ -181,7 +198,7 @@ function RBMK.Debug.RenderFluxLines()
         render.DrawLine(endPos, arrowA, color, true)
         -- FLUX TEXT
         local textPos = arrowA + offset * 0.5 + Vector(0, 0, -4)
-        RBMK.Debug.DrawWorldText(textPos, string.format('%.1f', line.flux), color)
+        RBMK.Debug.DrawWorldText(textPos, string.format('%.1f', line.flux), color, RBMK.Debug.GetSettingNumber('debug_textscale_flux', 0.3))
     end
 end
 

@@ -4,7 +4,8 @@ RBMK.TotalFlux = 0
 RBMK.TotalFluxSubtracted = 0
 function RBMK.DoFluxStep()
     RBMK.TotalFlux = 0
-    RBMK.Debug.FluxLines = {}
+    RBMK.Debug.ClientState = RBMK.Debug.ClientState or {}
+    RBMK.Debug.ClientState.FluxLines = {}
     RBMK.ClearFlux()
     for x = 1, RBMK.Width do
         for y = 1, RBMK.Height do

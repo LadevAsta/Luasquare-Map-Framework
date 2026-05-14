@@ -15,6 +15,9 @@ RBMK.MaxHeat = 20
 
 RBMK.AverageXenon = 0
 
+--TODO : Somehow Implement Megawatt Thermal (thermal transfer method). Which will be used by Auto control rod to stabilize the reactor for power production later (New Turbine Module in lithos_powerplant).
+--TODO : Implement Pressure in the reactor vessel. RPV will accept less and less water from Steamline network or ECCS if the incoming has lower pressure vice-versa.
+
 -- =========================================
 -- MATRIX
 -- =========================================
@@ -64,6 +67,18 @@ function RBMK.GetHeat(x, y)
     return cell.heat or 0
 end
 
+function RBMK.GetCoreHeat(x, y)
+    local cell = RBMK.GetCell(x, y)
+    if cell.type ~= RBMK.CELL_FUEL then return 0 end
+    return cell.coreHeat or 0
+end
+
+function RBMK.GetSkinHeat(x, y)
+    local cell = RBMK.GetCell(x, y)
+    if cell.type ~= RBMK.CELL_FUEL then return 0 end
+    return cell.skinHeat or 0
+end
+
 function RBMK.GetFlux(x, y)
     local cell = RBMK.GetCell(x, y)
     if not cell then return 0 end
@@ -92,8 +107,13 @@ function RBMK.RecalculatePools()
         end
     end
 
-    RBMK.MaxWater = steamChannels * 1000
-    RBMK.MaxSteam = steamChannels * 160000
+    RBMK.MaxWater = steamChannels * 10
+    RBMK.MaxSteam = steamChannels * 16000
+end
+
+function RBMK.AddInitialWater(percent)
+    local factor = math.Clamp(percent,0,100) / 100
+    RBMK.Water = RBMK.MaxWater * factor
 end
 
 -- Start loop
@@ -101,6 +121,49 @@ function RBMK.Start()
     if timer.Exists('RBMK_Tick') then timer.Remove('RBMK_Tick') end
     timer.Create('RBMK_Tick', RBMK.TickInterval, 0, function() RBMK.Tick() end)
     print('[LITHOS_RBMK] Started')
+end
+
+-- =========================================
+-- Reactor Events
+-- =========================================
+
+function RBMK.BlowoutSteam()
+    --Blowout Select a random RPV column to make them jump.
+    --Naming convention for RPV in the map is [Name]_0, [Name]_1, [Name]_2... Name defined by mapper via map script.
+    --Auto-detect how many RPV is found then apply the number.
+    --If there are no func_movelinear found at all, fall back to default value.
+    --This ent-fire func_movelinears with random setspeed and fire 'Close' input at it after a random duration, making them fall.
+    --1 Second After which, they can start jumping again.
+    --This function is called repeatedly by it's helper that reads RPV Pressure.
+    --The helper of this will scale frequency, set speed and duration based on how much overpressured the RPV is.
+    --Each jump removes a configurable static amount of steam. so no water return.
+    --This can also be manually called by it's API through in-map's button.
+end
+
+function RBMK.FuelChannelLeakCheck()
+    --Check every 30 seconds
+    --Select an offending fuel channel whose CELL Heat has breached 1500 C.
+    --Starting from 5% then +5% chance per 50 C above 1500 C.
+end
+
+function RBMK.FuelChannelLeak()
+    --Fired when it's check success, Throw warning to annunciator(NYI) 
+    --and trigger runaway heat logic on the offending fuel channel which will likely result in blowout or meltdown.
+    --If there are no water to flashboil and couldn't cause blowout, the heat will just keep rising until FuelChannelMelt.
+end
+
+function RBMK.FuelMeltdown()
+    --Occurs when fuel channel's temperature exceed 3000 C and there are no water or steam to blowout.
+    --This function throw warning to annunciator and ent-fire a logic_relay.
+    --Then waits for 30 seconds before causing a steam explosion or violent chemical reactions
+    --which in turn, Trigger Catastrophic Failure anyways.
+end
+
+function RBMK.CatastrophicFailure()
+    --Violently(in theory) destroy the reactor after upper threshold overpressure is breached.
+    --This is the last destination of 'meltdown' and the final nail in the sarcophagus of Lithosquare RBMK.
+    --This function ent-fire a logic_relay. Mapper defines how it will happen.
+    --Then stop RBMK tick timer.
 end
 
 -- =========================================

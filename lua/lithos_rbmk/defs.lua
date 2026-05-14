@@ -32,6 +32,8 @@ RBMK.CellSpacing = 64
 
 RBMK.TickInterval = 0.1
 
+RBMK.RPVHeatDiffusion = 0.05
+
 RBMK.FluxRange = 12
 RBMK.TotalFluxSubtractDefine = 0
 

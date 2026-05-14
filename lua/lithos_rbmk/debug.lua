@@ -69,6 +69,8 @@ function RBMK.Debug.BuildCell(x, y, cell)
 end
 
 function RBMK.Debug.AddFluxLine(startPos, endPos, flux, dx, dy)
+    RBMK.Debug.ClientState = RBMK.Debug.ClientState or {}
+    RBMK.Debug.ClientState.FluxLines = RBMK.Debug.ClientState.FluxLines or {}
     table.insert(RBMK.Debug.ClientState.FluxLines, {
         start = startPos,
         finish = endPos,
@@ -101,7 +103,6 @@ function RBMK.Debug.BuildVesselInfo()
 end
 
 function RBMK.Debug.Tick()
-    RBMK.Debug.ClientState.FluxLines = {}
     RBMK.Debug.BuildCells()
     --RBMK.Debug.BuildFluxLines()
     RBMK.Debug.BuildVesselInfo()
