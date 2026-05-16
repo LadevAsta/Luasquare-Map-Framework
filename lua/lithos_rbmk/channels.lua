@@ -23,9 +23,7 @@ end
 function RBMK.CreateSteamChannel()
     return {
         type = RBMK.CELL_STEAM,
-        heat = 20,
-        coolingRate = 0.05,
-        waterUseRate = 0.01
+        heat = 20
     }
 end
 

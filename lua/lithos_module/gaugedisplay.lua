@@ -5,6 +5,8 @@ LITHOS_GAUGE.Gauges = LITHOS_GAUGE.Gauges or {}
 LITHOS_GAUGE.Bindings = LITHOS_GAUGE.Bindings or {}
 LITHOS_GAUGE.EntityCache = LITHOS_GAUGE.EntityCache or {}
 
+LITHOS_GAUGE.TickInterval = 0.1
+
 -- =========================================
 -- ENTITY CACHE
 -- =========================================
@@ -93,7 +95,7 @@ end
 -- =========================================
 function LITHOS_GAUGE.Start()
     if timer.Exists('LITHOS_GAUGE_UpdateTimer') then timer.Remove('LITHOS_GAUGE_UpdateTimer') end
-    timer.Create('LITHOS_GAUGE_UpdateTimer', 0.1, 0, function() LITHOS_GAUGE.UpdateAll() end)
+    timer.Create('LITHOS_GAUGE_UpdateTimer', LITHOS_GAUGE.TickInterval, 0, function() LITHOS_GAUGE.UpdateAll() end)
     print('[LITHOS_GAUGE] Started')
 end
 

@@ -7,6 +7,8 @@ LITHOS_SEG7.EntityCache = LITHOS_SEG7.EntityCache or {}
 LITHOS_SEG7.BLANK = 10
 LITHOS_SEG7.MINUS = 11
 
+LITHOS_SEG7.TickInterval = 0.1
+
 -- =========================================
 -- ENTITY CACHE
 -- =========================================
@@ -96,6 +98,6 @@ end
 -- =========================================
 function LITHOS_SEG7.Start()
     if timer.Exists('LITHOS_SEG7_UpdateTimer') then timer.Remove('LITHOS_SEG7_UpdateTimer') end
-    timer.Create('LITHOS_SEG7_UpdateTimer', 0.1, 0, function() LITHOS_SEG7.UpdateAll() end)
+    timer.Create('LITHOS_SEG7_UpdateTimer', LITHOS_SEG7.TickInterval, 0, function() LITHOS_SEG7.UpdateAll() end)
     print('[LITHOS_SEG7] Started')
 end

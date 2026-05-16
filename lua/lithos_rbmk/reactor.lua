@@ -5,10 +5,72 @@ RBMK.Height = 0
 RBMK.Matrix = {}
 RBMK.TickInterval = 0.1
 
+RBMK.ColumnVolume = RBMK.ColumnVolume or 1000
+RBMK.TotalVolume = RBMK.TotalVolume or 0
+RBMK.SteamSpace = RBMK.SteamSpace or 0
+RBMK.MinSteamSpace = RBMK.MinSteamSpace or 0
+RBMK.RPVMinSteamSpaceFraction = RBMK.RPVMinSteamSpaceFraction or 0.05
+RBMK.SteamExpansionRatio = RBMK.SteamExpansionRatio or 1600
+RBMK.SteamPressureFactor = RBMK.SteamPressureFactor or 1
+
 RBMK.Water = 0
+RBMK.WaterTemperature = 20
 RBMK.Steam = 0
 RBMK.MaxWater = 0
 RBMK.MaxSteam = 0
+RBMK.HardMaxSteam = 0
+RBMK.RPVPressure = 0
+RBMK.RPVMaxPressure = 70
+RBMK.RPVHardPressure = 110
+RBMK.RPVSteamReliefPressure = 5
+RBMK.PressureUnit = 'bar'
+RBMK.SteamNetwork = nil
+RBMK.SteamOutletOpen = true
+RBMK.FeedwaterInletOpen = true
+RBMK.DrainValveOpen = false
+RBMK.DrainNetwork = nil
+RBMK.SteamOutletFlowRate = 0.25
+RBMK.DrainFlowRate = 10
+
+RBMK.WaterSpecificHeatKJPerL = 4.186
+RBMK.WaterLatentHeatKJPerL = 2257
+RBMK.WaterBoilingTemperature = 100
+RBMK.ChannelThermalMassKJPerC = 250
+RBMK.ChannelBoilingHeatTransfer = 0.08
+RBMK.LastThermalMW = 0
+RBMK.LastSteamExportFlow = 0
+RBMK.LastDrainFlow = 0
+
+RBMK.EventState = RBMK.EventState or {}
+RBMK.EventState.NextBlowout = 0
+RBMK.EventState.NextLeakCheck = 0
+RBMK.EventState.Failed = false
+RBMK.EventState.FailureReason = nil
+
+RBMK.BlowoutPressure = RBMK.BlowoutPressure or 85
+RBMK.BlowoutCooldown = RBMK.BlowoutCooldown or 1.5
+RBMK.BlowoutValvePrefix = RBMK.BlowoutValvePrefix or 'rbmk_blowout'
+RBMK.BlowoutFallbackValveCount = RBMK.BlowoutFallbackValveCount or 20
+RBMK.BlowoutSteamLoss = RBMK.BlowoutSteamLoss or 0.015
+RBMK.BlowoutMinSpeed = RBMK.BlowoutMinSpeed or 96
+RBMK.BlowoutMaxSpeed = RBMK.BlowoutMaxSpeed or 320
+RBMK.BlowoutMinDuration = RBMK.BlowoutMinDuration or 1
+RBMK.BlowoutMaxDuration = RBMK.BlowoutMaxDuration or 2
+
+RBMK.CatastrophicPressure = RBMK.CatastrophicPressure or 130
+RBMK.CatastrophicFailureRelay = RBMK.CatastrophicFailureRelay or nil
+RBMK.CatastrophicClearDelay = RBMK.CatastrophicClearDelay or 5
+
+RBMK.FuelLeakCheckInterval = RBMK.FuelLeakCheckInterval or 30
+RBMK.FuelLeakTemperature = RBMK.FuelLeakTemperature or 1500
+RBMK.FuelLeakBaseChance = RBMK.FuelLeakBaseChance or 5
+RBMK.FuelLeakChanceStep = RBMK.FuelLeakChanceStep or 5
+RBMK.FuelLeakTemperatureStep = RBMK.FuelLeakTemperatureStep or 50
+RBMK.FuelLeakHeatRate = RBMK.FuelLeakHeatRate or 50
+RBMK.FuelLeakRelay = RBMK.FuelLeakRelay or nil
+RBMK.FuelMeltdownTemperature = RBMK.FuelMeltdownTemperature or 3000
+RBMK.FuelMeltdownDelay = RBMK.FuelMeltdownDelay or 30
+RBMK.FuelMeltdownRelay = RBMK.FuelMeltdownRelay or nil
 
 RBMK.AverageHeat = 20
 RBMK.MaxHeat = 20
@@ -16,7 +78,7 @@ RBMK.MaxHeat = 20
 RBMK.AverageXenon = 0
 
 --TODO : Somehow Implement Megawatt Thermal (thermal transfer method). Which will be used by Auto control rod to stabilize the reactor for power production later (New Turbine Module in lithos_powerplant).
---TODO : Implement Pressure in the reactor vessel. RPV will accept less and less water from Steamline network or ECCS if the incoming has lower pressure vice-versa.
+-- Pressure is gameplay bar. Steam is stored as 1 bar steam-equivalent liters.
 
 -- =========================================
 -- MATRIX
@@ -55,8 +117,11 @@ function RBMK.Tick()
     RBMK.CommitFlux()
     RBMK.DoHeatStep()
     RBMK.DoSteamStep()
+    RBMK.DoSteamExportStep()
+    RBMK.DoDrainStep()
     RBMK.DoControlStep()
     RBMK.UpdateTelemetry()
+    RBMK.DoEventStep()
     RBMK.Debug.Tick()
 end
 
@@ -97,23 +162,14 @@ function RBMK.GetRodInsertion(x, y)
     return cell.rodInsertion or 0
 end
 
+-- =========================================
 -- Utilities
-function RBMK.RecalculatePools()
-    local steamChannels = 0
-    for x = 1, RBMK.Width do
-        for y = 1, RBMK.Height do
-            local cell = RBMK.Matrix[x][y]
-            if cell.type == RBMK.CELL_STEAM then steamChannels = steamChannels + 1 end
-        end
-    end
+-- =========================================
 
-    RBMK.MaxWater = steamChannels * 10
-    RBMK.MaxSteam = steamChannels * 16000
-end
-
-function RBMK.AddInitialWater(percent)
-    local factor = math.Clamp(percent,0,100) / 100
-    RBMK.Water = RBMK.MaxWater * factor
+function RBMK.CalculateColumnVolume(width, length, height, hollowPercentage)
+    -- In hammer, I assume 1 unit is 1 inch. This converts cubic inches to liters
+    hollowPercentage = hollowPercentage or 50
+    RBMK.ColumnVolume = width * length * height * 0.016387064 * (hollowPercentage / 100)
 end
 
 -- Start loop
@@ -127,43 +183,199 @@ end
 -- Reactor Events
 -- =========================================
 
+function RBMK.GetTime()
+    if CurTime then return CurTime() end
+    return os.clock()
+end
+
+function RBMK.FireRelay(relayName)
+    if not relayName then return false end
+    local ent = ents.FindByName(relayName)[1]
+    if not IsValid(ent) then
+        print('[LITHOS_RBMK] Missing relay: ' .. tostring(relayName))
+        return false
+    end
+
+    ent:Fire('Trigger')
+    return true
+end
+
+function RBMK.GetBlowoutValves()
+    local valves = {}
+    local index = 0
+    while true do
+        local ent = ents.FindByName(RBMK.BlowoutValvePrefix .. '_' .. index)[1]
+        if not IsValid(ent) then break end
+        table.insert(valves, ent)
+        index = index + 1
+    end
+
+    return valves
+end
+
 function RBMK.BlowoutSteam()
-    --Blowout Select a random RPV column to make them jump.
-    --Naming convention for RPV in the map is [Name]_0, [Name]_1, [Name]_2... Name defined by mapper via map script.
-    --Auto-detect how many RPV is found then apply the number.
-    --If there are no func_movelinear found at all, fall back to default value.
-    --This ent-fire func_movelinears with random setspeed and fire 'Close' input at it after a random duration, making them fall.
-    --1 Second After which, they can start jumping again.
-    --This function is called repeatedly by it's helper that reads RPV Pressure.
-    --The helper of this will scale frequency, set speed and duration based on how much overpressured the RPV is.
-    --Each jump removes a configurable static amount of steam. so no water return.
-    --This can also be manually called by it's API through in-map's button.
+    if RBMK.EventState.Failed then return 0 end
+    local now = RBMK.GetTime()
+    if now < (RBMK.EventState.NextBlowout or 0) then return 0 end
+
+    local pressure = RBMK.UpdateRPVPressure()
+    local overFactor = math.Clamp((pressure - RBMK.BlowoutPressure) / math.max(RBMK.CatastrophicPressure - RBMK.BlowoutPressure, 1), 0, 1)
+    if overFactor <= 0 then return 0 end
+
+    local valves = RBMK.GetBlowoutValves()
+    local valveCount = #valves
+    if valveCount <= 0 then valveCount = RBMK.BlowoutFallbackValveCount end
+
+    local valveIndex = math.random(1, valveCount)
+    local speed = Lerp(overFactor, RBMK.BlowoutMinSpeed, RBMK.BlowoutMaxSpeed)
+    local duration = Lerp(overFactor, RBMK.BlowoutMinDuration, RBMK.BlowoutMaxDuration)
+    local steamLoss = RBMK.SteamSpace * RBMK.BlowoutSteamLoss * (0.5 + overFactor) * RBMK.TickInterval
+    steamLoss = math.min(steamLoss, RBMK.Steam)
+
+    if #valves > 0 then
+        local ent = valves[valveIndex]
+        if IsValid(ent) then
+            ent:Fire('SetSpeed', tostring(speed))
+            ent:Fire('Open')
+            timer.Simple(duration, function()
+                if IsValid(ent) then ent:Fire('Close') end
+            end)
+        end
+    end
+
+    RBMK.Steam = RBMK.Steam - steamLoss
+    RBMK.EventState.LastBlowoutSteamLoss = steamLoss
+    RBMK.EventState.LastBlowoutPressure = pressure
+    RBMK.EventState.NextBlowout = now + RBMK.BlowoutCooldown
+    RBMK.UpdateRPVPressure()
+    return steamLoss
 end
 
 function RBMK.FuelChannelLeakCheck()
-    --Check every 30 seconds
-    --Select an offending fuel channel whose CELL Heat has breached 1500 C.
-    --Starting from 5% then +5% chance per 50 C above 1500 C.
+    -- THIS CHECK COLUMN TEMP! Which contributes to actual channel leaking.
+    if RBMK.EventState.Failed then return false end
+    local now = RBMK.GetTime()
+    if now < (RBMK.EventState.NextLeakCheck or 0) then return false end
+    RBMK.EventState.NextLeakCheck = now + RBMK.FuelLeakCheckInterval
+
+    local offenders = {}
+    for x = 1, RBMK.Width do
+        for y = 1, RBMK.Height do
+            local cell = RBMK.GetCell(x, y)
+            if cell and cell.type == RBMK.CELL_FUEL and not cell.leaking then
+                local hottest = cell.heat or 0
+                if hottest >= RBMK.FuelLeakTemperature then
+                    table.insert(offenders, {x = x, y = y, cell = cell, heat = hottest})
+                end
+            end
+        end
+    end
+
+    if #offenders <= 0 then return false end
+    local offender = offenders[math.random(1, #offenders)]
+    local overTemp = offender.heat - RBMK.FuelLeakTemperature
+    local chance = RBMK.FuelLeakBaseChance + math.floor(overTemp / RBMK.FuelLeakTemperatureStep) * RBMK.FuelLeakChanceStep
+    chance = math.Clamp(chance, 0, 100)
+    if math.Rand(0, 100) > chance then return false end
+
+    RBMK.FuelChannelLeak(offender.x, offender.y, offender.cell)
+    return true
 end
 
-function RBMK.FuelChannelLeak()
-    --Fired when it's check success, Throw warning to annunciator(NYI) 
-    --and trigger runaway heat logic on the offending fuel channel which will likely result in blowout or meltdown.
-    --If there are no water to flashboil and couldn't cause blowout, the heat will just keep rising until FuelChannelMelt.
+function RBMK.FuelChannelLeak(x, y, cell)
+    cell = cell or RBMK.GetCell(x, y)
+    if not cell or cell.type ~= RBMK.CELL_FUEL then return false end
+    if cell.leaking then return true end
+
+    cell.leaking = true
+    cell.leakStarted = RBMK.GetTime()
+    RBMK.EventState.LastFuelLeak = {x = x, y = y, time = cell.leakStarted}
+    RBMK.FireRelay(RBMK.FuelLeakRelay)
+    print(string.format('[LITHOS_RBMK] Fuel channel leak at %d,%d', x or 0, y or 0))
+    return true
 end
 
-function RBMK.FuelMeltdown()
-    --Occurs when fuel channel's temperature exceed 3000 C and there are no water or steam to blowout.
-    --This function throw warning to annunciator and ent-fire a logic_relay.
-    --Then waits for 30 seconds before causing a steam explosion or violent chemical reactions
-    --which in turn, Trigger Catastrophic Failure anyways.
+function RBMK.DoFuelLeakStep()
+    for x = 1, RBMK.Width do
+        for y = 1, RBMK.Height do
+            local cell = RBMK.GetCell(x, y)
+            if cell and cell.type == RBMK.CELL_FUEL and cell.leaking then
+                local heatAdd = RBMK.FuelLeakHeatRate * RBMK.TickInterval
+                cell.heat = (cell.heat or 20) + heatAdd
+                cell.skinHeat = (cell.skinHeat or cell.heat) + heatAdd * 1.5
+                cell.coreHeat = (cell.coreHeat or cell.skinHeat) + heatAdd * 2
+                if cell.heat >= RBMK.FuelMeltdownTemperature and not cell.meltingDown then
+                    RBMK.FuelMeltdown(x, y, cell)
+                end
+            end
+        end
+    end
 end
 
-function RBMK.CatastrophicFailure()
-    --Violently(in theory) destroy the reactor after upper threshold overpressure is breached.
-    --This is the last destination of 'meltdown' and the final nail in the sarcophagus of Lithosquare RBMK.
-    --This function ent-fire a logic_relay. Mapper defines how it will happen.
-    --Then stop RBMK tick timer.
+function RBMK.FuelMeltdown(x, y, cell)
+    cell = cell or RBMK.GetCell(x, y)
+    if not cell or cell.meltingDown then return false end
+
+    cell.meltingDown = true
+    cell.meltdownStarted = RBMK.GetTime()
+    RBMK.EventState.LastMeltdown = {x = x, y = y, time = cell.meltdownStarted}
+    RBMK.FireRelay(RBMK.FuelMeltdownRelay)
+    print(string.format('[LITHOS_RBMK] Fuel meltdown started at %d,%d', x or 0, y or 0))
+
+    timer.Simple(RBMK.FuelMeltdownDelay, function()
+        if RBMK and RBMK.EventState and not RBMK.EventState.Failed then
+            RBMK.CatastrophicFailure('fuel_meltdown')
+        end
+    end)
+    return true
+end
+
+function RBMK.CatastrophicFailure(reason)
+    if RBMK.EventState.Failed then return false end
+    RBMK.EventState.Failed = true
+    RBMK.EventState.FailureReason = reason or 'unknown'
+    RBMK.EventState.FailureTime = RBMK.GetTime()
+    RBMK.FireRelay(RBMK.CatastrophicFailureRelay)
+    if timer.Exists('RBMK_Tick') then timer.Remove('RBMK_Tick') end
+    print('[LITHOS_RBMK] Catastrophic failure: ' .. tostring(RBMK.EventState.FailureReason))
+    timer.Simple(RBMK.CatastrophicClearDelay, function()
+        if RBMK then RBMK.ClearReactorData() end
+    end)
+    return true
+end
+
+function RBMK.ClearReactorData()
+    RBMK.Width = 0
+    RBMK.Height = 0
+    RBMK.Matrix = {}
+    RBMK.Rods = {}
+    RBMK.Water = 0
+    RBMK.Steam = 0
+    RBMK.MaxWater = 0
+    RBMK.MaxSteam = 0
+    RBMK.HardMaxSteam = 0
+    RBMK.RPVPressure = 0
+    RBMK.TotalVolume = 0
+    RBMK.SteamSpace = 0
+    RBMK.MinSteamSpace = 0
+end
+
+function RBMK.DoPressureEventStep()
+    local pressure = RBMK.UpdateRPVPressure()
+    RBMK.EventState.LastPressure = pressure
+    if pressure >= RBMK.CatastrophicPressure then
+        RBMK.CatastrophicFailure('overpressure')
+        return
+    end
+
+    if pressure >= RBMK.BlowoutPressure then RBMK.BlowoutSteam() end
+end
+
+function RBMK.DoEventStep()
+    if RBMK.EventState.Failed then return end
+    RBMK.DoPressureEventStep()
+    RBMK.FuelChannelLeakCheck()
+    RBMK.DoFuelLeakStep()
 end
 
 -- =========================================
@@ -191,4 +403,5 @@ function RBMK.UpdateTelemetry()
     RBMK.AverageHeat = 0
     if validCells > 0 then RBMK.AverageHeat = totalHeat / validCells end
     RBMK.MaxHeat = maxHeat
+    RBMK.UpdateRPVPressure()
 end

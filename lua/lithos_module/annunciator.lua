@@ -8,6 +8,6 @@
 -- When start, start off with OFF skin
 -- When a problem arises, change the offender to fast flash.
 -- When ACK is pressed, unresolved problem get to ON skin
--- When problem is resolved, get to slow flash whenther or not it is ACKnowledged.
+-- When problem is resolved, play audio cue and get to slow flash whenther or not it is ACKnowledged.
 -- When RESET is pressed, problem with slow flash change to OFF skin.
 -- MUTE simply stop all the current alarm sounds. But 5 minutes after that, play audio cue turn them up again if not resolved.

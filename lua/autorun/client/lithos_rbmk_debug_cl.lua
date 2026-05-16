@@ -116,6 +116,8 @@ function RBMK.Debug.RenderCell(x, y, cell)
         table.insert(lines, tostring(cell.fuelType or '???'))
         table.insert(lines, string.format('F: %.1f', cell.flux or 0))
         table.insert(lines, string.format('X: %.1f', cell.xenon or 0))
+        if cell.leaking then table.insert(lines, 'LEAK') end
+        if cell.meltingDown then table.insert(lines, 'MELT') end
     elseif cell.type == RBMK.CELL_CONTROL then
         table.insert(lines, string.format('%s', cell.name or '???'))
         table.insert(lines, string.format('I: %.2f', cell.insertion or 0))
@@ -125,8 +127,6 @@ function RBMK.Debug.RenderCell(x, y, cell)
     elseif cell.type == RBMK.CELL_SOURCE then
         table.insert(lines, string.format('SRC: %.1f', cell.sourceStrength or 0))
         table.insert(lines, string.format('CLS: %s', tostring(cell.closedSource)))
-    elseif cell.type == RBMK.CELL_STEAM then
-        table.insert(lines, string.format('W: %.1f', cell.water or 0))
     end
 
     local text = table.concat(lines, ' ')
@@ -211,10 +211,25 @@ function RBMK.Debug.RenderVesselInfo()
     local lines = {'MODEL: ' .. tostring(info.model),
     string.format('AVG H: %.1f', info.averageHeat or 0),
     string.format('MAX H: %.1f', info.maxHeat or 0),
+    string.format('MWt: %.2f', info.lastThermalMW or 0),
     string.format('FLUX: %.1f', info.totalFlux or 0),
     string.format('XENON: %.1f', info.averageXenon or 0),
+    string.format('--------------------------------'),
     string.format('WATER: %.1f / %.1f', info.water or 0, info.maxWater or 0),
-    string.format('STEAM: %.1f / %.1f', info.steam or 0, info.maxSteam or 0)}
+    string.format('W TEMP: %.1f C', info.waterTemperature or 0),
+    string.format('STEAM: %.1f / %.1f', info.steam or 0, info.maxSteam or 0),
+    string.format('SPACE: %.1f / %.1f', info.steamSpace or 0, info.totalVolume or 0),
+    string.format('RPV P: %.1f %s', info.rpvPressure or 0, info.pressureUnit or 'bar'),
+    string.format('OUT: %s %.1f/s', tostring(info.steamOutletOpen), info.lastSteamExportFlow or 0),
+    string.format('--------------------------------'),
+    string.format('IN/DRAIN: %s / %s %.1f/s', tostring(info.feedwaterInletOpen), tostring(info.drainValveOpen), info.lastDrainFlow or 0),
+    string.format('BLOW/CATA: %.1f / %.1f', info.blowoutPressure or 0, info.catastrophicPressure or 0)}
+    if info.lastBlowoutSteamLoss and info.lastBlowoutSteamLoss > 0 then
+        table.insert(lines, string.format('LAST BLOW: %.1f @ %.1f', info.lastBlowoutSteamLoss or 0, info.lastBlowoutPressure or 0))
+    end
+    if info.lastFuelLeak then table.insert(lines, string.format('LEAK: %d,%d', info.lastFuelLeak.x or 0, info.lastFuelLeak.y or 0)) end
+    if info.lastMeltdown then table.insert(lines, string.format('MELT: %d,%d', info.lastMeltdown.x or 0, info.lastMeltdown.y or 0)) end
+    if info.eventFailed then table.insert(lines, 'FAILED: ' .. tostring(info.failureReason or 'unknown')) end
     for i, line in ipairs(lines) do
         local pos = basePos + Vector(0, 0, -(i - 1) * 8)
         RBMK.Debug.DrawWorldText(pos, line, Color(0, 255, 255))

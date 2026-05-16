@@ -1,0 +1,21 @@
+if not CLIENT then return end
+
+hook.Add('PopulateToolMenu', 'LITHOS_POWERPLANT_Menu', function()
+    spawnmenu.AddToolMenuOption('Options', 'Lithos', 'LithosPowerplant', 'Powerplant Debug', '', '', function(panel)
+        panel:Clear()
+        panel:Help('Lithos Powerplant Debug Options')
+        panel:CheckBox('Enable Debug', 'lithos_powerplant_debug_enabled')
+        panel:NumSlider('Text Scale', 'lithos_powerplant_debug_textscale', 0.1, 2.0, 2)
+        panel:CheckBox('Show Networks', 'lithos_powerplant_show_networks')
+        panel:CheckBox('Show Pumps', 'lithos_powerplant_show_pumps')
+        panel:CheckBox('Show Valves', 'lithos_powerplant_show_valves')
+        panel:CheckBox('Show Condensers', 'lithos_powerplant_show_condensers')
+    end)
+end)
+
+CreateClientConVar('lithos_powerplant_debug_enabled', '0', true, false)
+CreateClientConVar('lithos_powerplant_debug_textscale', '0.2', true, false)
+CreateClientConVar('lithos_powerplant_show_networks', '1', true, false)
+CreateClientConVar('lithos_powerplant_show_pumps', '1', true, false)
+CreateClientConVar('lithos_powerplant_show_valves', '1', true, false)
+CreateClientConVar('lithos_powerplant_show_condensers', '1', true, false)
