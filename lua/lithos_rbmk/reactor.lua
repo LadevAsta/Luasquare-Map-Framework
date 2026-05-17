@@ -43,19 +43,26 @@ RBMK.LastDrainFlow = 0
 
 RBMK.EventState = RBMK.EventState or {}
 RBMK.EventState.NextBlowout = 0
+RBMK.EventState.BlowoutValveCooldowns = RBMK.EventState.BlowoutValveCooldowns or {}
 RBMK.EventState.NextLeakCheck = 0
 RBMK.EventState.Failed = false
 RBMK.EventState.FailureReason = nil
 
+RBMK.BlowoutEnabled = RBMK.BlowoutEnabled ~= false
 RBMK.BlowoutPressure = RBMK.BlowoutPressure or 85
-RBMK.BlowoutCooldown = RBMK.BlowoutCooldown or 1.5
+RBMK.BlowoutCooldown = RBMK.BlowoutCooldown or 0.1
+RBMK.BlowoutColumnCooldown = RBMK.BlowoutColumnCooldown or 1.5
 RBMK.BlowoutValvePrefix = RBMK.BlowoutValvePrefix or 'rbmk_blowout'
 RBMK.BlowoutFallbackValveCount = RBMK.BlowoutFallbackValveCount or 20
-RBMK.BlowoutSteamLoss = RBMK.BlowoutSteamLoss or 0.015
-RBMK.BlowoutMinSpeed = RBMK.BlowoutMinSpeed or 96
+RBMK.BlowoutValves = RBMK.BlowoutValves or {}
+RBMK.BlowoutMinColumnsPerPass = RBMK.BlowoutMinColumnsPerPass or 1
+RBMK.BlowoutMaxColumnsPerPass = RBMK.BlowoutMaxColumnsPerPass or 1
+RBMK.BlowoutSteamLoss = RBMK.BlowoutSteamLoss or 0.5
+RBMK.BlowoutMinSpeed = RBMK.BlowoutMinSpeed or 64
 RBMK.BlowoutMaxSpeed = RBMK.BlowoutMaxSpeed or 320
-RBMK.BlowoutMinDuration = RBMK.BlowoutMinDuration or 1
-RBMK.BlowoutMaxDuration = RBMK.BlowoutMaxDuration or 2
+RBMK.BlowoutFallSpeed = RBMK.BlowoutFallSpeed or 320
+RBMK.BlowoutMinDuration = RBMK.BlowoutMinDuration or 0.2
+RBMK.BlowoutMaxDuration = RBMK.BlowoutMaxDuration or 1
 
 RBMK.CatastrophicPressure = RBMK.CatastrophicPressure or 130
 RBMK.CatastrophicFailureRelay = RBMK.CatastrophicFailureRelay or nil
@@ -200,20 +207,92 @@ function RBMK.FireRelay(relayName)
     return true
 end
 
+function RBMK.ClearBlowoutValves()
+    RBMK.BlowoutValves = {}
+    if RBMK.EventState then RBMK.EventState.BlowoutValveCooldowns = {} end
+end
+
+function RBMK.RegisterBlowoutValve(targetName, key)
+    if not targetName then return nil end
+    key = key or targetName
+    local ent = ents.FindByName(targetName)[1]
+    local valve = {
+        key = key,
+        targetName = targetName,
+        ent = IsValid(ent) and ent or nil,
+        resolved = IsValid(ent)
+    }
+
+    table.insert(RBMK.BlowoutValves, valve)
+    return valve
+end
+
+function RBMK.RegisterBlowoutValveRange(prefix, count, startIndex)
+    prefix = prefix or RBMK.BlowoutValvePrefix
+    count = math.max(math.floor(tonumber(count) or 0), 0)
+    startIndex = math.floor(tonumber(startIndex) or 0)
+    for i = startIndex, startIndex + count - 1 do
+        RBMK.RegisterBlowoutValve(prefix .. '_' .. i)
+    end
+end
+
+function RBMK.EnsureBlowoutValveRegistry()
+    if #RBMK.BlowoutValves > 0 then return end
+    RBMK.RegisterBlowoutValveRange(RBMK.BlowoutValvePrefix, RBMK.BlowoutFallbackValveCount, 0)
+end
+
+function RBMK.ResolveBlowoutValve(valve)
+    if not valve then return nil end
+    if IsValid(valve.ent) then return valve.ent end
+    if valve.resolved then return nil end
+    if not valve.targetName then return nil end
+
+    valve.ent = ents.FindByName(valve.targetName)[1]
+    valve.resolved = true
+    if not IsValid(valve.ent) then valve.ent = nil end
+    return valve.ent
+end
+
 function RBMK.GetBlowoutValves()
-    local valves = {}
-    local index = 0
-    while true do
-        local ent = ents.FindByName(RBMK.BlowoutValvePrefix .. '_' .. index)[1]
-        if not IsValid(ent) then break end
-        table.insert(valves, ent)
-        index = index + 1
+    RBMK.EnsureBlowoutValveRegistry()
+    return RBMK.BlowoutValves
+end
+
+function RBMK.GetAvailableBlowoutValves(now)
+    local available = {}
+    local cooldowns = RBMK.EventState.BlowoutValveCooldowns or {}
+    for _, valve in ipairs(RBMK.GetBlowoutValves()) do
+        if now >= (cooldowns[valve.key] or 0) then table.insert(available, valve) end
     end
 
-    return valves
+    return available
+end
+
+function RBMK.SetBlowoutEnabled(enabled)
+    RBMK.BlowoutEnabled = enabled and true or false
+end
+
+function RBMK.GetBlowoutColumnCount(overFactor, availableCount)
+    local minColumns = math.Clamp(math.floor(tonumber(RBMK.BlowoutMinColumnsPerPass) or 1), 1, 8)
+    local maxColumns = math.Clamp(math.floor(tonumber(RBMK.BlowoutMaxColumnsPerPass) or minColumns), minColumns, 8)
+    maxColumns = math.min(maxColumns, availableCount)
+    minColumns = math.min(minColumns, maxColumns)
+    if maxColumns <= minColumns then return maxColumns end
+
+    local biasedRoll = math.Rand(0, 1) ^ Lerp(overFactor, 2.5, 0.45)
+    return math.Clamp(math.floor(Lerp(biasedRoll, minColumns, maxColumns) + 0.5), minColumns, maxColumns)
+end
+
+function RBMK.GetBlowoutMotion(overFactor)
+    local speedBias = math.Rand(0, 1) ^ Lerp(overFactor, 2.2, 0.55)
+    local durationBias = math.Rand(0, 1) ^ Lerp(overFactor, 2.2, 0.55)
+    local speed = Lerp(speedBias, RBMK.BlowoutMinSpeed, RBMK.BlowoutMaxSpeed)
+    local duration = Lerp(durationBias, RBMK.BlowoutMinDuration, RBMK.BlowoutMaxDuration)
+    return speed, duration
 end
 
 function RBMK.BlowoutSteam()
+    if not RBMK.BlowoutEnabled then return 0 end
     if RBMK.EventState.Failed then return 0 end
     local now = RBMK.GetTime()
     if now < (RBMK.EventState.NextBlowout or 0) then return 0 end
@@ -222,30 +301,43 @@ function RBMK.BlowoutSteam()
     local overFactor = math.Clamp((pressure - RBMK.BlowoutPressure) / math.max(RBMK.CatastrophicPressure - RBMK.BlowoutPressure, 1), 0, 1)
     if overFactor <= 0 then return 0 end
 
-    local valves = RBMK.GetBlowoutValves()
-    local valveCount = #valves
-    if valveCount <= 0 then valveCount = RBMK.BlowoutFallbackValveCount end
+    local availableValves = RBMK.GetAvailableBlowoutValves(now)
+    if #availableValves <= 0 then return 0 end
+    local jumpCount = RBMK.GetBlowoutColumnCount(overFactor, #availableValves)
+    local jumped = {}
+    local longestDuration = 0
 
-    local valveIndex = math.random(1, valveCount)
-    local speed = Lerp(overFactor, RBMK.BlowoutMinSpeed, RBMK.BlowoutMaxSpeed)
-    local duration = Lerp(overFactor, RBMK.BlowoutMinDuration, RBMK.BlowoutMaxDuration)
-    local steamLoss = RBMK.SteamSpace * RBMK.BlowoutSteamLoss * (0.5 + overFactor) * RBMK.TickInterval
-    steamLoss = math.min(steamLoss, RBMK.Steam)
+    for _ = 1, jumpCount do
+        local index = math.random(1, #availableValves)
+        local valve = table.remove(availableValves, index)
+        local speed, duration = RBMK.GetBlowoutMotion(overFactor)
+        longestDuration = math.max(longestDuration, duration)
 
-    if #valves > 0 then
-        local ent = valves[valveIndex]
+        local ent = RBMK.ResolveBlowoutValve(valve)
         if IsValid(ent) then
             ent:Fire('SetSpeed', tostring(speed))
             ent:Fire('Open')
             timer.Simple(duration, function()
-                if IsValid(ent) then ent:Fire('Close') end
+                if IsValid(ent) then
+                    ent:Fire('SetSpeed', tostring(RBMK.BlowoutFallSpeed))
+                    ent:Fire('Close')
+                end
             end)
         end
+
+        RBMK.EventState.BlowoutValveCooldowns = RBMK.EventState.BlowoutValveCooldowns or {}
+        RBMK.EventState.BlowoutValveCooldowns[valve.key] = now + duration + RBMK.BlowoutColumnCooldown
+        table.insert(jumped, valve.key)
     end
 
+    local steamLoss = RBMK.SteamSpace * RBMK.BlowoutSteamLoss * (0.5 + overFactor) * RBMK.TickInterval * #jumped
+    steamLoss = math.min(steamLoss, RBMK.Steam)
     RBMK.Steam = RBMK.Steam - steamLoss
     RBMK.EventState.LastBlowoutSteamLoss = steamLoss
     RBMK.EventState.LastBlowoutPressure = pressure
+    RBMK.EventState.LastBlowoutValve = table.concat(jumped, ',')
+    RBMK.EventState.LastBlowoutCount = #jumped
+    RBMK.EventState.LastBlowoutDuration = longestDuration
     RBMK.EventState.NextBlowout = now + RBMK.BlowoutCooldown
     RBMK.UpdateRPVPressure()
     return steamLoss

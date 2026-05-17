@@ -223,9 +223,11 @@ function RBMK.Debug.RenderVesselInfo()
     string.format('OUT: %s %.1f/s', tostring(info.steamOutletOpen), info.lastSteamExportFlow or 0),
     string.format('--------------------------------'),
     string.format('IN/DRAIN: %s / %s %.1f/s', tostring(info.feedwaterInletOpen), tostring(info.drainValveOpen), info.lastDrainFlow or 0),
+    string.format('BLOWOUT: %s [%d]', tostring(info.blowoutEnabled), info.blowoutValveCount or 0),
     string.format('BLOW/CATA: %.1f / %.1f', info.blowoutPressure or 0, info.catastrophicPressure or 0)}
     if info.lastBlowoutSteamLoss and info.lastBlowoutSteamLoss > 0 then
-        table.insert(lines, string.format('LAST BLOW: %.1f @ %.1f', info.lastBlowoutSteamLoss or 0, info.lastBlowoutPressure or 0))
+        table.insert(lines, string.format('LAST BLOW: x%d %.1f @ %.1f %.1fs', info.lastBlowoutCount or 0, info.lastBlowoutSteamLoss or 0, info.lastBlowoutPressure or 0, info.lastBlowoutDuration or 0))
+        table.insert(lines, string.format('BLOW COLS: %s', tostring(info.lastBlowoutValve or '?')))
     end
     if info.lastFuelLeak then table.insert(lines, string.format('LEAK: %d,%d', info.lastFuelLeak.x or 0, info.lastFuelLeak.y or 0)) end
     if info.lastMeltdown then table.insert(lines, string.format('MELT: %d,%d', info.lastMeltdown.x or 0, info.lastMeltdown.y or 0)) end

@@ -48,15 +48,29 @@ RBMK.RPVMinSteamSpaceFraction = 0.05
 RBMK.SteamExpansionRatio = 1600
 RBMK.SteamPressureFactor = 1
 RBMK.RPVMaxPressure = 70
-RBMK.RPVHardPressure = 110
+RBMK.RPVHardPressure = 150
 RBMK.BlowoutPressure = 85
-RBMK.CatastrophicPressure = 130
+RBMK.CatastrophicPressure = 140
+-- Allow LRBMK to perform steam blowout when overpressured, it will cause column to jump and remove steam.
+-- Disable for more historically-accurate RBMK whose rod does not jump(nor blowout).
+RBMK.BlowoutEnabled = true
+-- Global cadence for blowout events, then per-column recovery after its jump finishes.
+RBMK.BlowoutCooldown = 0.05
+RBMK.BlowoutColumnCooldown = 1.0
+-- Each blowout pass randomly jumps within this range, biased higher at higher overpressure.
+RBMK.BlowoutMinColumnsPerPass = 1
+RBMK.BlowoutMaxColumnsPerPass = 8
 -- Name prefix of func_movelinear to be used as 'jumping rods' In Hammer it MUST be named [name]_0, [name]_1 etc.
--- Example : 'rbmk_blowout' is set here, In Hammer it must be 'rbmk_blowout_0', 'rbmk_blowout_1', ...
+-- Example : 'rbmk_blowout' is set here, In Hammer it must strictly be 'rbmk_blowout_0', 'rbmk_blowout_1', ...
 RBMK.BlowoutValvePrefix = 'brush_rpv'
--- Fallback value is used if there are no func_movelinear detected.
-RBMK.BlowoutFallbackValveCount = 20
-RBMK.BlowoutSteamLoss = 0.015
+-- The amount of blowout valves there is, make sure to set this equal to the amount of func_movelinears you want to use.
+RBMK.BlowoutFallbackValveCount = 77
+-- How much steam is removed from the vessel for each jump. Set it weak to make it serve only dramatic purposes.
+RBMK.BlowoutSteamLoss = 0.5
+-- Register blowout func_movelinears
+RBMK.ClearBlowoutValves()
+RBMK.RegisterBlowoutValveRange(RBMK.BlowoutValvePrefix, RBMK.BlowoutFallbackValveCount)
+
 RBMK.FuelLeakTemperature = 1500
 RBMK.FuelMeltdownTemperature = 3000
 RBMK.SteamOutletFlowRate = 0.5

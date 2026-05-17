@@ -115,6 +115,11 @@ function RBMK.Debug.BuildVesselInfo()
         failureReason = RBMK.EventState and RBMK.EventState.FailureReason or nil,
         lastBlowoutSteamLoss = RBMK.EventState and RBMK.EventState.LastBlowoutSteamLoss or 0,
         lastBlowoutPressure = RBMK.EventState and RBMK.EventState.LastBlowoutPressure or 0,
+        lastBlowoutValve = RBMK.EventState and RBMK.EventState.LastBlowoutValve or nil,
+        lastBlowoutCount = RBMK.EventState and RBMK.EventState.LastBlowoutCount or 0,
+        lastBlowoutDuration = RBMK.EventState and RBMK.EventState.LastBlowoutDuration or 0,
+        blowoutEnabled = RBMK.BlowoutEnabled and true or false,
+        blowoutValveCount = RBMK.BlowoutValves and #RBMK.BlowoutValves or 0,
         lastFuelLeak = RBMK.EventState and RBMK.EventState.LastFuelLeak or nil,
         lastMeltdown = RBMK.EventState and RBMK.EventState.LastMeltdown or nil
     }
