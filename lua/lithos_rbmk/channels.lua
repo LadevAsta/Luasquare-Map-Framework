@@ -48,6 +48,10 @@ function RBMK.CreateControlRod(name, group, indicatorSpriteEnt, visualEnt, graph
         visualEnt = visualEnt,
         graphiteTip = graphiteTip,
         reflector = reflector,
+        autoRegulator = false,
+        autoInsertion = 0,
+        autoTargetInsertion = 0,
+        autoMaxInsertion = RBMK.AutoRegulatorMaxInsertion or 0.1,
         name = name,
         group = group
     }

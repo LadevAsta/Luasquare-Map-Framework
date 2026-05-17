@@ -38,6 +38,8 @@ RBMK.SetCell(10, 9, RBMK.CreateControlRod('R6', 'yellow', 'sel_R6', 'ctlRod_lid_
 RBMK.SetCell(5, 10, RBMK.CreateControlRod('R7', 'yellow', 'sel_R7', 'ctlRod_lid_R7'))
 RBMK.SetCell(4, 9, RBMK.CreateControlRod('R8', 'yellow', 'sel_R8', 'ctlRod_lid_R8'))
 
+RBMK.SetAllAutoRegulators(true, RBMK.AutoRegulatorMaxInsertion)
+
 -- Reflectors (isIn:bool[true])
 RBMK.SetCell(2, 9, RBMK.CreateReflector())
 RBMK.SetCell(5, 12, RBMK.CreateReflector())

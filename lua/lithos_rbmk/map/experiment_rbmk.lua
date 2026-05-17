@@ -37,6 +37,10 @@ LITHOS_FLUID.TickInterval = 0.1
 LITHOS_VALVE.TickInterval = 0.1
 LITHOS_PUMP.TickInterval = 0.1
 
+-- =========================================
+-- REACTOR SETTINGS
+-- =========================================
+
 --Heat Diffusion FACTOR of Reactor Vessel. Diff is multiplied by this value 
 --(Should NOT be 0 or higher than 1 Default : 0.05)
 RBMK.RPVHeatDiffusion = 0.05
@@ -51,15 +55,15 @@ RBMK.RPVMaxPressure = 70
 RBMK.RPVHardPressure = 150
 RBMK.BlowoutPressure = 85
 RBMK.CatastrophicPressure = 140
--- Allow LRBMK to perform steam blowout when overpressured, it will cause column to jump and remove steam.
+-- Allow LRBMK to perform steam blowout when overpressured, it will cause column to jump and remove steam, canonically pollutes.
 -- Disable for more historically-accurate RBMK whose rod does not jump(nor blowout).
 RBMK.BlowoutEnabled = true
 -- Global cadence for blowout events, then per-column recovery after its jump finishes.
 RBMK.BlowoutCooldown = 0.05
 RBMK.BlowoutColumnCooldown = 1.0
--- Each blowout pass randomly jumps within this range, biased higher at higher overpressure.
+-- Each blowout pass randomly jump columns within this range, biased higher at higher overpressure.
 RBMK.BlowoutMinColumnsPerPass = 1
-RBMK.BlowoutMaxColumnsPerPass = 8
+RBMK.BlowoutMaxColumnsPerPass = 4
 -- Name prefix of func_movelinear to be used as 'jumping rods' In Hammer it MUST be named [name]_0, [name]_1 etc.
 -- Example : 'rbmk_blowout' is set here, In Hammer it must strictly be 'rbmk_blowout_0', 'rbmk_blowout_1', ...
 RBMK.BlowoutValvePrefix = 'brush_rpv'
@@ -79,6 +83,17 @@ RBMK.FeedwaterInletOpen = true
 RBMK.DrainValveOpen = false
 RBMK.DrainFlowRate = 500
 
+-- Automatic Regulator Rods. These are short control rods inserted from the bottom of Manual Control rod.
+RBMK.AutoRegulatorEnabled = false
+RBMK.AutoRegulatorUsePID = false
+RBMK.AutoRegulatorTargetMW = 0
+-- The length of auto regulator (0.0 - 1.0)
+RBMK.AutoRegulatorMaxInsertion = 0.1
+-- PID
+RBMK.AutoRegulatorKp = 0.00002
+RBMK.AutoRegulatorKi = 0.000001
+RBMK.AutoRegulatorKd = 0.000005
+
 RBMK.CatastrophicFailureRelay = 'explodetest'
 RBMK.FuelLeakRelay = nil
 RBMK.FuelMeltdownRelay = nil
@@ -96,7 +111,7 @@ RBMK.RodMoveDistance = 64
 
 
 -- =========================================
--- REACTOR
+-- REACTOR CONSTRUCTION
 -- =========================================
 
 -- Layout orchestrator
@@ -193,15 +208,15 @@ LITHOS_CONDENSER.RegisterCondenser('god_condenser', {
 -- DISPLAYS
 -- =========================================
 
-LITHOS_SEG7.RegisterDisplay('reactor_avgtemp', {
-    'reactor_avgtemp_0',
-    'reactor_avgtemp_1',
-    'reactor_avgtemp_2',
-    'reactor_avgtemp_3',
-    'reactor_avgtemp_4'
+LITHOS_SEG7.RegisterDisplay('reactor_mwth', {
+    'reactor_mwth_0',
+    'reactor_mwth_1',
+    'reactor_mwth_2',
+    'reactor_mwth_3',
+    'reactor_mwth_4'
 })
-LITHOS_SEG7.BindDisplay('reactor_avgtemp', function()
-    return math.floor(RBMK.MaxHeat)
+LITHOS_SEG7.BindDisplay('reactor_mwth', function()
+    return math.floor(RBMK.LastThermalMW)
 end)
 
 LITHOS_SEG7.RegisterDisplay('f1_coretemp', {
@@ -260,6 +275,17 @@ LITHOS_SEG7.BindDisplay(
     function() return math.floor(RBMK.AverageXenon) end
 )
 
+LITHOS_SEG7.RegisterDisplay('aprinsertion', {
+        'aprinsertion_0',
+        'aprinsertion_1',
+        'aprinsertion_2'
+    }
+)
+LITHOS_SEG7.BindDisplay(
+    'aprinsertion',
+    function() return math.floor((RBMK.AutoRegulatorTargetInsertion / RBMK.AutoRegulatorMaxInsertion) * 100) end
+)
+
 LITHOS_GAUGE.RegisterGauge('gauge_maxtemp', {
     entity = 'gauge_maxtemp',
     min = 0,
@@ -293,6 +319,17 @@ LITHOS_GAUGE.BindGauge('gauge_steamlevel', function()
     return (RBMK.Steam / RBMK.MaxSteam) * 100 or 0
 end)
 
+LITHOS_GAUGE.RegisterGauge('gauge_rpvpressure', {
+    entity = 'gauge_rpvpressure',
+    min = 0,
+    max = 100,
+    speed = 18
+})
+LITHOS_GAUGE.BindGauge('gauge_rpvpressure', function()
+    if not RBMK or not RBMK.RPVPressure or RBMK.RPVPressure <= 0 then return 0 end
+    return (RBMK.RPVPressure / RBMK.RPVMaxPressure) * 100 or 0
+end)
+
 -- =========================================
 -- OPERATOR INTERFACES
 -- =========================================
@@ -301,7 +338,7 @@ end)
 LITHOS_SEG7.RegisterDisplay('rodctrl', {
     'rodctrl_0',
     'rodctrl_1',
-    'rodctrl_2',
+    'rodctrl_2'
 })
 LITHOS_KEYPAD.RegisterKeypad('rodctrl',
     {
@@ -314,6 +351,24 @@ LITHOS_KEYPAD.RegisterKeypad('rodctrl',
     }
 )
 
+-- Automatic Power Regulator target keypad, value is MW thermal.
+LITHOS_SEG7.RegisterDisplay('aprctrl', {
+    'aprctrl_0',
+    'aprctrl_1',
+    'aprctrl_2',
+    'aprctrl_3'
+})
+LITHOS_KEYPAD.RegisterKeypad('aprctrl',
+    {
+        maxDigits = 4,
+        maxValue = 9999,
+        display = 'aprctrl',
+        onSubmit = function(value)
+            RBMK.SetAutoRegulatorTargetMW(value)
+            RBMK.SetAutoRegulatorEnabled(value > 0)
+        end
+    }
+)
 
 -- =========================================
 -- END DEFINITION

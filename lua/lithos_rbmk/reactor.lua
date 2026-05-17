@@ -41,6 +41,19 @@ RBMK.LastThermalMW = 0
 RBMK.LastSteamExportFlow = 0
 RBMK.LastDrainFlow = 0
 
+RBMK.AutoRegulatorEnabled = false
+RBMK.AutoRegulatorUsePID = true
+RBMK.AutoRegulatorTargetMW = 0
+RBMK.AutoRegulatorMaxInsertion = 0.1
+RBMK.AutoRegulatorTargetInsertion = 0
+RBMK.AutoRegulatorKp = 0.00002
+RBMK.AutoRegulatorKi = 0.000001
+RBMK.AutoRegulatorKd = 0.000005
+RBMK.AutoRegulatorIntegral = 0
+RBMK.AutoRegulatorLastError = 0
+RBMK.AutoRegulatorIntegralLimit = 10000
+RBMK.AutoRegulatorResponseRate = 0.03
+
 RBMK.EventState = RBMK.EventState or {}
 RBMK.EventState.NextBlowout = 0
 RBMK.EventState.BlowoutValveCooldowns = RBMK.EventState.BlowoutValveCooldowns or {}

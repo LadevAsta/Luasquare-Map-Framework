@@ -90,12 +90,14 @@ function RBMK.ProcessRayCell(cell, dirX, dirY, flux)
     if cell.type == RBMK.CELL_STEAM then return true, dirX, dirY, flux end
     -- Control Rod
     if cell.type == RBMK.CELL_CONTROL then
-        local ins = math.Clamp(cell.insertion or 1, 0, 1)
+        local manualInsertion = math.Clamp(cell.insertion or 1, 0, 1)
+        local autoInsertion = math.Clamp(cell.autoInsertion or 0, 0, cell.autoMaxInsertion or 0)
+        local ins = math.Clamp(manualInsertion + autoInsertion, 0, 1)
         -- Graphite tip zone
-        if cell.graphiteTip and cell.inserting and ins > 0.85 and ins < 0.95 then
+        if cell.graphiteTip and cell.inserting and manualInsertion > 0.85 and manualInsertion < 0.95 then
             local moveFactor = math.Clamp(cell.movingTime / 10, 0, 1)
-            local spike = 1 + ((0.95 - ins) * 4) * moveFactor
-            flux = flux * spike
+            local spike = 1 + ((0.95 - manualInsertion) * 4) * moveFactor
+            flux = flux * spike * (1 - autoInsertion)
         else
             flux = flux * (1 - ins)
         end

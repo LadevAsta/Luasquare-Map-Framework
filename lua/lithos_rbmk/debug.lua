@@ -48,6 +48,10 @@ function RBMK.Debug.BuildCell(x, y, cell)
         data.stationaryTime = cell.stationaryTime or 0
         data.movingTime = cell.movingTime or 0
         data.moveSpeed = cell.moveSpeed or 0
+        data.autoRegulator = cell.autoRegulator and true or false
+        data.autoInsertion = cell.autoInsertion or 0
+        data.autoTargetInsertion = cell.autoTargetInsertion or 0
+        data.autoMaxInsertion = cell.autoMaxInsertion or 0
         data.graphiteTip = cell.graphiteTip and true or false
         data.reflector = cell.reflector and true or false
         data.visualEnt = cell.visualEnt
@@ -93,6 +97,11 @@ function RBMK.Debug.BuildVesselInfo()
         totalFlux = RBMK.TotalFlux or 0,
         averageXenon = RBMK.AverageXenon or 0,
         lastThermalMW = RBMK.LastThermalMW or 0,
+        autoRegulatorEnabled = RBMK.AutoRegulatorEnabled and true or false,
+        autoRegulatorUsePID = RBMK.AutoRegulatorUsePID and true or false,
+        autoRegulatorTargetMW = RBMK.AutoRegulatorTargetMW or 0,
+        autoRegulatorTargetInsertion = RBMK.AutoRegulatorTargetInsertion or 0,
+        autoRegulatorLastError = RBMK.AutoRegulatorLastError or 0,
         waterTemperature = RBMK.WaterTemperature or 0,
         water = RBMK.Water or 0,
         maxWater = RBMK.MaxWater or 0,

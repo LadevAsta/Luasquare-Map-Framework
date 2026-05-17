@@ -122,6 +122,9 @@ function RBMK.Debug.RenderCell(x, y, cell)
         table.insert(lines, string.format('%s', cell.name or '???'))
         table.insert(lines, string.format('I: %.2f', cell.insertion or 0))
         table.insert(lines, string.format('> %.2f', cell.targetInsertion or 0))
+        if cell.autoRegulator then
+            table.insert(lines, string.format('A: %.3f', cell.autoInsertion or 0))
+        end
     elseif cell.type == RBMK.CELL_REFLECTOR then
         table.insert(lines, string.format('RE: %s', tostring(cell.reflectorIn)))
     elseif cell.type == RBMK.CELL_SOURCE then
@@ -212,6 +215,7 @@ function RBMK.Debug.RenderVesselInfo()
     string.format('AVG H: %.1f', info.averageHeat or 0),
     string.format('MAX H: %.1f', info.maxHeat or 0),
     string.format('MWt: %.2f', info.lastThermalMW or 0),
+    string.format('APR: %s %s %.1fMW %.3f', tostring(info.autoRegulatorEnabled), info.autoRegulatorUsePID and 'PID' or 'P', info.autoRegulatorTargetMW or 0, info.autoRegulatorTargetInsertion or 0),
     string.format('FLUX: %.1f', info.totalFlux or 0),
     string.format('XENON: %.1f', info.averageXenon or 0),
     string.format('--------------------------------'),
