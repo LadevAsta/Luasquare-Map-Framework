@@ -1,0 +1,21 @@
+if not CLIENT then return end
+
+hook.Add('PopulateToolMenu', 'LUASQUARE_POWERPLANT_Menu', function()
+    spawnmenu.AddToolMenuOption('Options', 'Luasquare', 'LuasquarePowerplant', 'Powerplant Framework', '', '', function(panel)
+        panel:Clear()
+        panel:Help('Luasquare Powerplant Debug Options')
+        panel:CheckBox('Enable Debug', 'luasquare_powerplant_debug_enabled')
+        panel:NumSlider('Text Scale', 'luasquare_powerplant_debug_textscale', 0.1, 2.0, 2)
+        panel:CheckBox('Show Networks', 'luasquare_powerplant_show_networks')
+        panel:CheckBox('Show Pumps', 'luasquare_powerplant_show_pumps')
+        panel:CheckBox('Show Valves', 'luasquare_powerplant_show_valves')
+        panel:CheckBox('Show Condensers', 'luasquare_powerplant_show_condensers')
+    end)
+end)
+
+CreateClientConVar('luasquare_powerplant_debug_enabled', '0', true, false)
+CreateClientConVar('luasquare_powerplant_debug_textscale', '0.2', true, false)
+CreateClientConVar('luasquare_powerplant_show_networks', '1', true, false)
+CreateClientConVar('luasquare_powerplant_show_pumps', '1', true, false)
+CreateClientConVar('luasquare_powerplant_show_valves', '1', true, false)
+CreateClientConVar('luasquare_powerplant_show_condensers', '1', true, false)

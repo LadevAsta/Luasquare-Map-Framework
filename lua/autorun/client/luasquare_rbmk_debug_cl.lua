@@ -41,8 +41,8 @@ RBMK.Debug.CellFilterSettings = {
 
 -- Client Debug module
 timer.Simple(10, function()
-    if not GetGlobal2Bool('LITHOSQUARE_RBMK_INITIALIZED_GLOBAL', false) then
-        print('[Lithosquare RBMK Debug Client] No RBMK detected after 10 seconds, terminating')
+    if not GetGlobal2Bool('LUASQUARE_RBMK_INITIALIZED_GLOBAL', false) then
+        print('[Luasquare RBMK Debug Client] No RBMK detected after 10 seconds, terminating')
         return
     end
 
@@ -56,24 +56,24 @@ timer.Simple(10, function()
         }
     end)
 
-    hook.Add('PostDrawTranslucentRenderables', 'LithosRBMK_DebugRender', function()
+    hook.Add('PostDrawTranslucentRenderables', 'luasquareRBMK_DebugRender', function()
         if not RBMK.Debug then return end
         if not RBMK.Debug.ClientState then return end
         RBMK.Debug.RenderCells()
         RBMK.Debug.RenderFluxLines()
         RBMK.Debug.RenderVesselInfo()
     end)
-    print('[Lithosquare RBMK Debug Client] Client initialized')
+    print('[Luasquare RBMK Debug Client] Client initialized')
 end)
 
 function RBMK.Debug.GetSetting(name, default)
-    local cvar = GetConVar('lithos_rbmk_' .. name)
+    local cvar = GetConVar('luasquare_rbmk_' .. name)
     if not cvar then return default end
     return cvar:GetBool()
 end
 
 function RBMK.Debug.GetSettingNumber(name, default)
-    local cvar = GetConVar('lithos_rbmk_' .. name)
+    local cvar = GetConVar('luasquare_rbmk_' .. name)
     if not cvar then return default end
     return cvar:GetFloat()
 end

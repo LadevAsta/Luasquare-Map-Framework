@@ -1,5 +1,5 @@
-if LITHOSQUARE_RBMK_INITIALIZED then
-    print('[LITHOSQUARE RBMK] BOOTSTRAP FAILED!\n[LITHOSQUARE RBMK] It already happened once in this session. Reload map.')
+if LUASQUARE_RBMK_INITIALIZED then
+    print('[LUASQUARE RBMK] BOOTSTRAP FAILED!\n[LUASQUARE RBMK] It already happened once in this session. Reload map.')
 return end
 
 -- =========================================
@@ -8,18 +8,18 @@ return end
 
 -- This is orchestration script to set up map integration.
 -- Deploy THIS SCRIPT using a lua_run in the map :
--- include('lithos_rbmk/map/experiment_rbmk.lua')
+-- include('luasquare_rbmk/map/experiment_rbmk.lua')
 
 -- =========================================
 -- CORE MODULES
 -- =========================================
 
-include('lithos_module/seg7display.lua') -- Pseudo 7-Segments numeric display
-include('lithos_module/gaugedisplay.lua') -- Gauge display
-include('lithos_module/keypad_controller.lua') -- Numeric Keypads
-include('lithos_module/rod_selector.lua') -- RBMK Control Rod Selector
-include('lithos_powerplant/init.lua') -- Balance of plant systems
-include('lithos_rbmk/init.lua') -- RBMK Core
+include('luasquare_module/seg7display.lua') -- Pseudo 7-Segments numeric display
+include('luasquare_module/gaugedisplay.lua') -- Gauge display
+include('luasquare_module/keypad_controller.lua') -- Numeric Keypads
+include('luasquare_module/rod_selector.lua') -- RBMK Control Rod Selector
+include('luasquare_powerplant/init.lua') -- Balance of plant systems
+include('luasquare_rbmk/init.lua') -- RBMK Core
 
 -- =========================================
 -- WORLD SETTINGS
@@ -31,11 +31,11 @@ RBMK.WorldOrigin = Vector(352, -672, 448)
 RBMK.CellSpacing = 64
 
 RBMK.TickInterval = 0.1
-LITHOS_SEG7.TickInterval = 0.1
-LITHOS_GAUGE.TickInterval = 0.2
-LITHOS_FLUID.TickInterval = 0.1
-LITHOS_VALVE.TickInterval = 0.1
-LITHOS_PUMP.TickInterval = 0.1
+LUASQUARE_SEG7.TickInterval = 0.1
+LUASQUARE_GAUGE.TickInterval = 0.2
+LUASQUARE_FLUID.TickInterval = 0.1
+LUASQUARE_VALVE.TickInterval = 0.1
+LUASQUARE_PUMP.TickInterval = 0.1
 
 -- =========================================
 -- REACTOR SETTINGS
@@ -115,7 +115,7 @@ RBMK.RodMoveDistance = 64
 -- =========================================
 
 -- Layout orchestrator
-include('lithos_rbmk/layouts/LRBMKP-400.lua')
+include('luasquare_rbmk/layouts/LRBMKP-400.lua')
 
 --Starting Water inside the reactor pressure vessel (in PERCENTAGE)
 RBMK.AddInitialWater(85)
@@ -126,8 +126,8 @@ RBMK.AddInitialWater(85)
 
 local MAPDEF_monitorZoffset = 128
 
-LITHOS_FLUID.RegisterNetwork('main_steam', {
-    type = LITHOS_FLUID.TYPE_STEAMLINE,
+LUASQUARE_FLUID.RegisterNetwork('main_steam', {
+    type = LUASQUARE_FLUID.TYPE_STEAMLINE,
     fluidType = 'steam',
     amount = 0,
     maxAmount = RBMK.MaxSteam,
@@ -138,8 +138,8 @@ LITHOS_FLUID.RegisterNetwork('main_steam', {
 })
 RBMK.SetSteamNetwork('main_steam')
 
-LITHOS_FLUID.RegisterNetwork('feedwater', {
-    type = LITHOS_FLUID.TYPE_STEAMLINE,
+LUASQUARE_FLUID.RegisterNetwork('feedwater', {
+    type = LUASQUARE_FLUID.TYPE_STEAMLINE,
     fluidType = 'water',
     amount = 0,
     maxAmount = RBMK.MaxWater,
@@ -150,8 +150,8 @@ LITHOS_FLUID.RegisterNetwork('feedwater', {
     monitorPos = RBMK.WorldOrigin + Vector(0, 96, 96 + MAPDEF_monitorZoffset)
 })
 
-LITHOS_FLUID.RegisterNetwork('drain_tank', {
-    type = LITHOS_FLUID.TYPE_STEAMLINE,
+LUASQUARE_FLUID.RegisterNetwork('drain_tank', {
+    type = LUASQUARE_FLUID.TYPE_STEAMLINE,
     fluidType = 'water',
     amount = 0,
     maxAmount = RBMK.MaxWater,
@@ -163,7 +163,7 @@ LITHOS_FLUID.RegisterNetwork('drain_tank', {
 })
 RBMK.SetDrainNetwork('drain_tank')
 
-LITHOS_VALVE.RegisterValve('rpv_drain_valve', {
+LUASQUARE_VALVE.RegisterValve('rpv_drain_valve', {
     a = 'rbmk_water',
     b = 'drain_tank',
     maxFlow = 500,
@@ -172,7 +172,7 @@ LITHOS_VALVE.RegisterValve('rpv_drain_valve', {
     monitorPos = RBMK.WorldOrigin + Vector(0, 384, 96 + MAPDEF_monitorZoffset)
 })
 
-LITHOS_PUMP.RegisterPump('feedwater_pump_a', {
+LUASQUARE_PUMP.RegisterPump('feedwater_pump_a', {
     source = 'feedwater',
     target = 'rbmk',
     rate = 500,
@@ -183,7 +183,7 @@ LITHOS_PUMP.RegisterPump('feedwater_pump_a', {
     monitorPos = RBMK.WorldOrigin + Vector(0, 192, 96 + MAPDEF_monitorZoffset)
 })
 
-LITHOS_PUMP.RegisterPump('feedwater_pump_b', {
+LUASQUARE_PUMP.RegisterPump('feedwater_pump_b', {
     source = 'feedwater',
     target = 'rbmk',
     rate = 500,
@@ -194,7 +194,7 @@ LITHOS_PUMP.RegisterPump('feedwater_pump_b', {
     monitorPos = RBMK.WorldOrigin + Vector(0, 192, 128 + MAPDEF_monitorZoffset)
 })
 
-LITHOS_CONDENSER.RegisterCondenser('god_condenser', {
+LUASQUARE_CONDENSER.RegisterCondenser('god_condenser', {
     input = 'main_steam',
     output = 'feedwater',
     ratio = 1600,
@@ -205,53 +205,53 @@ LITHOS_CONDENSER.RegisterCondenser('god_condenser', {
 })
 
 -- =========================================
--- DISPLAYS
+-- SEG7 DISPLAYS
 -- =========================================
 
-LITHOS_SEG7.RegisterDisplay('reactor_mwth', {
+LUASQUARE_SEG7.RegisterDisplay('reactor_mwth', {
     'reactor_mwth_0',
     'reactor_mwth_1',
     'reactor_mwth_2',
     'reactor_mwth_3',
     'reactor_mwth_4'
 })
-LITHOS_SEG7.BindDisplay('reactor_mwth', function()
+LUASQUARE_SEG7.BindDisplay('reactor_mwth', function()
     return math.floor(RBMK.LastThermalMW)
 end)
 
-LITHOS_SEG7.RegisterDisplay('f1_coretemp', {
+LUASQUARE_SEG7.RegisterDisplay('f1_coretemp', {
     'f1_coretemp_0',
     'f1_coretemp_1',
     'f1_coretemp_2',
     'f1_coretemp_3',
     'f1_coretemp_4'
 })
-LITHOS_SEG7.BindDisplay('f1_coretemp', function()
+LUASQUARE_SEG7.BindDisplay('f1_coretemp', function()
     return math.floor(RBMK.GetCoreHeat(5, 5))
 end)
 
-LITHOS_SEG7.RegisterDisplay('f1_skintemp', {
+LUASQUARE_SEG7.RegisterDisplay('f1_skintemp', {
     'f1_skintemp_0',
     'f1_skintemp_1',
     'f1_skintemp_2',
     'f1_skintemp_3'
 })
-LITHOS_SEG7.BindDisplay('f1_skintemp', function()
+LUASQUARE_SEG7.BindDisplay('f1_skintemp', function()
     return math.floor(RBMK.GetSkinHeat(5, 5))
 end)
 
-LITHOS_SEG7.RegisterDisplay('f1_coltemp', {
+LUASQUARE_SEG7.RegisterDisplay('f1_coltemp', {
     'f1_coltemp_0',
     'f1_coltemp_1',
     'f1_coltemp_2',
     'f1_coltemp_3'
 })
-LITHOS_SEG7.BindDisplay('f1_coltemp', function()
+LUASQUARE_SEG7.BindDisplay('f1_coltemp', function()
     return math.floor(RBMK.GetHeat(5, 5))
 end)
 
 
-LITHOS_SEG7.RegisterDisplay('totalflux', {
+LUASQUARE_SEG7.RegisterDisplay('totalflux', {
         'flux_0',
         'flux_1',
         'flux_2',
@@ -259,73 +259,77 @@ LITHOS_SEG7.RegisterDisplay('totalflux', {
         'flux_4'
     }
 )
-LITHOS_SEG7.BindDisplay(
+LUASQUARE_SEG7.BindDisplay(
     'totalflux',
     function() return math.floor(RBMK.TotalFluxSubtracted) end
 )
 
-LITHOS_SEG7.RegisterDisplay('averageXenon', {
+LUASQUARE_SEG7.RegisterDisplay('averageXenon', {
         'xenon_0',
         'xenon_1',
         'xenon_2'
     }
 )
-LITHOS_SEG7.BindDisplay(
+LUASQUARE_SEG7.BindDisplay(
     'averageXenon',
     function() return math.floor(RBMK.AverageXenon) end
 )
 
-LITHOS_SEG7.RegisterDisplay('aprinsertion', {
+LUASQUARE_SEG7.RegisterDisplay('aprinsertion', {
         'aprinsertion_0',
         'aprinsertion_1',
         'aprinsertion_2'
     }
 )
-LITHOS_SEG7.BindDisplay(
+LUASQUARE_SEG7.BindDisplay(
     'aprinsertion',
     function() return math.floor((RBMK.AutoRegulatorTargetInsertion / RBMK.AutoRegulatorMaxInsertion) * 100) end
 )
 
-LITHOS_GAUGE.RegisterGauge('gauge_maxtemp', {
+-- =========================================
+-- GAUGE DISPLAYS
+-- =========================================
+
+LUASQUARE_GAUGE.RegisterGauge('gauge_maxtemp', {
     entity = 'gauge_maxtemp',
     min = 0,
     max = 1600,
     speed = 18
 })
-LITHOS_GAUGE.BindGauge('gauge_maxtemp', function()
+LUASQUARE_GAUGE.BindGauge('gauge_maxtemp', function()
     if not RBMK or not RBMK.MaxHeat or RBMK.MaxHeat <= 0 then return 0 end
     return RBMK.MaxHeat or 0
 end)
 
-LITHOS_GAUGE.RegisterGauge('gauge_waterlevel', {
+LUASQUARE_GAUGE.RegisterGauge('gauge_waterlevel', {
     entity = 'gauge_waterlevel',
     min = 0,
     max = 100,
     speed = 18
 })
-LITHOS_GAUGE.BindGauge('gauge_waterlevel', function()
+LUASQUARE_GAUGE.BindGauge('gauge_waterlevel', function()
     if not RBMK or not RBMK.Water or RBMK.Water <= 0 then return 0 end
     return (RBMK.Water / RBMK.MaxWater) * 100 or 0
 end)
 
-LITHOS_GAUGE.RegisterGauge('gauge_steamlevel', {
+LUASQUARE_GAUGE.RegisterGauge('gauge_steamlevel', {
     entity = 'gauge_steamlevel',
     min = 0,
     max = 100,
     speed = 18
 })
-LITHOS_GAUGE.BindGauge('gauge_steamlevel', function()
+LUASQUARE_GAUGE.BindGauge('gauge_steamlevel', function()
     if not RBMK or not RBMK.Steam or RBMK.Steam <= 0 then return 0 end
     return (RBMK.Steam / RBMK.MaxSteam) * 100 or 0
 end)
 
-LITHOS_GAUGE.RegisterGauge('gauge_rpvpressure', {
+LUASQUARE_GAUGE.RegisterGauge('gauge_rpvpressure', {
     entity = 'gauge_rpvpressure',
     min = 0,
     max = 100,
     speed = 18
 })
-LITHOS_GAUGE.BindGauge('gauge_rpvpressure', function()
+LUASQUARE_GAUGE.BindGauge('gauge_rpvpressure', function()
     if not RBMK or not RBMK.RPVPressure or RBMK.RPVPressure <= 0 then return 0 end
     return (RBMK.RPVPressure / RBMK.RPVMaxPressure) * 100 or 0
 end)
@@ -335,30 +339,30 @@ end)
 -- =========================================
 
 -- Manual Control Rod Keypad and Selector Panel
-LITHOS_SEG7.RegisterDisplay('rodctrl', {
+LUASQUARE_SEG7.RegisterDisplay('rodctrl', {
     'rodctrl_0',
     'rodctrl_1',
     'rodctrl_2'
 })
-LITHOS_KEYPAD.RegisterKeypad('rodctrl',
+LUASQUARE_KEYPAD.RegisterKeypad('rodctrl',
     {
         maxDigits = 3,
         maxValue = 100,
         display = 'rodctrl',
         onSubmit = function(value)
-            LITHOS_ROD_SELECTOR.Apply(value)
+            LUASQUARE_ROD_SELECTOR.Apply(value)
         end
     }
 )
 
 -- Automatic Power Regulator target keypad, value is MW thermal.
-LITHOS_SEG7.RegisterDisplay('aprctrl', {
+LUASQUARE_SEG7.RegisterDisplay('aprctrl', {
     'aprctrl_0',
     'aprctrl_1',
     'aprctrl_2',
     'aprctrl_3'
 })
-LITHOS_KEYPAD.RegisterKeypad('aprctrl',
+LUASQUARE_KEYPAD.RegisterKeypad('aprctrl',
     {
         maxDigits = 4,
         maxValue = 9999,
@@ -376,14 +380,14 @@ LITHOS_KEYPAD.RegisterKeypad('aprctrl',
 
 RBMK.Start()
 
-LITHOS_SEG7.Start()
-LITHOS_GAUGE.Start()
-LITHOS_FLUID.Start()
-LITHOS_VALVE.Start()
-LITHOS_PUMP.Start()
-LITHOS_CONDENSER.Start()
-LITHOS_POWERPLANT.Debug.Start()
+LUASQUARE_SEG7.Start()
+LUASQUARE_GAUGE.Start()
+LUASQUARE_FLUID.Start()
+LUASQUARE_VALVE.Start()
+LUASQUARE_PUMP.Start()
+LUASQUARE_CONDENSER.Start()
+LUASQUARE_POWERPLANT.Debug.Start()
 
-print('[LITHOSQUARE RBMK] RBMK Reactor Initialization Finished.')
-LITHOSQUARE_RBMK_INITIALIZED = true
-SetGlobal2Bool('LITHOSQUARE_RBMK_INITIALIZED_GLOBAL', LITHOSQUARE_RBMK_INITIALIZED)
+print('[LUASQUARE RBMK] RBMK Reactor Initialization Finished.')
+LUASQUARE_RBMK_INITIALIZED = true
+SetGlobal2Bool('LUASQUARE_RBMK_INITIALIZED_GLOBAL', LUASQUARE_RBMK_INITIALIZED)

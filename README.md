@@ -14,4 +14,4 @@ It is not exactly straightforward to use this in Hammer either. As you'll requir
 I started building this because one day I scoured through the gmod workshop looking for some nuclear reactor map. I found one and it was really good, then something happened and I thought it'd be cool if I can make an in-map skin-based 7-segment display that can display any value it is given using Lua Addon as it's driver(at least in singleplayer)...
 Then somehow this ENTIRE project started ALL because of that skin-based pesudo-7-segment display.
 
-Why "Luasquare RBMK"? one, Because it's all Lua. two, it was originally "Lithosquare RBMK" but that name is taken and also doesn't quite fit for what this thing is!
+Why "Luasquare RBMK"? One, because it's all Lua. Two, because the name fits the map-framework-shaped box this project has turned into.

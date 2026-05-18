@@ -1,33 +1,33 @@
-if LITHOS_GAUGE_CORE_LOADED then return end
-LITHOS_GAUGE_CORE_LOADED = true
-LITHOS_GAUGE = LITHOS_GAUGE or {}
-LITHOS_GAUGE.Gauges = LITHOS_GAUGE.Gauges or {}
-LITHOS_GAUGE.Bindings = LITHOS_GAUGE.Bindings or {}
-LITHOS_GAUGE.EntityCache = LITHOS_GAUGE.EntityCache or {}
+if LUASQUARE_GAUGE_CORE_LOADED then return end
+LUASQUARE_GAUGE_CORE_LOADED = true
+LUASQUARE_GAUGE = LUASQUARE_GAUGE or {}
+LUASQUARE_GAUGE.Gauges = LUASQUARE_GAUGE.Gauges or {}
+LUASQUARE_GAUGE.Bindings = LUASQUARE_GAUGE.Bindings or {}
+LUASQUARE_GAUGE.EntityCache = LUASQUARE_GAUGE.EntityCache or {}
 
-LITHOS_GAUGE.TickInterval = 0.1
+LUASQUARE_GAUGE.TickInterval = 0.1
 
 -- =========================================
 -- ENTITY CACHE
 -- =========================================
-function LITHOS_GAUGE.GetEnt(name)
-    local cached = LITHOS_GAUGE.EntityCache[name]
+function LUASQUARE_GAUGE.GetEnt(name)
+    local cached = LUASQUARE_GAUGE.EntityCache[name]
     if IsValid(cached) then return cached end
     local ent = ents.FindByName(name)[1]
-    if IsValid(ent) then LITHOS_GAUGE.EntityCache[name] = ent end
+    if IsValid(ent) then LUASQUARE_GAUGE.EntityCache[name] = ent end
     return ent
 end
 
 -- =========================================
 -- REGISTER
 -- =========================================
-function LITHOS_GAUGE.RegisterGauge(name, data)
+function LUASQUARE_GAUGE.RegisterGauge(name, data)
     if not data then
-        print('[LITHOS_GAUGE] Missing data for gauge: ' .. tostring(name))
+        print('[LUASQUARE_GAUGE] Missing data for gauge: ' .. tostring(name))
         return
     end
 
-    LITHOS_GAUGE.Gauges[name] = {
+    LUASQUARE_GAUGE.Gauges[name] = {
         entity = data.entity,
         min = tonumber(data.min) or 0,
         max = tonumber(data.max) or 100,
@@ -39,21 +39,21 @@ end
 -- =========================================
 -- SET GAUGE
 -- =========================================
-function LITHOS_GAUGE.SetGauge(name, value)
-    local gauge = LITHOS_GAUGE.Gauges[name]
+function LUASQUARE_GAUGE.SetGauge(name, value)
+    local gauge = LUASQUARE_GAUGE.Gauges[name]
     if not gauge then
-        print('[LITHOS_GAUGE] Unknown gauge: ' .. tostring(name))
+        print('[LUASQUARE_GAUGE] Unknown gauge: ' .. tostring(name))
         return
     end
 
     if not gauge.entity then
-        print('[LITHOS_GAUGE] Missing entity for gauge: ' .. tostring(name))
+        print('[LUASQUARE_GAUGE] Missing entity for gauge: ' .. tostring(name))
         return
     end
 
-    local ent = LITHOS_GAUGE.GetEnt(gauge.entity)
+    local ent = LUASQUARE_GAUGE.GetEnt(gauge.entity)
     if not IsValid(ent) then
-        print('[LITHOS_GAUGE] Missing entity: ' .. tostring(gauge.entity))
+        print('[LUASQUARE_GAUGE] Missing entity: ' .. tostring(gauge.entity))
         return
     end
 
@@ -71,20 +71,20 @@ end
 -- =========================================
 -- BIND LIVE VALUE
 -- =========================================
-function LITHOS_GAUGE.BindGauge(name, getter)
-    LITHOS_GAUGE.Bindings[name] = getter
+function LUASQUARE_GAUGE.BindGauge(name, getter)
+    LUASQUARE_GAUGE.Bindings[name] = getter
 end
 
 -- =========================================
 -- AUTO UPDATE LOOP
 -- =========================================
-function LITHOS_GAUGE.UpdateAll()
-    for gaugeName, getter in pairs(LITHOS_GAUGE.Bindings) do
+function LUASQUARE_GAUGE.UpdateAll()
+    for gaugeName, getter in pairs(LUASQUARE_GAUGE.Bindings) do
         local ok, value = pcall(getter)
         if ok then
-            LITHOS_GAUGE.SetGauge(gaugeName, value)
+            LUASQUARE_GAUGE.SetGauge(gaugeName, value)
         else
-            print('[LITHOS_GAUGE] Getter failed for ' .. tostring(gaugeName))
+            print('[LUASQUARE_GAUGE] Getter failed for ' .. tostring(gaugeName))
             print(value)
         end
     end
@@ -93,50 +93,50 @@ end
 -- =========================================
 -- START UPDATE TIMER
 -- =========================================
-function LITHOS_GAUGE.Start()
-    if timer.Exists('LITHOS_GAUGE_UpdateTimer') then timer.Remove('LITHOS_GAUGE_UpdateTimer') end
-    timer.Create('LITHOS_GAUGE_UpdateTimer', LITHOS_GAUGE.TickInterval, 0, function() LITHOS_GAUGE.UpdateAll() end)
-    print('[LITHOS_GAUGE] Started')
+function LUASQUARE_GAUGE.Start()
+    if timer.Exists('LUASQUARE_GAUGE_UpdateTimer') then timer.Remove('LUASQUARE_GAUGE_UpdateTimer') end
+    timer.Create('LUASQUARE_GAUGE_UpdateTimer', LUASQUARE_GAUGE.TickInterval, 0, function() LUASQUARE_GAUGE.UpdateAll() end)
+    print('[LUASQUARE_GAUGE] Started')
 end
 
-print('[LITHOS_GAUGE] Loaded')
+print('[LUASQUARE_GAUGE] Loaded')
 
 -- =========================================
 -- EXAMPLES
 -- =========================================
--- include('lithos_module/gaugedisplay.lua')
+-- include('luasquare_module/gaugedisplay.lua')
 --
--- LITHOS_GAUGE.RegisterGauge('rpv_water', {
+-- LUASQUARE_GAUGE.RegisterGauge('rpv_water', {
 --     entity = 'gauge_rpv_water',
 --     min = 0,
 --     max = 100,
 --     speed = 64
 -- })
--- LITHOS_GAUGE.BindGauge('rpv_water', function()
+-- LUASQUARE_GAUGE.BindGauge('rpv_water', function()
 --     if not RBMK or not RBMK.MaxWater or RBMK.MaxWater <= 0 then return 0 end
 --     return (RBMK.Water / RBMK.MaxWater) * 100
 -- end)
 --
--- LITHOS_GAUGE.RegisterGauge('rpv_steam', {
+-- LUASQUARE_GAUGE.RegisterGauge('rpv_steam', {
 --     entity = 'gauge_rpv_steam',
 --     min = 0,
 --     max = 100,
 --     speed = 64
 -- })
--- LITHOS_GAUGE.BindGauge('rpv_steam', function()
+-- LUASQUARE_GAUGE.BindGauge('rpv_steam', function()
 --     if not RBMK or not RBMK.MaxSteam or RBMK.MaxSteam <= 0 then return 0 end
 --     return (RBMK.Steam / RBMK.MaxSteam) * 100
 -- end)
 --
--- LITHOS_GAUGE.RegisterGauge('reactor_flux', {
+-- LUASQUARE_GAUGE.RegisterGauge('reactor_flux', {
 --     entity = 'gauge_reactor_flux',
 --     min = 0,
 --     max = 1000,
 --     speed = 64
 -- })
--- LITHOS_GAUGE.BindGauge('reactor_flux', function()
+-- LUASQUARE_GAUGE.BindGauge('reactor_flux', function()
 --     if not RBMK then return 0 end
 --     return RBMK.TotalFluxSubtracted or 0
 -- end)
 --
--- LITHOS_GAUGE.Start()
+-- LUASQUARE_GAUGE.Start()

@@ -1,10 +1,6 @@
-if RBMK.Initialized then return end
-RBMK.Initialized = true
-
 -- LAYOUT FILE
 -- This is orchestration script to build an RBMK reactor.
 
--- TEST REACTOR
 RBMK.ModelName = 'LRBMKP-400'
 
 -- Define size (Rectangle)
@@ -15,9 +11,9 @@ RBMK.CreateMatrix(13, 13)
 
 -- Fuel channels (Fuel Type:fueltype[Default:'MEU'])
 RBMK.SetCell(5, 5, RBMK.CreateFuelChannel('HEU'))
-RBMK.SetCell(9, 9, RBMK.CreateFuelChannel())
+RBMK.SetCell(9, 9, RBMK.CreateFuelChannel('MOX'))
 RBMK.SetCell(9, 5, RBMK.CreateFuelChannel('MOX'))
-RBMK.SetCell(5, 9, RBMK.CreateFuelChannel())
+RBMK.SetCell(5, 9, RBMK.CreateFuelChannel('MOX'))
 RBMK.SetCell(5, 11, RBMK.CreateFuelChannel('EMPTY')) --Empty fuel rod acts like blank
 
 -- Neutron Sources (constantFlux:float, closedSource(become reflector):bool[false])

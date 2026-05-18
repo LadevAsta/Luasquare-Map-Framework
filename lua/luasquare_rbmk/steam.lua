@@ -116,13 +116,13 @@ function RBMK.AddWaterFromPump(amount, pressure)
 end
 
 function RBMK.DoSteamExportStep()
-    if not RBMK.SteamOutletOpen or not LITHOS_FLUID or not RBMK.SteamNetwork then
+    if not RBMK.SteamOutletOpen or not LUASQUARE_FLUID or not RBMK.SteamNetwork then
         RBMK.LastSteamExportFlow = 0
         RBMK.UpdateRPVPressure()
         return
     end
 
-    local network = LITHOS_FLUID.GetNetwork(RBMK.SteamNetwork)
+    local network = LUASQUARE_FLUID.GetNetwork(RBMK.SteamNetwork)
     if not network then
         RBMK.LastSteamExportFlow = 0
         RBMK.UpdateRPVPressure()
@@ -141,7 +141,7 @@ function RBMK.DoSteamExportStep()
     local exportRate = math.max(RBMK.SteamSpace * 0.05, RBMK.Steam * RBMK.SteamOutletFlowRate)
     local requested = exportRate * scale * RBMK.TickInterval
     local moved = math.min(requested, RBMK.Steam)
-    local accepted = LITHOS_FLUID.AddFluid(RBMK.SteamNetwork, moved)
+    local accepted = LUASQUARE_FLUID.AddFluid(RBMK.SteamNetwork, moved)
     RBMK.Steam = RBMK.Steam - accepted
     RBMK.LastSteamExportFlow = accepted / math.max(RBMK.TickInterval, 0.0001)
     RBMK.UpdateRPVPressure()
@@ -176,8 +176,8 @@ function RBMK.DoDrainStep()
         return
     end
 
-    if LITHOS_FLUID and RBMK.DrainNetwork then
-        local accepted = LITHOS_FLUID.AddFluid(RBMK.DrainNetwork, drained)
+    if LUASQUARE_FLUID and RBMK.DrainNetwork then
+        local accepted = LUASQUARE_FLUID.AddFluid(RBMK.DrainNetwork, drained)
         RBMK.Water = RBMK.Water - accepted
         RBMK.LastDrainFlow = accepted / math.max(RBMK.TickInterval, 0.0001)
     else

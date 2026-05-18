@@ -57,7 +57,7 @@ function RBMK.CreateControlRod(name, group, indicatorSpriteEnt, visualEnt, graph
     }
 
     RBMK.Rods[name] = rod
-    if indicatorSpriteEnt ~= nil then LITHOS_ROD_SELECTOR.RegisterIndicator(name, indicatorSpriteEnt) end
+    if indicatorSpriteEnt ~= nil then LUASQUARE_ROD_SELECTOR.RegisterIndicator(name, indicatorSpriteEnt) end
     return rod
 end
 

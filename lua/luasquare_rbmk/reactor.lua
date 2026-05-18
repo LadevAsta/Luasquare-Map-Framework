@@ -97,7 +97,7 @@ RBMK.MaxHeat = 20
 
 RBMK.AverageXenon = 0
 
---TODO : Somehow Implement Megawatt Thermal (thermal transfer method). Which will be used by Auto control rod to stabilize the reactor for power production later (New Turbine Module in lithos_powerplant).
+--TODO : Somehow Implement Megawatt Thermal (thermal transfer method). Which will be used by Auto control rod to stabilize the reactor for power production later (New Turbine Module in luasquare_powerplant).
 -- Pressure is gameplay bar. Steam is stored as 1 bar steam-equivalent liters.
 
 -- =========================================
@@ -196,7 +196,7 @@ end
 function RBMK.Start()
     if timer.Exists('RBMK_Tick') then timer.Remove('RBMK_Tick') end
     timer.Create('RBMK_Tick', RBMK.TickInterval, 0, function() RBMK.Tick() end)
-    print('[LITHOS_RBMK] Started')
+    print('[' .. RBMK.ModelName .. '] Started')
 end
 
 -- =========================================
@@ -212,7 +212,7 @@ function RBMK.FireRelay(relayName)
     if not relayName then return false end
     local ent = ents.FindByName(relayName)[1]
     if not IsValid(ent) then
-        print('[LITHOS_RBMK] Missing relay: ' .. tostring(relayName))
+        print('[' .. RBMK.ModelName .. '] Missing relay: ' .. tostring(relayName))
         return false
     end
 
@@ -396,7 +396,7 @@ function RBMK.FuelChannelLeak(x, y, cell)
     cell.leakStarted = RBMK.GetTime()
     RBMK.EventState.LastFuelLeak = {x = x, y = y, time = cell.leakStarted}
     RBMK.FireRelay(RBMK.FuelLeakRelay)
-    print(string.format('[LITHOS_RBMK] Fuel channel leak at %d,%d', x or 0, y or 0))
+    print(string.format('[' .. RBMK.ModelName .. '] FUEL CHANNEL LEAK AT %d,%d', x or 0, y or 0))
     return true
 end
 
@@ -425,11 +425,11 @@ function RBMK.FuelMeltdown(x, y, cell)
     cell.meltdownStarted = RBMK.GetTime()
     RBMK.EventState.LastMeltdown = {x = x, y = y, time = cell.meltdownStarted}
     RBMK.FireRelay(RBMK.FuelMeltdownRelay)
-    print(string.format('[LITHOS_RBMK] Fuel meltdown started at %d,%d', x or 0, y or 0))
+    print(string.format('[' .. RBMK.ModelName .. '] FUEL MELTDOWN STARTED! %d,%d', x or 0, y or 0))
 
     timer.Simple(RBMK.FuelMeltdownDelay, function()
         if RBMK and RBMK.EventState and not RBMK.EventState.Failed then
-            RBMK.CatastrophicFailure('fuel_meltdown')
+            RBMK.CatastrophicFailure('FUEL_MELTDOWN')
         end
     end)
     return true
@@ -442,7 +442,7 @@ function RBMK.CatastrophicFailure(reason)
     RBMK.EventState.FailureTime = RBMK.GetTime()
     RBMK.FireRelay(RBMK.CatastrophicFailureRelay)
     if timer.Exists('RBMK_Tick') then timer.Remove('RBMK_Tick') end
-    print('[LITHOS_RBMK] Catastrophic failure: ' .. tostring(RBMK.EventState.FailureReason))
+    print('[' .. RBMK.ModelName .. '] CATASTROPHIC FAILURE!!! :  ' .. tostring(RBMK.EventState.FailureReason))
     timer.Simple(RBMK.CatastrophicClearDelay, function()
         if RBMK then RBMK.ClearReactorData() end
     end)
@@ -469,7 +469,7 @@ function RBMK.DoPressureEventStep()
     local pressure = RBMK.UpdateRPVPressure()
     RBMK.EventState.LastPressure = pressure
     if pressure >= RBMK.CatastrophicPressure then
-        RBMK.CatastrophicFailure('overpressure')
+        RBMK.CatastrophicFailure('OVERPRESSURE')
         return
     end
 
