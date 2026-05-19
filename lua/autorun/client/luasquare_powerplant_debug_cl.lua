@@ -56,6 +56,7 @@ function LUASQUARE_POWERPLANT.Debug.RenderNetwork(network)
         'NET ' .. tostring(network.name),
         tostring(network.fluidType) .. ' ' .. tostring(network.type),
         string.format('A %.1f / %.1f', network.amount or 0, network.maxAmount or 0),
+        string.format('V %.1f', network.volume or 0),
         string.format('P %.1f / %.1f bar', network.pressure or 0, network.maxPressure or 0),
         string.format('T %.1f C', network.temperature or 0)
     }

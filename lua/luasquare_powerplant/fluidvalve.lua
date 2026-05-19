@@ -46,6 +46,22 @@ function LUASQUARE_VALVE.GetEndpointPressure(endpoint)
     return network.pressure or 0
 end
 
+function LUASQUARE_VALVE.GetEndpointTemperature(endpoint)
+    if endpoint == 'rbmk_steam' then
+        if not RBMK then return 20 end
+        return RBMK.SteamTemperature or 100
+    end
+
+    if endpoint == 'rbmk_water' then
+        if not RBMK then return 20 end
+        return RBMK.WaterTemperature or 20
+    end
+
+    local network = LUASQUARE_FLUID and LUASQUARE_FLUID.GetNetwork(endpoint)
+    if not network then return 20 end
+    return network.temperature or 20
+end
+
 function LUASQUARE_VALVE.RemoveFromEndpoint(endpoint, amount)
     amount = math.max(tonumber(amount) or 0, 0)
     if endpoint == 'rbmk_steam' then
@@ -68,12 +84,13 @@ function LUASQUARE_VALVE.RemoveFromEndpoint(endpoint, amount)
     return LUASQUARE_FLUID.RemoveFluid(endpoint, amount)
 end
 
-function LUASQUARE_VALVE.AddToEndpoint(endpoint, amount, pressure)
+function LUASQUARE_VALVE.AddToEndpoint(endpoint, amount, pressure, temperature)
     amount = math.max(tonumber(amount) or 0, 0)
     if endpoint == 'rbmk_steam' then
         if not RBMK then return 0 end
         local freeSteam = math.max((RBMK.HardMaxSteam or math.huge) - (RBMK.Steam or 0), 0)
         local moved = math.min(amount, freeSteam)
+        RBMK.SteamTemperature = RBMK.MixTemperature and RBMK.MixTemperature(RBMK.Steam or 0, RBMK.SteamTemperature or 100, moved, temperature or 100) or RBMK.SteamTemperature
         RBMK.Steam = RBMK.Steam + moved
         RBMK.UpdateRPVPressure()
         return moved
@@ -81,19 +98,20 @@ function LUASQUARE_VALVE.AddToEndpoint(endpoint, amount, pressure)
 
     if endpoint == 'rbmk_water' then
         if not RBMK or not RBMK.AddWaterFromPump then return 0 end
-        return RBMK.AddWaterFromPump(amount, pressure or 0)
+        return RBMK.AddWaterFromPump(amount, pressure or 0, temperature)
     end
 
     if not LUASQUARE_FLUID then return 0 end
-    return LUASQUARE_FLUID.AddFluid(endpoint, amount)
+    return LUASQUARE_FLUID.AddFluid(endpoint, amount, temperature)
 end
 
-function LUASQUARE_VALVE.RestoreToEndpoint(endpoint, amount)
+function LUASQUARE_VALVE.RestoreToEndpoint(endpoint, amount, temperature)
     amount = math.max(tonumber(amount) or 0, 0)
     if endpoint == 'rbmk_steam' then
         if not RBMK then return 0 end
         local freeSteam = math.max((RBMK.HardMaxSteam or math.huge) - (RBMK.Steam or 0), 0)
         local moved = math.min(amount, freeSteam)
+        RBMK.SteamTemperature = RBMK.MixTemperature and RBMK.MixTemperature(RBMK.Steam or 0, RBMK.SteamTemperature or 100, moved, temperature or 100) or RBMK.SteamTemperature
         RBMK.Steam = RBMK.Steam + moved
         RBMK.UpdateRPVPressure()
         return moved
@@ -103,19 +121,21 @@ function LUASQUARE_VALVE.RestoreToEndpoint(endpoint, amount)
         if not RBMK then return 0 end
         local freeWater = math.max((RBMK.MaxWater or math.huge) - (RBMK.Water or 0), 0)
         local moved = math.min(amount, freeWater)
+        RBMK.WaterTemperature = RBMK.MixTemperature and RBMK.MixTemperature(RBMK.Water or 0, RBMK.WaterTemperature or 20, moved, temperature or 20) or RBMK.WaterTemperature
         RBMK.Water = RBMK.Water + moved
         RBMK.UpdateRPVPressure()
         return moved
     end
 
     if not LUASQUARE_FLUID then return 0 end
-    return LUASQUARE_FLUID.AddFluid(endpoint, amount)
+    return LUASQUARE_FLUID.AddFluid(endpoint, amount, temperature)
 end
 
 function LUASQUARE_VALVE.Transfer(a, b, amount, pressure)
+    local temperature = LUASQUARE_VALVE.GetEndpointTemperature(a)
     local removed = LUASQUARE_VALVE.RemoveFromEndpoint(a, amount)
-    local added = LUASQUARE_VALVE.AddToEndpoint(b, removed, pressure)
-    if added < removed then LUASQUARE_VALVE.RestoreToEndpoint(a, removed - added) end
+    local added = LUASQUARE_VALVE.AddToEndpoint(b, removed, pressure, temperature)
+    if added < removed then LUASQUARE_VALVE.RestoreToEndpoint(a, removed - added, temperature) end
     return added
 end
 

@@ -19,6 +19,7 @@ function LUASQUARE_CONDENSER.RegisterCondenser(name, data)
         godMode = data.godMode and true or false,
         startRelay = data.startRelay,
         stopRelay = data.stopRelay,
+        outputTemperature = tonumber(data.outputTemperature) or 20,
         lastSteamUsed = 0,
         lastWaterMade = 0,
         monitorPos = data.monitorPos,
@@ -77,14 +78,13 @@ function LUASQUARE_CONDENSER.UpdateCondenser(name, dt)
 
     local removed = LUASQUARE_FLUID.RemoveFluid(condenser.input, steamToUse)
     local waterMade = removed / ratio
-    local added = LUASQUARE_FLUID.AddFluid(condenser.output, waterMade)
+    local added = LUASQUARE_FLUID.AddFluid(condenser.output, waterMade, condenser.outputTemperature)
     if added < waterMade then
-        LUASQUARE_FLUID.AddFluid(condenser.input, (waterMade - added) * ratio)
+        LUASQUARE_FLUID.AddFluid(condenser.input, (waterMade - added) * ratio, input.temperature)
         waterMade = added
         removed = added * ratio
     end
 
-    output.temperature = 20
     condenser.lastSteamUsed = removed / math.max(dt, 0.0001)
     condenser.lastWaterMade = waterMade / math.max(dt, 0.0001)
 end

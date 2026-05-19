@@ -75,14 +75,14 @@ function LUASQUARE_PUMP.GetTargetPressure(target)
     return network.pressure or 0
 end
 
-function LUASQUARE_PUMP.AddToTarget(target, amount, dischargePressure)
+function LUASQUARE_PUMP.AddToTarget(target, amount, dischargePressure, temperature)
     if target == 'rbmk' then
         if not RBMK or not RBMK.AddWaterFromPump then return 0 end
-        return RBMK.AddWaterFromPump(amount, dischargePressure)
+        return RBMK.AddWaterFromPump(amount, dischargePressure, temperature)
     end
 
     if not LUASQUARE_FLUID then return 0 end
-    return LUASQUARE_FLUID.AddFluid(target, amount)
+    return LUASQUARE_FLUID.AddFluid(target, amount, temperature)
 end
 
 -- =========================================
@@ -113,8 +113,8 @@ function LUASQUARE_PUMP.UpdatePump(name, dt)
     local pressureScale = math.Clamp((dischargePressure - targetPressure) / math.max(dischargePressure, 0.0001), 0, 1)
     local requested = pump.rate * dt * pressureScale * pump.flowMultiplier * speedMultiplier
     local removed = LUASQUARE_FLUID.RemoveFluid(pump.source, requested)
-    local added = LUASQUARE_PUMP.AddToTarget(pump.target, removed, dischargePressure)
-    if added < removed then LUASQUARE_FLUID.AddFluid(pump.source, removed - added) end
+    local added = LUASQUARE_PUMP.AddToTarget(pump.target, removed, dischargePressure, source.temperature)
+    if added < removed then LUASQUARE_FLUID.AddFluid(pump.source, removed - added, source.temperature) end
     pump.lastFlow = added / math.max(dt, 0.0001)
 end
 

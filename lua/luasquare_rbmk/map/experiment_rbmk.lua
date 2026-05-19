@@ -15,6 +15,7 @@ return end
 -- =========================================
 
 include('luasquare_module/seg7display.lua') -- Pseudo 7-Segments numeric display
+include('luasquare_module/3d2display.lua') -- 3D2D Display
 include('luasquare_module/gaugedisplay.lua') -- Gauge display
 include('luasquare_module/keypad_controller.lua') -- Numeric Keypads
 include('luasquare_module/rod_selector.lua') -- RBMK Control Rod Selector
@@ -33,6 +34,7 @@ RBMK.CellSpacing = 64
 RBMK.TickInterval = 0.1
 LUASQUARE_SEG7.TickInterval = 0.1
 LUASQUARE_GAUGE.TickInterval = 0.2
+LUASQUARE_3D2D.TickInterval = 0.2
 LUASQUARE_FLUID.TickInterval = 0.1
 LUASQUARE_VALVE.TickInterval = 0.1
 LUASQUARE_PUMP.TickInterval = 0.1
@@ -51,6 +53,11 @@ RBMK.CalculateColumnVolume(64, 64, 256, 10)
 RBMK.RPVMinSteamSpaceFraction = 0.05
 RBMK.SteamExpansionRatio = 1600
 RBMK.SteamPressureFactor = 1
+RBMK.WaterBoilingPressureFactor = 2.6
+RBMK.CoolingOptimalWaterFraction = 0.8
+RBMK.CoolingLowWaterFraction = 0.1
+RBMK.CoolingLowEfficiency = 0.08
+RBMK.CoolingDryEfficiency = 0.02
 RBMK.RPVMaxPressure = 70
 RBMK.RPVHardPressure = 150
 RBMK.BlowoutPressure = 85
@@ -130,10 +137,12 @@ LUASQUARE_FLUID.RegisterNetwork('main_steam', {
     type = LUASQUARE_FLUID.TYPE_STEAMLINE,
     fluidType = 'steam',
     amount = 0,
+    volume = RBMK.SteamSpace,
     maxAmount = RBMK.MaxSteam,
     hardMaxAmount = RBMK.HardMaxSteam,
     maxPressure = 150,
-    temperature = 280,
+    temperature = 100,
+    thermalLossRate = 0.002,
     monitorPos = RBMK.WorldOrigin + Vector(0, 0, 96 + MAPDEF_monitorZoffset)
 })
 RBMK.SetSteamNetwork('main_steam')
@@ -146,6 +155,7 @@ LUASQUARE_FLUID.RegisterNetwork('feedwater', {
     hardMaxAmount = RBMK.MaxWater,
     maxPressure = 150,
     temperature = 40,
+    thermalLossRate = 0.005,
     serviceRate = 0,
     monitorPos = RBMK.WorldOrigin + Vector(0, 96, 96 + MAPDEF_monitorZoffset)
 })
@@ -158,6 +168,7 @@ LUASQUARE_FLUID.RegisterNetwork('drain_tank', {
     hardMaxAmount = RBMK.MaxWater,
     maxPressure = 5,
     temperature = 40,
+    thermalLossRate = 0.01,
     serviceRate = 0,
     monitorPos = RBMK.WorldOrigin + Vector(0, 96, 128 + MAPDEF_monitorZoffset)
 })
@@ -201,6 +212,7 @@ LUASQUARE_CONDENSER.RegisterCondenser('god_condenser', {
     maxRate = math.huge,
     enabled = true,
     godMode = true,
+    outputTemperature = 20,
     monitorPos = RBMK.WorldOrigin + Vector(0, 288, 96 + MAPDEF_monitorZoffset)
 })
 
@@ -335,6 +347,108 @@ LUASQUARE_GAUGE.BindGauge('gauge_rpvpressure', function()
 end)
 
 -- =========================================
+-- 3D2D PANEL DISPLAYS
+-- =========================================
+
+local MAPDEF_panelScale = 0.1
+
+local function MAPDEF_panelBase(title, pos, width, height, angle)
+    local compact = height <= 160
+    return {
+        pos = pos,
+        ang = angle,
+        anchorX = 0.5,
+        anchorY = 0.5,
+        scale = MAPDEF_panelScale,
+        width = width,
+        height = height,
+        padding = compact and 6 or 10,
+        lineHeight = compact and 13 or 18,
+        titleHeight = compact and 18 or 28,
+        font = compact and 'Luasquare3D2D_Small' or nil,
+        titleFont = compact and 'Luasquare3D2D_Line' or nil,
+        title = title,
+        backgroundColor = Color(3, 10, 12, 235),
+        borderColor = Color(30, 163, 216, 230),
+        textColor = Color(205, 235, 240),
+        titleColor = Color(255, 255, 255),
+        barColor = Color(80, 220, 160)
+    }
+end
+
+local function MAPDEF_powerState(enabled)
+    if enabled then return 'ON', Color(110, 255, 150) end
+    return 'OFF', Color(255, 95, 95)
+end
+
+local function MAPDEF_pumpColumn(label, pumpName)
+    local pump = LUASQUARE_PUMP.GetPump(pumpName) or {}
+    local state, color = MAPDEF_powerState(pump.enabled)
+    local speed = 0
+    if pump.speedLevels and LUASQUARE_PUMP.GetPumpSpeedMultiplier then speed = LUASQUARE_PUMP.GetPumpSpeedMultiplier(pump) * 100 end
+
+    return {
+        label = label,
+        value = state,
+        sub = string.format('%.0f%% %.0f/s', speed, pump.lastFlow or 0),
+        color = Color(205, 235, 240),
+        valueColor = color
+    }
+end
+
+local function MAPDEF_valveColumn(label, valveName)
+    local valve = LUASQUARE_VALVE.GetValve(valveName) or {}
+    local open = valve.open and true or false
+    return {
+        label = label,
+        value = open and 'OPEN' or 'SHUT',
+        sub = string.format('%.0f/s', valve.lastFlow or 0),
+        color = Color(205, 235, 240),
+        valueColor = open and Color(110, 255, 150) or Color(255, 210, 80)
+    }
+end
+
+LUASQUARE_3D2D.RegisterDisplay('aux_flow_status_panel', MAPDEF_panelBase(
+    'AUX FLOW STATUS',
+    Vector(91, -535, 598), 440, 220,
+    Angle(0, -90, 90)
+))
+LUASQUARE_3D2D.BindDisplay('aux_flow_status_panel', function()
+    return {
+        {
+            type = 'columns',
+            height = 150,
+            columns = {
+                MAPDEF_pumpColumn('FW PUMP A', 'feedwater_pump_a'),
+                MAPDEF_pumpColumn('FW PUMP B', 'feedwater_pump_b'),
+                MAPDEF_valveColumn('DRAIN VLV', 'rpv_drain_valve')
+            }
+        }
+    }
+end)
+
+LUASQUARE_3D2D.RegisterDisplay('rpv_status_panel', MAPDEF_panelBase(
+    'RPV STATUS',
+    Vector(91, -461, 598), 240, 220,
+    Angle(0, -90, 90)
+))
+LUASQUARE_3D2D.BindDisplay('rpv_status_panel', function()
+    local waterFraction = 0
+    if RBMK.MaxWater and RBMK.MaxWater > 0 then waterFraction = math.Clamp((RBMK.Water or 0) / RBMK.MaxWater, 0, 1) end
+    local pressureFraction = 0
+    if RBMK.RPVMaxPressure and RBMK.RPVMaxPressure > 0 then pressureFraction = math.Clamp((RBMK.RPVPressure or 0) / RBMK.RPVMaxPressure, 0, 1) end
+
+    return {
+        { type = 'value', label = 'MWt', value = RBMK.LastThermalMW or 0, decimals = 0 },
+        { type = 'value', label = 'RPV P', value = RBMK.RPVPressure or 0, decimals = 1, unit = 'bar', warn = pressureFraction > 0.85 },
+        { type = 'bar', label = 'H2O', fraction = waterFraction, height = 5 },
+        { type = 'value', label = 'H2O T', value = RBMK.WaterTemperature or 0, decimals = 0, unit = 'C' },
+        { type = 'value', label = 'STM T', value = RBMK.SteamTemperature or 0, decimals = 0, unit = 'C' },
+        { type = 'value', label = 'COOL', value = (RBMK.LastCoolingEfficiency or 0) * 100, decimals = 0, unit = '%' }
+    }
+end)
+
+-- =========================================
 -- OPERATOR INTERFACES
 -- =========================================
 
@@ -382,6 +496,7 @@ RBMK.Start()
 
 LUASQUARE_SEG7.Start()
 LUASQUARE_GAUGE.Start()
+LUASQUARE_3D2D.Start()
 LUASQUARE_FLUID.Start()
 LUASQUARE_VALVE.Start()
 LUASQUARE_PUMP.Start()

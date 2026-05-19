@@ -25,6 +25,7 @@ function LUASQUARE_POWERPLANT.Debug.BuildNetworks()
                 amount = network.amount or 0,
                 maxAmount = network.maxAmount or 0,
                 hardMaxAmount = network.hardMaxAmount or 0,
+                volume = network.volume or 0,
                 pressure = network.pressure or 0,
                 maxPressure = network.maxPressure or 0,
                 temperature = network.temperature or 0,

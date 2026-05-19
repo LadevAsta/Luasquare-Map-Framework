@@ -5,6 +5,8 @@ LUASQUARE_FLUID.Networks = LUASQUARE_FLUID.Networks or {}
 LUASQUARE_FLUID.EntityCache = LUASQUARE_FLUID.EntityCache or {}
 LUASQUARE_FLUID.TickInterval = LUASQUARE_FLUID.TickInterval or 0.1
 LUASQUARE_FLUID.PressureUnit = 'bar'
+LUASQUARE_FLUID.ReferenceSteamTemperature = 100
+LUASQUARE_FLUID.WaterThermalPressureFactor = 0.02
 
 LUASQUARE_FLUID.TYPE_SIMPLE = 'simple'
 LUASQUARE_FLUID.TYPE_STEAMLINE = 'steamline'
@@ -41,6 +43,16 @@ function LUASQUARE_FLUID.RegisterNetwork(name, data)
     local hardMaxAmount = maxAmount
     if networkType == LUASQUARE_FLUID.TYPE_STEAMLINE then hardMaxAmount = tonumber(data.hardMaxAmount) or maxAmount * 2 end
     hardMaxAmount = math.max(hardMaxAmount, maxAmount)
+    local maxPressure = tonumber(data.maxPressure) or 100
+    local volume = tonumber(data.volume)
+    if not volume then
+        if networkType == LUASQUARE_FLUID.TYPE_STEAMLINE and (data.fluidType or 'water') == 'steam' then
+            volume = maxAmount / math.max(maxPressure, 0.0001)
+        else
+            volume = maxAmount
+        end
+    end
+
     LUASQUARE_FLUID.Networks[name] = {
         name = name,
         type = networkType,
@@ -48,9 +60,13 @@ function LUASQUARE_FLUID.RegisterNetwork(name, data)
         amount = math.Clamp(tonumber(data.amount) or 0, 0, hardMaxAmount),
         maxAmount = maxAmount,
         hardMaxAmount = hardMaxAmount,
+        volume = math.max(volume, 0.0001),
         pressure = tonumber(data.pressure) or 0,
-        maxPressure = tonumber(data.maxPressure) or 100,
+        maxPressure = maxPressure,
+        pressureFactor = tonumber(data.pressureFactor) or 1,
         temperature = tonumber(data.temperature) or 20,
+        ambientTemperature = tonumber(data.ambientTemperature) or 20,
+        thermalLossRate = tonumber(data.thermalLossRate) or 0,
         serviceRate = tonumber(data.serviceRate) or 0,
         serviceEnabled = data.serviceEnabled and true or false,
         ruptured = false,
@@ -84,7 +100,17 @@ function LUASQUARE_FLUID.SetAmount(name, amount)
     return network.amount
 end
 
-function LUASQUARE_FLUID.AddFluid(name, amount)
+function LUASQUARE_FLUID.MixTemperature(currentAmount, currentTemperature, addedAmount, addedTemperature)
+    currentAmount = math.max(tonumber(currentAmount) or 0, 0)
+    addedAmount = math.max(tonumber(addedAmount) or 0, 0)
+    currentTemperature = tonumber(currentTemperature) or 20
+    addedTemperature = tonumber(addedTemperature) or currentTemperature
+    local total = currentAmount + addedAmount
+    if total <= 0 then return currentTemperature end
+    return (currentTemperature * currentAmount + addedTemperature * addedAmount) / total
+end
+
+function LUASQUARE_FLUID.AddFluid(name, amount, temperature)
     local network = LUASQUARE_FLUID.GetNetwork(name)
     if not network then
         print('[LUASQUARE_FLUID] Unknown network: ' .. tostring(name))
@@ -94,6 +120,7 @@ function LUASQUARE_FLUID.AddFluid(name, amount)
     amount = math.max(tonumber(amount) or 0, 0)
     local free = math.max((network.hardMaxAmount or network.maxAmount) - network.amount, 0)
     local moved = math.min(amount, free)
+    network.temperature = LUASQUARE_FLUID.MixTemperature(network.amount, network.temperature, moved, temperature)
     network.amount = network.amount + moved
     LUASQUARE_FLUID.UpdatePressure(name)
     return moved
@@ -129,8 +156,8 @@ function LUASQUARE_FLUID.TransferFluid(fromName, toName, amount)
     local requested = math.max(tonumber(amount) or 0, 0)
     requested = requested * math.min(fromNetwork.flowMultiplier or 1, toNetwork.flowMultiplier or 1)
     local removed = LUASQUARE_FLUID.RemoveFluid(fromName, requested)
-    local added = LUASQUARE_FLUID.AddFluid(toName, removed)
-    if added < removed then LUASQUARE_FLUID.AddFluid(fromName, removed - added) end
+    local added = LUASQUARE_FLUID.AddFluid(toName, removed, fromNetwork.temperature)
+    if added < removed then LUASQUARE_FLUID.AddFluid(fromName, removed - added, fromNetwork.temperature) end
     return added
 end
 
@@ -152,7 +179,17 @@ function LUASQUARE_FLUID.UpdatePressure(name)
     if not network then return 0 end
     if network.type ~= LUASQUARE_FLUID.TYPE_STEAMLINE then return network.pressure or 0 end
 
-    network.pressure = math.max(network.amount / network.maxAmount, 0) * network.maxPressure
+    if network.fluidType == 'steam' then
+        local referenceK = LUASQUARE_FLUID.ReferenceSteamTemperature + 273.15
+        local temperatureK = math.max((network.temperature or LUASQUARE_FLUID.ReferenceSteamTemperature) + 273.15, 1)
+        network.pressure = math.max(network.amount / math.max(network.volume or network.maxAmount, 0.0001), 0) *
+            (temperatureK / referenceK) * (network.pressureFactor or 1)
+    else
+        local fillPressure = math.max(network.amount / math.max(network.maxAmount, 0.0001), 0) * network.maxPressure
+        local thermalPressure = math.max((network.temperature or 20) - 100, 0) * (LUASQUARE_FLUID.WaterThermalPressureFactor or 0)
+        network.pressure = fillPressure + thermalPressure
+    end
+
     return network.pressure
 end
 
@@ -175,6 +212,7 @@ function LUASQUARE_FLUID.SetTemperature(name, temperature)
     end
 
     network.temperature = tonumber(temperature) or network.temperature or 20
+    LUASQUARE_FLUID.UpdatePressure(name)
     return network.temperature
 end
 
@@ -235,6 +273,11 @@ function LUASQUARE_FLUID.UpdateNetwork(name, dt)
 
     if network.ruptured and network.ruptureLeakRate > 0 then
         LUASQUARE_FLUID.RemoveFluid(name, network.ruptureLeakRate * dt)
+    end
+
+    if network.thermalLossRate and network.thermalLossRate > 0 then
+        local ambient = network.ambientTemperature or 20
+        network.temperature = network.temperature + (ambient - network.temperature) * math.Clamp(network.thermalLossRate * dt, 0, 1)
     end
 
     if network.type == LUASQUARE_FLUID.TYPE_STEAMLINE then
