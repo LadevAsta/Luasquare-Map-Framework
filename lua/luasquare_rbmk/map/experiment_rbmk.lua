@@ -347,13 +347,14 @@ LUASQUARE_GAUGE.BindGauge('gauge_rpvpressure', function()
 end)
 
 -- =========================================
--- 3D2D PANEL DISPLAYS
+-- 3D2D PANEL DISPLAYS FUNCTION
 -- =========================================
 
+-- width/height are Hammer units. At scale 0.1, a 44x22 HU panel gets a 440x220 pixel canvas.
 local MAPDEF_panelScale = 0.1
 
 local function MAPDEF_panelBase(title, pos, width, height, angle)
-    local compact = height <= 160
+    local compact = height <= 16
     return {
         pos = pos,
         ang = angle,
@@ -408,9 +409,13 @@ local function MAPDEF_valveColumn(label, valveName)
     }
 end
 
+-- =========================================
+-- 3D2D PANEL DISPLAYS REGISTER
+-- =========================================
+
 LUASQUARE_3D2D.RegisterDisplay('aux_flow_status_panel', MAPDEF_panelBase(
     'AUX FLOW STATUS',
-    Vector(91, -535, 598), 440, 220,
+    Vector(91, -535, 598), 44, 22,
     Angle(0, -90, 90)
 ))
 LUASQUARE_3D2D.BindDisplay('aux_flow_status_panel', function()
@@ -429,7 +434,7 @@ end)
 
 LUASQUARE_3D2D.RegisterDisplay('rpv_status_panel', MAPDEF_panelBase(
     'RPV STATUS',
-    Vector(91, -461, 598), 240, 220,
+    Vector(91, -461, 598), 24, 22,
     Angle(0, -90, 90)
 ))
 LUASQUARE_3D2D.BindDisplay('rpv_status_panel', function()
@@ -440,11 +445,11 @@ LUASQUARE_3D2D.BindDisplay('rpv_status_panel', function()
 
     return {
         { type = 'value', label = 'MWt', value = RBMK.LastThermalMW or 0, decimals = 0 },
-        { type = 'value', label = 'RPV P', value = RBMK.RPVPressure or 0, decimals = 1, unit = 'bar', warn = pressureFraction > 0.85 },
-        { type = 'bar', label = 'H2O', fraction = waterFraction, height = 5 },
-        { type = 'value', label = 'H2O T', value = RBMK.WaterTemperature or 0, decimals = 0, unit = 'C' },
-        { type = 'value', label = 'STM T', value = RBMK.SteamTemperature or 0, decimals = 0, unit = 'C' },
-        { type = 'value', label = 'COOL', value = (RBMK.LastCoolingEfficiency or 0) * 100, decimals = 0, unit = '%' }
+        { type = 'value', label = 'RPV Pressure', value = RBMK.RPVPressure or 0, decimals = 1, unit = 'bar', warn = pressureFraction > 0.85 },
+        { type = 'bar', label = 'Water Level', fraction = waterFraction, height = 5 },
+        { type = 'value', label = 'Water Temp.', value = RBMK.WaterTemperature or 0, decimals = 0, unit = 'C' },
+        { type = 'value', label = 'Steam Temp.', value = RBMK.SteamTemperature or 0, decimals = 0, unit = 'C' },
+        { type = 'value', label = 'Cooling Eff.', value = (RBMK.LastCoolingEfficiency or 0) * 100, decimals = 0, unit = '%' }
     }
 end)
 

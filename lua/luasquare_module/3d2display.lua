@@ -8,6 +8,7 @@ LUASQUARE_3D2D.ClientState = LUASQUARE_3D2D.ClientState or { Displays = {} }
 
 LUASQUARE_3D2D.TickInterval = LUASQUARE_3D2D.TickInterval or 0.1
 LUASQUARE_3D2D.NetMessage = 'LUASQUARE_3D2D_State'
+LUASQUARE_3D2D.DefaultScale = LUASQUARE_3D2D.DefaultScale or 0.1
 
 local function copyColor(value, fallback)
     if not value then
@@ -27,6 +28,99 @@ end
 local function copyAngle(value)
     if not value then return nil end
     return Angle(value.p or 0, value.y or 0, value.r or 0)
+end
+
+local function roundPositive(value, fallback)
+    value = tonumber(value)
+    if not value or value <= 0 then value = fallback or 1 end
+    return math.max(math.floor(value + 0.5), 1)
+end
+
+local function firstNumber(source, keys)
+    for _, key in ipairs(keys) do
+        if source[key] ~= nil then
+            local value = tonumber(source[key])
+            if value and value > 0 then return value end
+        end
+    end
+
+    return nil
+end
+
+local function resolveDisplayMetrics(data)
+    local unitWidth = firstNumber(data, {'unitWidth', 'hammerWidth', 'panelWidth', 'worldWidth', 'width'}) or 25.6
+    local unitHeight = firstNumber(data, {'unitHeight', 'hammerHeight', 'panelHeight', 'worldHeight', 'height'}) or 12.8
+    local desiredScale = firstNumber(data, {'pixelScale', 'scale'}) or LUASQUARE_3D2D.DefaultScale or 0.1
+    local resolutionWidth = firstNumber(data, {'resolutionWidth', 'pixelWidth', 'canvasWidth'})
+    local resolutionHeight = firstNumber(data, {'resolutionHeight', 'pixelHeight', 'canvasHeight'})
+    local adjustedResolution = false
+
+    if data.legacyPixelSize then
+        resolutionWidth = roundPositive(data.width, 256)
+        resolutionHeight = roundPositive(data.height, 128)
+        return {
+            unitWidth = resolutionWidth * desiredScale,
+            unitHeight = resolutionHeight * desiredScale,
+            width = resolutionWidth,
+            height = resolutionHeight,
+            scale = desiredScale,
+            desiredScale = desiredScale
+        }
+    end
+
+    if resolutionWidth and resolutionHeight then
+        local scale = unitWidth / resolutionWidth
+        local expectedHeight = roundPositive(unitHeight / scale, resolutionHeight)
+        if math.abs(expectedHeight - resolutionHeight) > 1 then
+            resolutionHeight = expectedHeight
+            adjustedResolution = true
+        else
+            resolutionHeight = roundPositive(resolutionHeight, 128)
+        end
+
+        return {
+            unitWidth = unitWidth,
+            unitHeight = unitHeight,
+            width = roundPositive(resolutionWidth, 256),
+            height = resolutionHeight,
+            scale = scale,
+            desiredScale = desiredScale,
+            adjustedResolution = adjustedResolution
+        }
+    end
+
+    if resolutionWidth then
+        local scale = unitWidth / resolutionWidth
+        return {
+            unitWidth = unitWidth,
+            unitHeight = unitHeight,
+            width = roundPositive(resolutionWidth, 256),
+            height = roundPositive(unitHeight / scale, 128),
+            scale = scale,
+            desiredScale = desiredScale
+        }
+    end
+
+    if resolutionHeight then
+        local scale = unitHeight / resolutionHeight
+        return {
+            unitWidth = unitWidth,
+            unitHeight = unitHeight,
+            width = roundPositive(unitWidth / scale, 256),
+            height = roundPositive(resolutionHeight, 128),
+            scale = scale,
+            desiredScale = desiredScale
+        }
+    end
+
+    return {
+        unitWidth = unitWidth,
+        unitHeight = unitHeight,
+        width = roundPositive(unitWidth / desiredScale, 256),
+        height = roundPositive(unitHeight / desiredScale, 128),
+        scale = desiredScale,
+        desiredScale = desiredScale
+    }
 end
 
 local function shallowCopyAllowed(source, keys)
@@ -88,7 +182,9 @@ local function sanitizeDisplay(name, display)
     local out = {
         name = name,
         title = display.title,
-        scale = tonumber(display.scale) or 0.1,
+        scale = tonumber(display.scale) or LUASQUARE_3D2D.DefaultScale or 0.1,
+        unitWidth = tonumber(display.unitWidth) or 25.6,
+        unitHeight = tonumber(display.unitHeight) or 12.8,
         width = tonumber(display.width) or 256,
         height = tonumber(display.height) or 128,
         padding = tonumber(display.padding) or 8,
@@ -138,6 +234,11 @@ if SERVER then
             return
         end
 
+        local metrics = resolveDisplayMetrics(data)
+        if metrics.adjustedResolution then
+            print('[LUASQUARE_3D2D] Adjusted resolution height for ' .. tostring(name) .. ' to preserve Hammer-unit panel size.')
+        end
+
         LUASQUARE_3D2D.Displays[name] = {
             entity = data.entity,
             pos = data.pos,
@@ -145,9 +246,12 @@ if SERVER then
             ang = data.ang or data.angle,
             title = data.title,
             content = data.content or data.lines or '',
-            scale = data.scale,
-            width = data.width,
-            height = data.height,
+            scale = metrics.scale,
+            desiredScale = metrics.desiredScale,
+            unitWidth = metrics.unitWidth,
+            unitHeight = metrics.unitHeight,
+            width = metrics.width,
+            height = metrics.height,
             padding = data.padding,
             lineHeight = data.lineHeight,
             titleHeight = data.titleHeight,
@@ -463,9 +567,11 @@ end
 -- LUASQUARE_3D2D.RegisterDisplay('rpv_status', {
 --     pos = Vector(0, 0, 128),
 --     ang = Angle(0, 90, 90),
+--     -- width/height are Hammer units. scale is Hammer units per canvas pixel.
+--     -- Use resolutionWidth/resolutionHeight when you need to override the derived pixel canvas.
 --     scale = 0.1,
---     width = 320,
---     height = 150,
+--     width = 32,
+--     height = 15,
 --     title = 'RPV STATUS'
 -- })
 -- LUASQUARE_3D2D.BindDisplay('rpv_status', function()
@@ -480,8 +586,8 @@ end
 -- LUASQUARE_3D2D.RegisterDisplay('sync_status', {
 --     pos = Vector(0, 64, 128),
 --     ang = Angle(0, 90, 90),
---     width = 340,
---     height = 170,
+--     width = 34,
+--     height = 17,
 --     title = 'GENERATOR SYNC'
 -- })
 -- LUASQUARE_3D2D.BindDisplay('sync_status', function()
