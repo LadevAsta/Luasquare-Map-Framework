@@ -1,0 +1,22 @@
+$bodygroup "studio"
+{
+	studio "annui16x8_src.smd"
+}
+
+$origin 0 0 0 -90
+
+$collisionmodel "annui16x8_src_phys.smd"
+{
+	$automass
+	$concave
+	$remove2d
+	$maxconvexpieces 1000000
+}
+
+$sequence ref "annui16x8_src.smd"
+
+$surfaceprop "glass"
+
+$contents "solid"
+
+$cdmaterials "models\luasquare\ann\"

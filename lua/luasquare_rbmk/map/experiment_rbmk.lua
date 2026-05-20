@@ -16,6 +16,7 @@ return end
 
 include('luasquare_module/seg7display.lua') -- Pseudo 7-Segments numeric display
 include('luasquare_module/3d2display.lua') -- 3D2D Display
+include('luasquare_module/annunciator/annunciator.lua') -- Alarm annunciator system
 include('luasquare_module/gaugedisplay.lua') -- Gauge display
 include('luasquare_module/keypad_controller.lua') -- Numeric Keypads
 include('luasquare_module/rod_selector.lua') -- RBMK Control Rod Selector
@@ -35,6 +36,7 @@ RBMK.TickInterval = 0.1
 LUASQUARE_SEG7.TickInterval = 0.1
 LUASQUARE_GAUGE.TickInterval = 0.2
 LUASQUARE_3D2D.TickInterval = 0.2
+LUASQUARE_ANNUNCIATOR.TickInterval = 0.5
 LUASQUARE_FLUID.TickInterval = 0.1
 LUASQUARE_VALVE.TickInterval = 0.1
 LUASQUARE_PUMP.TickInterval = 0.1
@@ -494,6 +496,45 @@ LUASQUARE_KEYPAD.RegisterKeypad('aprctrl',
 )
 
 -- =========================================
+-- ANNUNCIATOR FUNCTION
+-- =========================================
+
+-- Nothing yet
+
+-- =========================================
+-- ANNUNCIATOR
+-- =========================================
+
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('rpv_high_pressure', {
+    label = 'RPV HIGH PRESSURE',
+    soundEntity = 'ann_rpv_high_pressure_snd',
+    getter = function()
+        return RBMK.RPVPressure > 60
+    end
+})
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('fuel_channel_leak', {
+    label = 'FUEL CHANNEL LEAK',
+    soundWav = 'bms_objects/alarms/alarm14.wav',
+    soundDistance = 5000,
+    soundVolume = 10,
+    soundPitch = 100,
+    getter = function()
+        local leakCount = RBMK.GetFuelChannelLeakCount()
+        if leakCount <= 0 then return false end
+
+        local lastLeak = RBMK.EventState and RBMK.EventState.LastFuelLeak
+        if lastLeak then return true, string.format('%d CHANNEL(S), LAST %d,%d', leakCount, lastLeak.x or 0, lastLeak.y or 0) end
+        return true, string.format('%d CHANNEL(S)', leakCount)
+    end
+})
+LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('reactor_panel', {
+    indicators = {
+        rpv_high_pressure = 'ann_rpv_high_pressure',
+        fuel_channel_leak = 'ann_fuel_channel_leak'
+    }
+})
+
+-- =========================================
 -- END DEFINITION
 -- =========================================
 
@@ -502,6 +543,7 @@ RBMK.Start()
 LUASQUARE_SEG7.Start()
 LUASQUARE_GAUGE.Start()
 LUASQUARE_3D2D.Start()
+LUASQUARE_ANNUNCIATOR.Start()
 LUASQUARE_FLUID.Start()
 LUASQUARE_VALVE.Start()
 LUASQUARE_PUMP.Start()

@@ -1,0 +1,18 @@
+version 1
+nodes
+0 "root" -1
+end
+skeleton
+time 0
+0 0 0 0 0 0 0
+end
+triangles
+fuel_channel_leak
+0 -0.5 8 4 -1 0 0 17 79 1 0 1
+0 -0.5 8 -4 -1 0 0 17 78 1 0 1
+0 -0.5 -8 -4 -1 0 0 18 78 1 0 1
+fuel_channel_leak
+0 -0.5 -8 4 -1 0 0 18 79 1 0 1
+0 -0.5 8 4 -1 0 0 17 79 1 0 1
+0 -0.5 -8 -4 -1 0 0 18 78 1 0 1
+end

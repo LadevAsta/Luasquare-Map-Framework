@@ -168,12 +168,14 @@ end
 
 function RBMK.GetCoreHeat(x, y)
     local cell = RBMK.GetCell(x, y)
+    if not cell then return 77777 end
     if cell.type ~= RBMK.CELL_FUEL then return 0 end
     return cell.coreHeat or 0
 end
 
 function RBMK.GetSkinHeat(x, y)
     local cell = RBMK.GetCell(x, y)
+    if not cell then return 77777 end
     if cell.type ~= RBMK.CELL_FUEL then return 0 end
     return cell.skinHeat or 0
 end
@@ -523,4 +525,18 @@ function RBMK.UpdateTelemetry()
     if validCells > 0 then RBMK.AverageHeat = totalHeat / validCells end
     RBMK.MaxHeat = maxHeat
     RBMK.UpdateRPVPressure()
+end
+
+function RBMK.GetFuelChannelLeakCount()
+    local count = 0
+    if not RBMK or not RBMK.Matrix then return count end
+
+    for x = 1, RBMK.Width do
+        for y = 1, RBMK.Height do
+            local cell = RBMK.GetCell(x, y)
+            if cell and cell.type == RBMK.CELL_FUEL and cell.leaking then count = count + 1 end
+        end
+    end
+
+    return count
 end

@@ -1,0 +1,15 @@
+UnlitGeneric
+{
+    "$basetexture" "models/luasquare/ann/fuel_channel_leak"
+    "$frame" "0"
+
+    "Proxies"
+    {
+        "AnimatedTexture"
+        {
+            "animatedtexturevar" "$basetexture"
+            "animatedtextureframenumvar" "$frame"
+            "animatedtextureframerate" "4"
+        }
+    }
+}

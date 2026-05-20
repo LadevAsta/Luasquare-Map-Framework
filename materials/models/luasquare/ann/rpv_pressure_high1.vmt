@@ -1,0 +1,15 @@
+UnlitGeneric
+{
+    "$basetexture" "models/luasquare/ann/rpv_pressure_high"
+    "$frame" "0"
+
+    "Proxies"
+    {
+        "AnimatedTexture"
+        {
+            "animatedtexturevar" "$basetexture"
+            "animatedtextureframenumvar" "$frame"
+            "animatedtextureframerate" "4"
+        }
+    }
+}
