@@ -499,7 +499,10 @@ LUASQUARE_KEYPAD.RegisterKeypad('aprctrl',
 -- ANNUNCIATOR FUNCTION
 -- =========================================
 
--- Nothing yet
+local MAPDEF_annunciatorCorePos = Vector(91, -498, 598)
+
+LUASQUARE_ANNUNCIATOR.SetCorePosition(MAPDEF_annunciatorCorePos)
+LUASQUARE_ANNUNCIATOR.SetUnmuteCue('buttons/button17.wav', 90, 1, 100)
 
 -- =========================================
 -- ANNUNCIATOR
@@ -515,9 +518,10 @@ LUASQUARE_ANNUNCIATOR.RegisterAlarm('rpv_high_pressure', {
 LUASQUARE_ANNUNCIATOR.RegisterAlarm('fuel_channel_leak', {
     label = 'FUEL CHANNEL LEAK',
     soundWav = 'bms_objects/alarms/alarm14.wav',
-    soundDistance = 5000,
+    soundDistance = 500,
     soundVolume = 10,
     soundPitch = 100,
+    ackStopsSound = false,
     getter = function()
         local leakCount = RBMK.GetFuelChannelLeakCount()
         if leakCount <= 0 then return false end

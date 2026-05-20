@@ -10,8 +10,16 @@ LUASQUARE_ANNUNCIATOR.MissingEntities = LUASQUARE_ANNUNCIATOR.MissingEntities or
 
 LUASQUARE_ANNUNCIATOR.TickInterval = LUASQUARE_ANNUNCIATOR.TickInterval or 0.1
 LUASQUARE_ANNUNCIATOR.DefaultMuteDuration = LUASQUARE_ANNUNCIATOR.DefaultMuteDuration or 60
+LUASQUARE_ANNUNCIATOR.DefaultReAlarmDelay = LUASQUARE_ANNUNCIATOR.DefaultReAlarmDelay or 180
+LUASQUARE_ANNUNCIATOR.UnmuteCueLeadTime = LUASQUARE_ANNUNCIATOR.UnmuteCueLeadTime or 1
+LUASQUARE_ANNUNCIATOR.UnmuteCueSound = LUASQUARE_ANNUNCIATOR.UnmuteCueSound or nil
+LUASQUARE_ANNUNCIATOR.UnmuteCueDistance = LUASQUARE_ANNUNCIATOR.UnmuteCueDistance or 75
+LUASQUARE_ANNUNCIATOR.UnmuteCueVolume = LUASQUARE_ANNUNCIATOR.UnmuteCueVolume or 1
+LUASQUARE_ANNUNCIATOR.UnmuteCuePitch = LUASQUARE_ANNUNCIATOR.UnmuteCuePitch or 100
+LUASQUARE_ANNUNCIATOR.CorePos = LUASQUARE_ANNUNCIATOR.CorePos or nil
 LUASQUARE_ANNUNCIATOR.MutedUntil = LUASQUARE_ANNUNCIATOR.MutedUntil or 0
 LUASQUARE_ANNUNCIATOR.WasMuted = LUASQUARE_ANNUNCIATOR.WasMuted or false
+LUASQUARE_ANNUNCIATOR.MuteCuePlayed = LUASQUARE_ANNUNCIATOR.MuteCuePlayed or false
 
 LUASQUARE_ANNUNCIATOR.STATE_OFF = 'off'
 LUASQUARE_ANNUNCIATOR.STATE_FAST_FLASH = 'fast_flash'
@@ -109,6 +117,32 @@ function LUASQUARE_ANNUNCIATOR.FireTarget(name, input, value)
     return true
 end
 
+function LUASQUARE_ANNUNCIATOR.SetCorePosition(pos)
+    LUASQUARE_ANNUNCIATOR.CorePos = pos
+end
+
+function LUASQUARE_ANNUNCIATOR.SetUnmuteCue(soundName, distance, volume, pitch)
+    LUASQUARE_ANNUNCIATOR.UnmuteCueSound = soundName
+    if distance ~= nil then LUASQUARE_ANNUNCIATOR.UnmuteCueDistance = tonumber(distance) or LUASQUARE_ANNUNCIATOR.UnmuteCueDistance end
+    if volume ~= nil then LUASQUARE_ANNUNCIATOR.UnmuteCueVolume = tonumber(volume) or LUASQUARE_ANNUNCIATOR.UnmuteCueVolume end
+    if pitch ~= nil then LUASQUARE_ANNUNCIATOR.UnmuteCuePitch = tonumber(pitch) or LUASQUARE_ANNUNCIATOR.UnmuteCuePitch end
+end
+
+function LUASQUARE_ANNUNCIATOR.PlayCoreSound(soundName, distance, volume, pitch)
+    if not soundName then return false end
+    local pos = LUASQUARE_ANNUNCIATOR.CorePos
+    if not pos then
+        if not LUASQUARE_ANNUNCIATOR.MissingCoreSoundOrigin then
+            LUASQUARE_ANNUNCIATOR.MissingCoreSoundOrigin = true
+            print('[LUASQUARE_ANNUNCIATOR] Missing core position for sound: ' .. tostring(soundName))
+        end
+        return false
+    end
+
+    sound.Play(soundName, pos, tonumber(distance) or LUASQUARE_ANNUNCIATOR.UnmuteCueDistance, tonumber(pitch) or LUASQUARE_ANNUNCIATOR.UnmuteCuePitch, tonumber(volume) or LUASQUARE_ANNUNCIATOR.UnmuteCueVolume)
+    return true
+end
+
 function LUASQUARE_ANNUNCIATOR.ApplyPropDisplaysToAlarm(name)
     local alarm = LUASQUARE_ANNUNCIATOR.Alarms[name]
     if not alarm then return end
@@ -150,13 +184,18 @@ function LUASQUARE_ANNUNCIATOR.RegisterAlarm(name, data)
         soundPitch = tonumber(data.soundPitch or data.pitch) or 100,
         soundVolume = tonumber(data.soundVolume or data.volume) or 1,
         soundPos = data.soundPos or data.pos,
+        useCoreSoundOrigin = (data.useCoreSoundOrigin or data.soundFromCore or data.coreSound) and true or false,
+        ackStopsSound = data.ackStopsSound ~= false,
+        reAlarmDelay = tonumber(data.reAlarmDelay) or LUASQUARE_ANNUNCIATOR.DefaultReAlarmDelay,
         resolvedSound = data.resolvedSound or data.resolvedSoundWav,
         resolvedSoundEntity = data.resolvedSoundEntity,
         onTrip = data.onTrip,
         onClear = data.onClear,
         onStateChanged = data.onStateChanged,
         getter = data.getter or data.condition,
-        message = data.message
+        message = data.message,
+        acknowledgedTime = nil,
+        testActive = false
     }
 
     if LUASQUARE_ANNUNCIATOR.Alarms[name].getter then
@@ -214,6 +253,8 @@ end
 -- STATE
 -- =========================================
 function LUASQUARE_ANNUNCIATOR.GetDisplayState(alarm)
+    if alarm.testActive then return LUASQUARE_ANNUNCIATOR.STATE_FAST_FLASH end
+
     if alarm.active then
         if alarm.acknowledged then return LUASQUARE_ANNUNCIATOR.STATE_ON end
         return LUASQUARE_ANNUNCIATOR.STATE_FAST_FLASH
@@ -244,6 +285,10 @@ function LUASQUARE_ANNUNCIATOR.PlaySound(alarm, soundName, soundEntity)
 
     if soundEntity then
         return LUASQUARE_ANNUNCIATOR.FireTarget(soundEntity, 'PlaySound')
+    end
+
+    if alarm.useCoreSoundOrigin then
+        return LUASQUARE_ANNUNCIATOR.PlayCoreSound(soundName, alarm.soundLevel, alarm.soundVolume, alarm.soundPitch)
     end
 
     local emitter
@@ -287,9 +332,18 @@ function LUASQUARE_ANNUNCIATOR.IsMuted()
 end
 
 function LUASQUARE_ANNUNCIATOR.ShouldSoundAlarm(alarm)
-    if not alarm.active then return false end
-    if alarm.acknowledged then return false end
+    if not alarm.active and not alarm.testActive then return false end
     if LUASQUARE_ANNUNCIATOR.IsMuted() then return false end
+    if alarm.testActive then return true end
+    if alarm.acknowledged and alarm.ackStopsSound then return false end
+    return true
+end
+
+function LUASQUARE_ANNUNCIATOR.WillSoundAfterMute(alarm)
+    if not alarm.active and not alarm.testActive then return false end
+    if not alarm.sound and not alarm.soundEntity then return false end
+    if alarm.testActive then return true end
+    if alarm.acknowledged and alarm.ackStopsSound then return false end
     return true
 end
 
@@ -338,6 +392,7 @@ function LUASQUARE_ANNUNCIATOR.SetAlarm(name, active, message)
     alarm.active = active
     if active then
         alarm.acknowledged = false
+        alarm.acknowledgedTime = nil
         alarm.resolved = false
         alarm.tripTime = getTime()
         if alarm.onTrip then
@@ -367,7 +422,7 @@ end
 function LUASQUARE_ANNUNCIATOR.GetActiveCount()
     local count = 0
     for _, alarm in pairs(LUASQUARE_ANNUNCIATOR.Alarms) do
-        if alarm.active then count = count + 1 end
+        if alarm.active or alarm.testActive then count = count + 1 end
     end
     return count
 end
@@ -375,7 +430,7 @@ end
 function LUASQUARE_ANNUNCIATOR.GetUnacknowledgedCount()
     local count = 0
     for _, alarm in pairs(LUASQUARE_ANNUNCIATOR.Alarms) do
-        if alarm.active and not alarm.acknowledged then count = count + 1 end
+        if (alarm.active or alarm.testActive) and not alarm.acknowledged then count = count + 1 end
     end
     return count
 end
@@ -389,6 +444,7 @@ function LUASQUARE_ANNUNCIATOR.GetState()
             group = alarm.group,
             priority = alarm.priority,
             active = alarm.active,
+            testActive = alarm.testActive,
             acknowledged = alarm.acknowledged,
             resolved = alarm.resolved,
             state = alarm.state,
@@ -404,7 +460,19 @@ end
 -- =========================================
 function LUASQUARE_ANNUNCIATOR.Acknowledge()
     for name, alarm in pairs(LUASQUARE_ANNUNCIATOR.Alarms) do
-        if alarm.active then alarm.acknowledged = true end
+        if alarm.testActive then
+            alarm.testActive = false
+            if alarm.active then
+                alarm.acknowledged = true
+                alarm.acknowledgedTime = getTime()
+            else
+                LUASQUARE_ANNUNCIATOR.StopSound(alarm, alarm.sound, alarm.soundEntity)
+                alarm.soundPlaying = false
+            end
+        elseif alarm.active then
+            alarm.acknowledged = true
+            alarm.acknowledgedTime = getTime()
+        end
         LUASQUARE_ANNUNCIATOR.RefreshAlarmState(name)
     end
 end
@@ -424,6 +492,7 @@ end
 function LUASQUARE_ANNUNCIATOR.Mute(duration)
     duration = tonumber(duration) or LUASQUARE_ANNUNCIATOR.DefaultMuteDuration
     LUASQUARE_ANNUNCIATOR.MutedUntil = getTime() + math.max(duration, 0)
+    LUASQUARE_ANNUNCIATOR.MuteCuePlayed = false
 
     for name, alarm in pairs(LUASQUARE_ANNUNCIATOR.Alarms) do
         LUASQUARE_ANNUNCIATOR.StopSound(alarm, alarm.sound, alarm.soundEntity)
@@ -432,21 +501,67 @@ function LUASQUARE_ANNUNCIATOR.Mute(duration)
     end
 end
 
+function LUASQUARE_ANNUNCIATOR.TestAll()
+    LUASQUARE_ANNUNCIATOR.MutedUntil = 0
+    LUASQUARE_ANNUNCIATOR.MuteCuePlayed = false
+    for name, alarm in pairs(LUASQUARE_ANNUNCIATOR.Alarms) do
+        alarm.testActive = true
+        alarm.acknowledged = false
+        alarm.acknowledgedTime = nil
+        LUASQUARE_ANNUNCIATOR.RefreshAlarmState(name)
+    end
+end
+
+LUASQUARE_ANNUNCIATOR.Test = LUASQUARE_ANNUNCIATOR.TestAll
+
 -- =========================================
 -- UPDATE LOOP
 -- =========================================
 function LUASQUARE_ANNUNCIATOR.UpdateMute()
     local muted = LUASQUARE_ANNUNCIATOR.IsMuted()
-    if LUASQUARE_ANNUNCIATOR.WasMuted and not muted and LUASQUARE_ANNUNCIATOR.GetUnacknowledgedCount() > 0 then
-        for _, alarm in pairs(LUASQUARE_ANNUNCIATOR.Alarms) do
-            if alarm.active and not alarm.acknowledged then
-                LUASQUARE_ANNUNCIATOR.UpdateAlarmSound(alarm)
-            end
+    if muted and not LUASQUARE_ANNUNCIATOR.MuteCuePlayed and LUASQUARE_ANNUNCIATOR.UnmuteCueSound then
+        local remaining = (LUASQUARE_ANNUNCIATOR.MutedUntil or 0) - getTime()
+        if remaining <= LUASQUARE_ANNUNCIATOR.UnmuteCueLeadTime and LUASQUARE_ANNUNCIATOR.HasSoundAfterMute() then
+            LUASQUARE_ANNUNCIATOR.PlayCoreSound(
+                LUASQUARE_ANNUNCIATOR.UnmuteCueSound,
+                LUASQUARE_ANNUNCIATOR.UnmuteCueDistance,
+                LUASQUARE_ANNUNCIATOR.UnmuteCueVolume,
+                LUASQUARE_ANNUNCIATOR.UnmuteCuePitch
+            )
+            LUASQUARE_ANNUNCIATOR.MuteCuePlayed = true
         end
+    end
+
+    if LUASQUARE_ANNUNCIATOR.WasMuted and not muted and LUASQUARE_ANNUNCIATOR.HasSoundAfterMute() then
+        for _, alarm in pairs(LUASQUARE_ANNUNCIATOR.Alarms) do
+            LUASQUARE_ANNUNCIATOR.UpdateAlarmSound(alarm)
+        end
+        LUASQUARE_ANNUNCIATOR.MuteCuePlayed = false
     end
 
     LUASQUARE_ANNUNCIATOR.WasMuted = muted
 end
+
+function LUASQUARE_ANNUNCIATOR.HasSoundAfterMute()
+    for _, alarm in pairs(LUASQUARE_ANNUNCIATOR.Alarms) do
+        if LUASQUARE_ANNUNCIATOR.WillSoundAfterMute(alarm) then return true end
+    end
+
+    return false
+end
+
+function LUASQUARE_ANNUNCIATOR.UpdateReAlarm()
+    local now = getTime()
+    for name, alarm in pairs(LUASQUARE_ANNUNCIATOR.Alarms) do
+        if alarm.active and alarm.acknowledged and alarm.reAlarmDelay and alarm.reAlarmDelay > 0 and
+        now >= (alarm.acknowledgedTime or now) + alarm.reAlarmDelay then
+            alarm.acknowledged = false
+            alarm.acknowledgedTime = nil
+            LUASQUARE_ANNUNCIATOR.RefreshAlarmState(name)
+        end
+    end
+end
+
 
 function LUASQUARE_ANNUNCIATOR.UpdateAll()
     for alarmName, getter in pairs(LUASQUARE_ANNUNCIATOR.Bindings) do
@@ -460,6 +575,7 @@ function LUASQUARE_ANNUNCIATOR.UpdateAll()
     end
 
     LUASQUARE_ANNUNCIATOR.UpdateMute()
+    LUASQUARE_ANNUNCIATOR.UpdateReAlarm()
 end
 
 function LUASQUARE_ANNUNCIATOR.Start()
@@ -483,6 +599,8 @@ print('[LUASQUARE_ANNUNCIATOR] Loaded')
 -- EXAMPLES
 -- =========================================
 -- include('luasquare_module/annunciator/annunciator.lua')
+-- LUASQUARE_ANNUNCIATOR.SetCorePosition(Vector(0, 0, 128))
+-- LUASQUARE_ANNUNCIATOR.SetUnmuteCue('buttons/button17.wav', 90, 1, 100)
 --
 -- LUASQUARE_ANNUNCIATOR.RegisterAlarm('rpv_high_pressure', {
 --     label = 'RPV HIGH PRESS',
@@ -490,6 +608,7 @@ print('[LUASQUARE_ANNUNCIATOR] Loaded')
 --     soundDistance = 90,
 --     soundVolume = 1,
 --     soundPitch = 100,
+--     -- useCoreSoundOrigin = true can be used for alarms with no indicator prop.
 --     getter = function()
 --         return RBMK.RPVPressure > 60
 --     end
@@ -504,5 +623,6 @@ print('[LUASQUARE_ANNUNCIATOR] Loaded')
 -- LUASQUARE_ANNUNCIATOR.Acknowledge()
 -- LUASQUARE_ANNUNCIATOR.Mute()
 -- LUASQUARE_ANNUNCIATOR.Reset()
+-- LUASQUARE_ANNUNCIATOR.TestAll()
 --
 -- LUASQUARE_ANNUNCIATOR.Start()
