@@ -230,7 +230,7 @@ LUASQUARE_SEG7.RegisterDisplay('reactor_mwth', {
     'reactor_mwth_4'
 })
 LUASQUARE_SEG7.BindDisplay('reactor_mwth', function()
-    return math.floor(RBMK.LastThermalMW)
+    return math.floor(RBMK.LastThermalMW + RBMK.LastFlashBoilMW)
 end)
 
 LUASQUARE_SEG7.RegisterDisplay('f1_coretemp', {
@@ -499,7 +499,7 @@ LUASQUARE_KEYPAD.RegisterKeypad('aprctrl',
 -- ANNUNCIATOR FUNCTION
 -- =========================================
 
-local MAPDEF_annunciatorCorePos = Vector(91, -498, 598)
+local MAPDEF_annunciatorCorePos = Vector(35, -433, 627)
 
 LUASQUARE_ANNUNCIATOR.SetCorePosition(MAPDEF_annunciatorCorePos)
 LUASQUARE_ANNUNCIATOR.SetUnmuteCue('buttons/button17.wav', 90, 1, 100)
@@ -508,17 +508,27 @@ LUASQUARE_ANNUNCIATOR.SetUnmuteCue('buttons/button17.wav', 90, 1, 100)
 -- ANNUNCIATOR
 -- =========================================
 
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('rpv_high_pressure', {
-    label = 'RPV HIGH PRESSURE',
-    soundEntity = 'ann_rpv_high_pressure_snd',
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('rpv_pressure_high', {
+    label = 'RPV PRESSURE HIGH',
+    soundEntity = 'ann_rpv_pressure_high_snd',
     getter = function()
         return RBMK.RPVPressure > 60
+    end
+})
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('rpv_temperature_high', {
+    label = 'RPV TEMPERATURE HIGH',
+    soundWav = 'ambient/alarms/combine_bank_alarm_loop4.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 100,
+    getter = function()
+        return RBMK.MaxHeat > 1100
     end
 })
 LUASQUARE_ANNUNCIATOR.RegisterAlarm('fuel_channel_leak', {
     label = 'FUEL CHANNEL LEAK',
     soundWav = 'bms_objects/alarms/alarm14.wav',
-    soundDistance = 500,
+    soundDistance = 100,
     soundVolume = 10,
     soundPitch = 100,
     ackStopsSound = false,
@@ -533,7 +543,8 @@ LUASQUARE_ANNUNCIATOR.RegisterAlarm('fuel_channel_leak', {
 })
 LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('reactor_panel', {
     indicators = {
-        rpv_high_pressure = 'ann_rpv_high_pressure',
+        rpv_pressure_high = 'ann_rpv_pressure_high',
+        rpv_temperature_high = 'ann_rpv_temperature_high',
         fuel_channel_leak = 'ann_fuel_channel_leak'
     }
 })

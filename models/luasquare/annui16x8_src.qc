@@ -1,7 +1,7 @@
 
-$definevariable NAME "fuel_channel_leak"
+$definevariable NAME "temperature_high"
 
-$modelname "luasquare/ann/fuel_channel_leak"
+$modelname "luasquare/ann/temperature_high"
 
 $include "annui16x8_src_shared.qci"
 

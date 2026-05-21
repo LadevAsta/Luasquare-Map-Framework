@@ -479,6 +479,8 @@ function RBMK.ClearReactorData()
     RBMK.TotalVolume = 0
     RBMK.SteamSpace = 0
     RBMK.MinSteamSpace = 0
+    RBMK.AverageHeat = 0
+    RBMK.MaxHeat = 0
 end
 
 function RBMK.DoPressureEventStep()
