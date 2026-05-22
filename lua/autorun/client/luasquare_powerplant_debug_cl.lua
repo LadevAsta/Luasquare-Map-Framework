@@ -5,7 +5,9 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     Networks = {},
     Pumps = {},
     Valves = {},
-    Condensers = {}
+    Condensers = {},
+    Turbines = {},
+    CoolingTowers = {}
 }
 
 timer.Simple(10, function()
@@ -19,7 +21,9 @@ timer.Simple(10, function()
             Networks = {},
             Pumps = {},
             Valves = {},
-            Condensers = {}
+            Condensers = {},
+            Turbines = {},
+            CoolingTowers = {}
         }
     end)
 
@@ -99,6 +103,38 @@ function LUASQUARE_POWERPLANT.Debug.RenderCondenser(condenser)
     LUASQUARE_POWERPLANT.Debug.DrawWorldText(condenser.pos, table.concat(lines, '\n'), Color(100, 255, 100))
 end
 
+function LUASQUARE_POWERPLANT.Debug.RenderTurbine(turbine)
+    local outputName = turbine.condenserOutput or turbine.output
+    local lines = {
+        'TURB ' .. tostring(turbine.name),
+        tostring(turbine.input) .. ' > ' .. tostring(outputName),
+        'EN ' .. tostring(turbine.enabled) .. ' SYNC ' .. tostring(turbine.synced),
+        string.format('VLV %.1f%% BYP %.1f%%', (turbine.valve or 0) * 100, (turbine.bypassValve or 0) * 100),
+        string.format('RPM %.0f PH %.1f', turbine.rpm or 0, turbine.phase or 0),
+        string.format('RATED %.0f/s MAX %.0f/s', turbine.ratedSteamRate or 0, turbine.maxSteamRate or 0),
+        string.format('S %.1f/s B %.1f/s', turbine.lastSteamUsed or 0, turbine.lastBypassSteam or 0),
+        string.format('HW %.3f/s BHW %.3f/s', turbine.lastCondensateMade or 0, turbine.lastBypassCondensateMade or 0),
+        string.format('MW %.1f VIB %.1f', turbine.lastMW or 0, turbine.vibration or 0)
+    }
+    if turbine.tripped then table.insert(lines, 'TRIP ' .. tostring(turbine.tripReason or '')) end
+    LUASQUARE_POWERPLANT.Debug.DrawWorldText(turbine.pos, table.concat(lines, '\n'), Color(180, 220, 255))
+end
+
+function LUASQUARE_POWERPLANT.Debug.RenderCoolingTower(tower)
+    local lines = {
+        'COOL ' .. tostring(tower.name),
+        'BASIN > ' .. tostring(tower.output),
+        'EN ' .. tostring(tower.enabled),
+        string.format('IN %.2f/s OUT %.2f/s', tower.lastWaterReceived or 0, tower.lastWaterCooled or 0),
+        string.format('B %.1f / %.1f', tower.basinAmount or 0, tower.basinMaxAmount or 0),
+        string.format('BP %.1f / %.1f bar', tower.basinPressure or 0, tower.basinMaxPressure or 0),
+        string.format('BT %.1f C', tower.basinTemperature or 0),
+        string.format('OUT %.1f C', tower.outputTemperature or 0),
+        string.format('HEAT %.1f C-l/s', tower.lastHeatRemoved or 0)
+    }
+    LUASQUARE_POWERPLANT.Debug.DrawWorldText(tower.pos, table.concat(lines, '\n'), Color(120, 220, 255))
+end
+
 function LUASQUARE_POWERPLANT.Debug.Render()
     if not LUASQUARE_POWERPLANT.Debug.GetSetting('debug_enabled', false) then return end
     local state = LUASQUARE_POWERPLANT.Debug.ClientState
@@ -120,6 +156,16 @@ function LUASQUARE_POWERPLANT.Debug.Render()
     if LUASQUARE_POWERPLANT.Debug.GetSetting('show_condensers', true) then
         for _, condenser in ipairs(state.Condensers or {}) do
             LUASQUARE_POWERPLANT.Debug.RenderCondenser(condenser)
+        end
+    end
+    if LUASQUARE_POWERPLANT.Debug.GetSetting('show_turbines', true) then
+        for _, turbine in ipairs(state.Turbines or {}) do
+            LUASQUARE_POWERPLANT.Debug.RenderTurbine(turbine)
+        end
+    end
+    if LUASQUARE_POWERPLANT.Debug.GetSetting('show_coolingtowers', true) then
+        for _, tower in ipairs(state.CoolingTowers or {}) do
+            LUASQUARE_POWERPLANT.Debug.RenderCoolingTower(tower)
         end
     end
 end

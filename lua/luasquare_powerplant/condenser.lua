@@ -23,6 +23,7 @@ function LUASQUARE_CONDENSER.RegisterCondenser(name, data)
         lastSteamUsed = 0,
         lastWaterMade = 0,
         monitorPos = data.monitorPos,
+        monitorTarget = data.monitorTarget or data.monitorEntity or data.monitorName,
         monitorOffset = data.monitorOffset or Vector(0, 0, 0)
     }
 end

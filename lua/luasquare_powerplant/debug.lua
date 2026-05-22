@@ -4,12 +4,14 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     Networks = {},
     Pumps = {},
     Valves = {},
-    Condensers = {}
+    Condensers = {},
+    Turbines = {},
+    CoolingTowers = {}
 }
 
 local function copyMonitorPos(data)
-    if not data or not data.monitorPos then return nil end
-    return data.monitorPos + (data.monitorOffset or Vector(0, 0, 0))
+    if not LUASQUARE_POWERPLANT.ResolveMonitorPos then return nil end
+    return LUASQUARE_POWERPLANT.ResolveMonitorPos(data)
 end
 
 function LUASQUARE_POWERPLANT.Debug.BuildNetworks()
@@ -100,11 +102,77 @@ function LUASQUARE_POWERPLANT.Debug.BuildCondensers()
     end
 end
 
+function LUASQUARE_POWERPLANT.Debug.BuildTurbines()
+    LUASQUARE_POWERPLANT.Debug.ClientState.Turbines = {}
+    if not LUASQUARE_TURBINE then return end
+    for name, turbine in pairs(LUASQUARE_TURBINE.Turbines) do
+        local pos = copyMonitorPos(turbine)
+        if pos then
+            table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.Turbines, {
+                name = name,
+                input = turbine.input,
+                output = turbine.output,
+                condenserOutput = turbine.condenserOutput,
+                bypassCondenserOutput = turbine.bypassCondenserOutput,
+                enabled = turbine.enabled and true or false,
+                tripped = turbine.tripped and true or false,
+                synced = turbine.synced and true or false,
+                autoSync = turbine.autoSync and true or false,
+                valve = turbine.valve or 0,
+                bypassValve = turbine.bypassValve or 0,
+                maxSteamRate = turbine.maxSteamRate or 0,
+                ratedSteamRate = turbine.ratedSteamRate or turbine.maxSteamRate or 0,
+                rpm = turbine.rpm or 0,
+                phase = turbine.phase or 0,
+                vibration = turbine.vibration or 0,
+                lastSteamUsed = turbine.lastSteamUsed or 0,
+                lastBypassSteam = turbine.lastBypassSteam or 0,
+                lastExhaustMade = turbine.lastExhaustMade or 0,
+                lastCondensateMade = turbine.lastCondensateMade or 0,
+                lastBypassCondensateMade = turbine.lastBypassCondensateMade or 0,
+                lastMW = turbine.lastMW or 0,
+                tripReason = turbine.tripReason,
+                pos = pos
+            })
+        end
+    end
+end
+
+function LUASQUARE_POWERPLANT.Debug.BuildCoolingTowers()
+    LUASQUARE_POWERPLANT.Debug.ClientState.CoolingTowers = {}
+    if not LUASQUARE_COOLINGTOWER then return end
+    for name, tower in pairs(LUASQUARE_COOLINGTOWER.CoolingTowers) do
+        local pos = copyMonitorPos(tower)
+        if pos then
+            table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.CoolingTowers, {
+                name = name,
+                input = tower.input,
+                basin = tower.basin,
+                output = tower.output,
+                maxRate = tower.maxRate or 0,
+                enabled = tower.enabled and true or false,
+                outputTemperature = tower.outputTemperature or 0,
+                basinAmount = tower.basinAmount or 0,
+                basinMaxAmount = tower.basinMaxAmount or 0,
+                basinTemperature = tower.basinTemperature or 0,
+                basinPressure = tower.basinPressure or 0,
+                basinMaxPressure = tower.basinMaxPressure or 0,
+                lastWaterReceived = tower.lastWaterReceived or 0,
+                lastWaterCooled = tower.lastWaterCooled or 0,
+                lastHeatRemoved = tower.lastHeatRemoved or 0,
+                pos = pos
+            })
+        end
+    end
+end
+
 function LUASQUARE_POWERPLANT.Debug.Tick()
     LUASQUARE_POWERPLANT.Debug.BuildNetworks()
     LUASQUARE_POWERPLANT.Debug.BuildPumps()
     LUASQUARE_POWERPLANT.Debug.BuildValves()
     LUASQUARE_POWERPLANT.Debug.BuildCondensers()
+    LUASQUARE_POWERPLANT.Debug.BuildTurbines()
+    LUASQUARE_POWERPLANT.Debug.BuildCoolingTowers()
     LUASQUARE_POWERPLANT.Debug.Broadcast()
 end
 

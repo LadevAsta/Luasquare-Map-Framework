@@ -75,6 +75,7 @@ function LUASQUARE_FLUID.RegisterNetwork(name, data)
         ruptureFlowMultiplier = tonumber(data.ruptureFlowMultiplier) or 0.25,
         flowMultiplier = 1,
         monitorPos = data.monitorPos,
+        monitorTarget = data.monitorTarget or data.monitorEntity or data.monitorName,
         monitorOffset = data.monitorOffset or Vector(0, 0, 0)
     }
 

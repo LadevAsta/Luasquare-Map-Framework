@@ -1,7 +1,7 @@
 
-$definevariable NAME "temperature_high"
+$definevariable NAME "turbine_trip"
 
-$modelname "luasquare/ann/temperature_high"
+$modelname "luasquare/ann/turbine_trip"
 
 $include "annui16x8_src_shared.qci"
 

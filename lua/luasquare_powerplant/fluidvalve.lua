@@ -15,6 +15,7 @@ function LUASQUARE_VALVE.RegisterValve(name, data)
         bidirectional = data.bidirectional ~= false,
         lastFlow = 0,
         monitorPos = data.monitorPos,
+        monitorTarget = data.monitorTarget or data.monitorEntity or data.monitorName,
         monitorOffset = data.monitorOffset or Vector(0, 0, 0)
     }
 end

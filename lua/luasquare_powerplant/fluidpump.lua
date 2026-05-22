@@ -26,6 +26,7 @@ function LUASQUARE_PUMP.RegisterPump(name, data)
         flowMultiplier = tonumber(data.flowMultiplier) or 1,
         lastFlow = 0,
         monitorPos = data.monitorPos,
+        monitorTarget = data.monitorTarget or data.monitorEntity or data.monitorName,
         monitorOffset = data.monitorOffset or Vector(0, 0, 0)
     }
 end
@@ -71,7 +72,12 @@ function LUASQUARE_PUMP.GetTargetPressure(target)
     end
 
     local network = LUASQUARE_FLUID and LUASQUARE_FLUID.GetNetwork(target)
-    if not network then return 0 end
+    if not network then
+        if LUASQUARE_COOLINGTOWER and LUASQUARE_COOLINGTOWER.GetCoolingTower(target) then
+            return LUASQUARE_COOLINGTOWER.GetBasinPressure(target)
+        end
+        return 0
+    end
     return network.pressure or 0
 end
 
@@ -79,6 +85,10 @@ function LUASQUARE_PUMP.AddToTarget(target, amount, dischargePressure, temperatu
     if target == 'rbmk' then
         if not RBMK or not RBMK.AddWaterFromPump then return 0 end
         return RBMK.AddWaterFromPump(amount, dischargePressure, temperature)
+    end
+
+    if LUASQUARE_COOLINGTOWER and LUASQUARE_COOLINGTOWER.GetCoolingTower(target) then
+        return LUASQUARE_COOLINGTOWER.AddToBasin(target, amount, temperature)
     end
 
     if not LUASQUARE_FLUID then return 0 end

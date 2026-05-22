@@ -40,6 +40,8 @@ LUASQUARE_ANNUNCIATOR.TickInterval = 0.5
 LUASQUARE_FLUID.TickInterval = 0.1
 LUASQUARE_VALVE.TickInterval = 0.1
 LUASQUARE_PUMP.TickInterval = 0.1
+LUASQUARE_TURBINE.TickInterval = 0.1
+LUASQUARE_COOLINGTOWER.TickInterval = 0.1
 
 -- =========================================
 -- REACTOR SETTINGS
@@ -134,6 +136,7 @@ RBMK.AddInitialWater(85)
 -- =========================================
 
 local MAPDEF_monitorZoffset = 128
+-- Debug monitor positions can be Vector(...) or monitorTarget = 'named_info_target'.
 
 LUASQUARE_FLUID.RegisterNetwork('main_steam', {
     type = LUASQUARE_FLUID.TYPE_STEAMLINE,
@@ -152,7 +155,7 @@ RBMK.SetSteamNetwork('main_steam')
 LUASQUARE_FLUID.RegisterNetwork('feedwater', {
     type = LUASQUARE_FLUID.TYPE_STEAMLINE,
     fluidType = 'water',
-    amount = 0,
+    amount = 100000,
     maxAmount = RBMK.MaxWater,
     hardMaxAmount = RBMK.MaxWater,
     maxPressure = 150,
@@ -160,6 +163,19 @@ LUASQUARE_FLUID.RegisterNetwork('feedwater', {
     thermalLossRate = 0.005,
     serviceRate = 0,
     monitorPos = RBMK.WorldOrigin + Vector(0, 96, 96 + MAPDEF_monitorZoffset)
+})
+
+LUASQUARE_FLUID.RegisterNetwork('turbine_hotwell', {
+    type = LUASQUARE_FLUID.TYPE_STEAMLINE,
+    fluidType = 'water',
+    amount = 0,
+    maxAmount = RBMK.MaxWater,
+    hardMaxAmount = RBMK.MaxWater,
+    maxPressure = 20,
+    temperature = 80,
+    thermalLossRate = 0.01,
+    serviceRate = 0,
+    monitorPos = 'tar_hotwell'
 })
 
 LUASQUARE_FLUID.RegisterNetwork('drain_tank', {
@@ -207,15 +223,54 @@ LUASQUARE_PUMP.RegisterPump('feedwater_pump_b', {
     monitorPos = RBMK.WorldOrigin + Vector(0, 192, 128 + MAPDEF_monitorZoffset)
 })
 
-LUASQUARE_CONDENSER.RegisterCondenser('god_condenser', {
-    input = 'main_steam',
-    output = 'feedwater',
-    ratio = 1600,
-    maxRate = math.huge,
+LUASQUARE_PUMP.RegisterPump('condensate_pump_a1', {
+    source = 'turbine_hotwell',
+    target = 'main_cooling_tower',
+    rate = 1000,
+    headPressure = 150,
+    speedLevels = {0, 0.25, 0.5, 1},
+    speedLevel = 4,
     enabled = true,
-    godMode = true,
+    monitorPos = 'tar_condpump_a1'
+})
+
+LUASQUARE_TURBINE.RegisterTurbine('tg1', {
+    input = 'main_steam',
+    condenserOutput = 'turbine_hotwell',
+    bypassCondenserOutput = 'turbine_hotwell',
+    condenserOutputTemperature = 80,
+    bypassCondenserOutputTemperature = 95,
+    maxSteamRate = 700000,
+    ratedSteamRate = 350000,
+    bypassMaxSteamRate = 700000,
+    valve = 0,
+    bypassValve = 0,
+    enabled = true,
+    autoSync = false,
+    soundEntity = 'tg1_turbine_sound',
+    soundEntity2 = 'tg1_turbine_sound2',
+    soundMinVolume = 1,
+    soundMaxVolume = 10,
+    soundMinPitch = 80,
+    soundMaxPitch = 140,
+    shakeEntity = 'tg1_turbine_shake',
+    shakeMaxAmplitude = 4,
+    shakeMaxFrequency = 80,
+    tripRelay = 'tg1_trip_relay',
+    monitorPos = 'tar_turbine_generator_a'
+})
+
+LUASQUARE_COOLINGTOWER.RegisterCoolingTower('main_cooling_tower', {
+    output = 'feedwater',
+    basinMaxAmount = RBMK.MaxWater,
+    basinMaxPressure = 20,
+    basinTemperature = 40,
+    maxRate = 1000,
+    enabled = true,
     outputTemperature = 20,
-    monitorPos = RBMK.WorldOrigin + Vector(0, 288, 96 + MAPDEF_monitorZoffset)
+    startRelay = 'cooling_tower_on',
+    stopRelay = 'cooling_tower_off',
+    monitorPos = 'tar_coolingtower_a'
 })
 
 -- =========================================
@@ -411,6 +466,20 @@ local function MAPDEF_valveColumn(label, valveName)
     }
 end
 
+local function MAPDEF_coolingTowerColumn(label, towerName)
+    local tower = LUASQUARE_COOLINGTOWER and LUASQUARE_COOLINGTOWER.GetCoolingTower(towerName) or {}
+    local state, color = MAPDEF_powerState(tower.enabled)
+    local basinPercent = 0
+    if tower.basinMaxAmount and tower.basinMaxAmount > 0 then basinPercent = math.Clamp((tower.basinAmount or 0) / tower.basinMaxAmount, 0, 1) * 100 end
+    return {
+        label = label,
+        value = state,
+        sub = string.format('I%.0f O%.0f %.0f%% %.0fC', tower.lastWaterReceived or 0, tower.lastWaterCooled or 0, basinPercent, tower.basinTemperature or 20),
+        color = Color(205, 235, 240),
+        valueColor = color
+    }
+end
+
 -- =========================================
 -- 3D2D PANEL DISPLAYS REGISTER
 -- =========================================
@@ -424,11 +493,29 @@ LUASQUARE_3D2D.BindDisplay('aux_flow_status_panel', function()
     return {
         {
             type = 'columns',
-            height = 150,
+            height = 120,
             columns = {
                 MAPDEF_pumpColumn('FW PUMP A', 'feedwater_pump_a'),
                 MAPDEF_pumpColumn('FW PUMP B', 'feedwater_pump_b'),
                 MAPDEF_valveColumn('DRAIN VLV', 'rpv_drain_valve')
+            }
+        }
+    }
+end)
+
+LUASQUARE_3D2D.RegisterDisplay('condensate_pump_status_panel', MAPDEF_panelBase(
+    'COOLING LOOP',
+    Vector(91, -749, 598), 44, 22,
+    Angle(0, -90, 90)
+))
+LUASQUARE_3D2D.BindDisplay('condensate_pump_status_panel', function()
+    return {
+        {
+            type = 'columns',
+            height = 120,
+            columns = {
+                MAPDEF_pumpColumn('COND PUMP A1', 'condensate_pump_a1'),
+                MAPDEF_coolingTowerColumn('COOLING TWR A', 'main_cooling_tower')
             }
         }
     }
@@ -448,10 +535,30 @@ LUASQUARE_3D2D.BindDisplay('rpv_status_panel', function()
     return {
         { type = 'value', label = 'MWt', value = RBMK.LastThermalMW or 0, decimals = 0 },
         { type = 'value', label = 'RPV Pressure', value = RBMK.RPVPressure or 0, decimals = 1, unit = 'bar', warn = pressureFraction > 0.85 },
+        { type = 'bar', fraction = pressureFraction, height = 5 },
         { type = 'bar', label = 'Water Level', fraction = waterFraction, height = 5 },
         { type = 'value', label = 'Water Temp.', value = RBMK.WaterTemperature or 0, decimals = 0, unit = 'C' },
         { type = 'value', label = 'Steam Temp.', value = RBMK.SteamTemperature or 0, decimals = 0, unit = 'C' },
         { type = 'value', label = 'Cooling Eff.', value = (RBMK.LastCoolingEfficiency or 0) * 100, decimals = 0, unit = '%' }
+    }
+end)
+
+LUASQUARE_3D2D.RegisterDisplay('tg1_status_panel', MAPDEF_panelBase(
+    'TURBINE A',
+    Vector(91, -624, 598), 44, 22,
+    Angle(0, -90, 90)
+))
+LUASQUARE_3D2D.BindDisplay('tg1_status_panel', function()
+    local data = LUASQUARE_TURBINE.GetTurbine('tg1')
+    return {
+        { type = 'value', label = 'RPM', value = data.rpm or 0, decimals = 2 , unit = 'RPM'},
+        { type = 'value', label = 'Turbine Valve', value = data.valve * 100 or 0, decimals = 1 },
+        { type = 'bar', fraction = data.valve, height = 5 },
+        { type = 'value', label = 'Bypass Valve', value = data.bypassValve * 100 or 0, decimals = 1 },
+        { type = 'bar', fraction = data.bypassValve, height = 5 },
+        { type = 'value', label = 'Vibration', value = data.vibration or 0, decimals = 2, unit = '%'},
+        { type = 'bar', fraction = data.vibration / 100, height = 5 },
+        { type = 'value', label = 'Load', value = data.loadMW or 0, decimals = 2 },
     }
 end)
 
@@ -549,6 +656,22 @@ LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('reactor_panel', {
     }
 })
 
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('tg1_trip', {
+    label = 'TURBINE A TRIP',
+    soundWav = 'bms_objects/alarms/alarm4.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 110,
+    getter = function()
+        return LUASQUARE_TURBINE.GetTurbine('tg1').tripped
+    end
+})
+LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('turbine_a_panel', {
+    indicators = {
+        tg1_trip = 'ann_turbine_a_trip'
+    }
+})
+
 -- =========================================
 -- END DEFINITION
 -- =========================================
@@ -563,6 +686,8 @@ LUASQUARE_FLUID.Start()
 LUASQUARE_VALVE.Start()
 LUASQUARE_PUMP.Start()
 LUASQUARE_CONDENSER.Start()
+LUASQUARE_TURBINE.Start()
+LUASQUARE_COOLINGTOWER.Start()
 LUASQUARE_POWERPLANT.Debug.Start()
 
 print('[LUASQUARE RBMK] RBMK Reactor Initialization Finished.')
