@@ -88,7 +88,8 @@ RBMK.RegisterBlowoutValveRange(RBMK.BlowoutValvePrefix, RBMK.BlowoutFallbackValv
 
 RBMK.FuelLeakTemperature = 1500
 RBMK.FuelMeltdownTemperature = 3000
-RBMK.SteamOutletFlowRate = 0.5
+RBMK.SteamOutletFlowRate = 1.2
+RBMK.SteamOutletRatedPressureDelta = 5
 RBMK.SteamOutletOpen = true
 RBMK.FeedwaterInletOpen = true
 RBMK.DrainValveOpen = false
@@ -96,14 +97,14 @@ RBMK.DrainFlowRate = 500
 
 -- Automatic Regulator Rods. These are short control rods inserted from the bottom of Manual Control rod.
 RBMK.AutoRegulatorEnabled = false
-RBMK.AutoRegulatorUsePID = false
+RBMK.AutoRegulatorUsePID = true
 RBMK.AutoRegulatorTargetMW = 0
 -- The length of auto regulator (0.0 - 1.0)
 RBMK.AutoRegulatorMaxInsertion = 0.1
 -- PID
-RBMK.AutoRegulatorKp = 0.00002
-RBMK.AutoRegulatorKi = 0.000001
-RBMK.AutoRegulatorKd = 0.000005
+RBMK.AutoRegulatorKp = 0.0002
+RBMK.AutoRegulatorKi = 0.00001
+RBMK.AutoRegulatorKd = 0.00005
 
 RBMK.CatastrophicFailureRelay = 'explodetest'
 RBMK.FuelLeakRelay = nil
@@ -136,15 +137,17 @@ RBMK.AddInitialWater(85)
 -- =========================================
 
 local MAPDEF_monitorZoffset = 128
+local MAPDEF_feedwaterTargetPercent = 80
+local MAPDEF_hotwellTargetPercent = 35
 -- Debug monitor positions can be Vector(...) or monitorTarget = 'named_info_target'.
 
 LUASQUARE_FLUID.RegisterNetwork('main_steam', {
     type = LUASQUARE_FLUID.TYPE_STEAMLINE,
     fluidType = 'steam',
     amount = 0,
-    volume = RBMK.SteamSpace,
-    maxAmount = RBMK.MaxSteam,
-    hardMaxAmount = RBMK.HardMaxSteam,
+    volume = RBMK.SteamSpace / 2,
+    maxAmount = RBMK.MaxSteam / 2,
+    hardMaxAmount = RBMK.HardMaxSteam / 2,
     maxPressure = 150,
     temperature = 100,
     thermalLossRate = 0.002,
@@ -165,10 +168,10 @@ LUASQUARE_FLUID.RegisterNetwork('feedwater', {
     monitorPos = RBMK.WorldOrigin + Vector(0, 96, 96 + MAPDEF_monitorZoffset)
 })
 
-LUASQUARE_FLUID.RegisterNetwork('turbine_hotwell', {
+LUASQUARE_FLUID.RegisterNetwork('hotwell', {
     type = LUASQUARE_FLUID.TYPE_STEAMLINE,
     fluidType = 'water',
-    amount = 0,
+    amount = 20000,
     maxAmount = RBMK.MaxWater,
     hardMaxAmount = RBMK.MaxWater,
     maxPressure = 20,
@@ -205,7 +208,15 @@ LUASQUARE_PUMP.RegisterPump('feedwater_pump_a', {
     source = 'feedwater',
     target = 'rbmk',
     rate = 500,
-    headPressure = 90,
+    headPressure = 120,
+    minFlowFraction = 0.25,
+    regulate = true,
+    regulationMode = 'fill',
+    regulationSensor = 'rbmk_water_percent',
+    regulationTarget = MAPDEF_feedwaterTargetPercent,
+    regulationDeadband = 0.5,
+    regulationGain = 0.1,
+    regulationMinOutput = 0.1,
     speedLevels = {0, 0.25, 0.5, 1},
     speedLevel = 3,
     enabled = true,
@@ -216,7 +227,15 @@ LUASQUARE_PUMP.RegisterPump('feedwater_pump_b', {
     source = 'feedwater',
     target = 'rbmk',
     rate = 500,
-    headPressure = 90,
+    headPressure = 120,
+    minFlowFraction = 0.25,
+    regulate = true,
+    regulationMode = 'fill',
+    regulationSensor = 'rbmk_water_percent',
+    regulationTarget = MAPDEF_feedwaterTargetPercent,
+    regulationDeadband = 0.5,
+    regulationGain = 0.1,
+    regulationMinOutput = 0.1,
     speedLevels = {0, 0.25, 0.5, 1},
     speedLevel = 1,
     enabled = false,
@@ -224,10 +243,17 @@ LUASQUARE_PUMP.RegisterPump('feedwater_pump_b', {
 })
 
 LUASQUARE_PUMP.RegisterPump('condensate_pump_a1', {
-    source = 'turbine_hotwell',
+    source = 'hotwell',
     target = 'main_cooling_tower',
     rate = 1000,
     headPressure = 150,
+    regulate = true,
+    regulationMode = 'drain',
+    regulationSensor = 'hotwell',
+    regulationTarget = MAPDEF_hotwellTargetPercent,
+    regulationDeadband = 1,
+    regulationGain = 0.08,
+    regulationMinOutput = 0.1,
     speedLevels = {0, 0.25, 0.5, 1},
     speedLevel = 4,
     enabled = true,
@@ -236,26 +262,27 @@ LUASQUARE_PUMP.RegisterPump('condensate_pump_a1', {
 
 LUASQUARE_TURBINE.RegisterTurbine('tg1', {
     input = 'main_steam',
-    condenserOutput = 'turbine_hotwell',
-    bypassCondenserOutput = 'turbine_hotwell',
+    condenserOutput = 'hotwell',
+    bypassCondenserOutput = 'hotwell',
     condenserOutputTemperature = 80,
     bypassCondenserOutputTemperature = 95,
-    maxSteamRate = 700000,
+    maxSteamRate = 500000,
     ratedSteamRate = 350000,
-    bypassMaxSteamRate = 700000,
+    bypassMaxSteamRate = 500000,
+    ratedInletPressure = 10,
     valve = 0,
     bypassValve = 0,
     enabled = true,
     autoSync = false,
     soundEntity = 'tg1_turbine_sound',
     soundEntity2 = 'tg1_turbine_sound2',
-    soundMinVolume = 1,
+    soundMinVolume = 4,
     soundMaxVolume = 10,
     soundMinPitch = 80,
     soundMaxPitch = 140,
     shakeEntity = 'tg1_turbine_shake',
-    shakeMaxAmplitude = 4,
-    shakeMaxFrequency = 80,
+    shakeMaxAmplitude = 16,
+    shakeMaxFrequency = 255,
     tripRelay = 'tg1_trip_relay',
     monitorPos = 'tar_turbine_generator_a'
 })
@@ -271,6 +298,15 @@ LUASQUARE_COOLINGTOWER.RegisterCoolingTower('main_cooling_tower', {
     startRelay = 'cooling_tower_on',
     stopRelay = 'cooling_tower_off',
     monitorPos = 'tar_coolingtower_a'
+})
+
+LUASQUARE_VALVE.RegisterValve('hotwell_drain_valve', {
+    a = 'hotwell',
+    b = 'void',
+    maxFlow = 500,
+    open = false,
+    bidirectional = false,
+    monitorPos = 'tar_hotwell_drain'
 })
 
 -- =========================================
@@ -411,26 +447,55 @@ end)
 local MAPDEF_panelScale = 0.1
 
 local function MAPDEF_panelBase(title, pos, width, height, angle)
-    local compact = height <= 16
+    local data
+    if type(title) == 'table' then
+        data = title
+    else
+        data = {
+            title = title,
+            pos = pos,
+            width = width,
+            height = height,
+            ang = angle
+        }
+    end
+
+    local displayWidth = data.width or 1
+    local displayHeight = data.height or 1
+    local displayAngle = data.ang or data.angle
+    local target = data.target or data.infoTarget
+    local posTarget = data.posTarget or data.positionTarget
+    local angleTarget = data.angleTarget or data.angTarget
+    local useTargetAngle = data.useTargetAngle
+    if useTargetAngle == nil then useTargetAngle = data.targetAngle end
+    if useTargetAngle == nil and (target or posTarget or (type(data.pos) == 'string' and not displayAngle)) then useTargetAngle = true end
+
+    local compact = displayHeight <= 16
     return {
-        pos = pos,
-        ang = angle,
-        anchorX = 0.5,
-        anchorY = 0.5,
-        scale = MAPDEF_panelScale,
-        width = width,
-        height = height,
-        padding = compact and 6 or 10,
-        lineHeight = compact and 13 or 18,
-        titleHeight = compact and 18 or 28,
-        font = compact and 'Luasquare3D2D_Small' or nil,
-        titleFont = compact and 'Luasquare3D2D_Line' or nil,
-        title = title,
-        backgroundColor = Color(3, 10, 12, 235),
-        borderColor = Color(30, 163, 216, 230),
-        textColor = Color(205, 235, 240),
-        titleColor = Color(255, 255, 255),
-        barColor = Color(80, 220, 160)
+        target = target,
+        posTarget = posTarget,
+        angleTarget = angleTarget,
+        useTargetAngle = useTargetAngle,
+        pos = data.pos,
+        ang = displayAngle,
+        offset = data.offset,
+        angleOffset = data.angleOffset or data.angOffset,
+        anchorX = data.anchorX or 0.5,
+        anchorY = data.anchorY or 0.5,
+        scale = data.scale or MAPDEF_panelScale,
+        width = displayWidth,
+        height = displayHeight,
+        padding = data.padding or (compact and 6 or 10),
+        lineHeight = data.lineHeight or (compact and 13 or 18),
+        titleHeight = data.titleHeight or (compact and 18 or 28),
+        font = data.font or (compact and 'Luasquare3D2D_Small' or nil),
+        titleFont = data.titleFont or (compact and 'Luasquare3D2D_Line' or nil),
+        title = data.title,
+        backgroundColor = data.backgroundColor or Color(3, 10, 12, 235),
+        borderColor = data.borderColor or Color(30, 163, 216, 230),
+        textColor = data.textColor or Color(205, 235, 240),
+        titleColor = data.titleColor or Color(255, 255, 255),
+        barColor = data.barColor or Color(80, 220, 160)
     }
 end
 
@@ -444,11 +509,13 @@ local function MAPDEF_pumpColumn(label, pumpName)
     local state, color = MAPDEF_powerState(pump.enabled)
     local speed = 0
     if pump.speedLevels and LUASQUARE_PUMP.GetPumpSpeedMultiplier then speed = LUASQUARE_PUMP.GetPumpSpeedMultiplier(pump) * 100 end
+    local sub = string.format('%.0f%% %.0f/s', speed, pump.lastFlow or 0)
+    if pump.regulate then sub = string.format('R %.0f/%.0f %.0f/s', pump.regulationLevel or 0, pump.regulationTarget or 0, pump.lastFlow or 0) end
 
     return {
         label = label,
         value = state,
-        sub = string.format('%.0f%% %.0f/s', speed, pump.lastFlow or 0),
+        sub = sub,
         color = Color(205, 235, 240),
         valueColor = color
     }
@@ -480,6 +547,16 @@ local function MAPDEF_coolingTowerColumn(label, towerName)
     }
 end
 
+local function MAPDEF_levelTargetColumn(label, current, target)
+    return {
+        label = label,
+        value = string.format('%.0f%%', target or 0),
+        sub = string.format('LVL %.0f%%', current or 0),
+        color = Color(205, 235, 240),
+        valueColor = Color(110, 255, 150)
+    }
+end
+
 -- =========================================
 -- 3D2D PANEL DISPLAYS REGISTER
 -- =========================================
@@ -497,17 +574,19 @@ LUASQUARE_3D2D.BindDisplay('aux_flow_status_panel', function()
             columns = {
                 MAPDEF_pumpColumn('FW PUMP A', 'feedwater_pump_a'),
                 MAPDEF_pumpColumn('FW PUMP B', 'feedwater_pump_b'),
+                MAPDEF_levelTargetColumn('RPV TARGET', RBMK.MaxWater > 0 and ((RBMK.Water or 0) / RBMK.MaxWater) * 100 or 0, MAPDEF_feedwaterTargetPercent),
                 MAPDEF_valveColumn('DRAIN VLV', 'rpv_drain_valve')
             }
         }
     }
 end)
 
-LUASQUARE_3D2D.RegisterDisplay('condensate_pump_status_panel', MAPDEF_panelBase(
-    'COOLING LOOP',
-    Vector(91, -749, 598), 44, 22,
-    Angle(0, -90, 90)
-))
+LUASQUARE_3D2D.RegisterDisplay('condensate_pump_status_panel', MAPDEF_panelBase({
+    title = 'COOLING LOOP',
+    target = 'tar_display_coolingloop',
+    width = 44,
+    height = 22
+}))
 LUASQUARE_3D2D.BindDisplay('condensate_pump_status_panel', function()
     return {
         {
@@ -515,7 +594,8 @@ LUASQUARE_3D2D.BindDisplay('condensate_pump_status_panel', function()
             height = 120,
             columns = {
                 MAPDEF_pumpColumn('COND PUMP A1', 'condensate_pump_a1'),
-                MAPDEF_coolingTowerColumn('COOLING TWR A', 'main_cooling_tower')
+                MAPDEF_coolingTowerColumn('COOLING TWR A', 'main_cooling_tower'),
+                MAPDEF_valveColumn('HOTWELL DRN', 'hotwell_drain_valve')
             }
         }
     }
@@ -566,6 +646,55 @@ end)
 -- OPERATOR INTERFACES
 -- =========================================
 
+local function MAPDEF_setFeedwaterTarget(percent)
+    MAPDEF_feedwaterTargetPercent = math.Clamp(tonumber(percent) or 0, 0, 100)
+    LUASQUARE_PUMP.SetRegulationTarget('feedwater_pump_a', MAPDEF_feedwaterTargetPercent)
+    LUASQUARE_PUMP.SetRegulationTarget('feedwater_pump_b', MAPDEF_feedwaterTargetPercent)
+end
+
+local function MAPDEF_setHotwellTarget(percent)
+    MAPDEF_hotwellTargetPercent = math.Clamp(tonumber(percent) or 0, 0, 100)
+    LUASQUARE_PUMP.SetRegulationTarget('condensate_pump_a1', MAPDEF_hotwellTargetPercent)
+end
+
+-- Feedwater pump regulator target keypad, value is RPV water level percent.
+LUASQUARE_SEG7.RegisterDisplay('fwlevelctrl', {
+    'fwlevelctrl_0',
+    'fwlevelctrl_1',
+    'fwlevelctrl_2'
+})
+LUASQUARE_KEYPAD.RegisterKeypad('fwlevelctrl',
+    {
+        maxDigits = 3,
+        maxValue = 100,
+        display = 'fwlevelctrl',
+        initialValue = MAPDEF_feedwaterTargetPercent,
+        clearOnSubmit = false,
+        onSubmit = function(value)
+            MAPDEF_setFeedwaterTarget(value)
+        end
+    }
+)
+
+-- Condensate pump regulator target keypad, value is hotwell level percent.
+LUASQUARE_SEG7.RegisterDisplay('hotwellctrl', {
+    'hotwellctrl_0',
+    'hotwellctrl_1',
+    'hotwellctrl_2'
+})
+LUASQUARE_KEYPAD.RegisterKeypad('hotwellctrl',
+    {
+        maxDigits = 3,
+        maxValue = 100,
+        display = 'hotwellctrl',
+        initialValue = MAPDEF_hotwellTargetPercent,
+        clearOnSubmit = false,
+        onSubmit = function(value)
+            MAPDEF_setHotwellTarget(value)
+        end
+    }
+)
+
 -- Manual Control Rod Keypad and Selector Panel
 LUASQUARE_SEG7.RegisterDisplay('rodctrl', {
     'rodctrl_0',
@@ -595,6 +724,7 @@ LUASQUARE_KEYPAD.RegisterKeypad('aprctrl',
         maxDigits = 4,
         maxValue = 9999,
         display = 'aprctrl',
+        clearOnSubmit = false,
         onSubmit = function(value)
             RBMK.SetAutoRegulatorTargetMW(value)
             RBMK.SetAutoRegulatorEnabled(value > 0)

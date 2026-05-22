@@ -37,6 +37,7 @@ function LUASQUARE_VALVE.SetValve(name, open)
 end
 
 function LUASQUARE_VALVE.GetEndpointPressure(endpoint)
+    if endpoint == 'void' then return 0 end
     if endpoint == 'rbmk_steam' or endpoint == 'rbmk_water' then
         if not RBMK then return 0 end
         return RBMK.GetRPVPressure and RBMK.GetRPVPressure() or RBMK.RPVPressure or 0
@@ -48,6 +49,7 @@ function LUASQUARE_VALVE.GetEndpointPressure(endpoint)
 end
 
 function LUASQUARE_VALVE.GetEndpointTemperature(endpoint)
+    if endpoint == 'void' then return 20 end
     if endpoint == 'rbmk_steam' then
         if not RBMK then return 20 end
         return RBMK.SteamTemperature or 100
@@ -87,6 +89,7 @@ end
 
 function LUASQUARE_VALVE.AddToEndpoint(endpoint, amount, pressure, temperature)
     amount = math.max(tonumber(amount) or 0, 0)
+    if endpoint == 'void' then return amount end
     if endpoint == 'rbmk_steam' then
         if not RBMK then return 0 end
         local freeSteam = math.max((RBMK.HardMaxSteam or math.huge) - (RBMK.Steam or 0), 0)

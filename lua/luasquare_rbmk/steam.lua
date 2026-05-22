@@ -227,7 +227,8 @@ function RBMK.DoSteamExportStep()
         return
     end
 
-    local scale = math.Clamp(pressureDelta / math.max(RBMK.RPVMaxPressure, 0.0001), 0, 1)
+    local ratedPressureDelta = RBMK.SteamOutletRatedPressureDelta or RBMK.RPVMaxPressure
+    local scale = math.Clamp(pressureDelta / math.max(ratedPressureDelta, 0.0001), 0, 1)
     local exportRate = math.max(RBMK.SteamSpace * 0.05, RBMK.Steam * RBMK.SteamOutletFlowRate)
     local requested = exportRate * scale * RBMK.TickInterval
     local moved = math.min(requested, RBMK.Steam)

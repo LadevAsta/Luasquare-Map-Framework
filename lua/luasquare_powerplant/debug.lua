@@ -54,6 +54,11 @@ function LUASQUARE_POWERPLANT.Debug.BuildPumps()
                 enabled = pump.enabled and true or false,
                 speedLevel = pump.speedLevel or 1,
                 speedMultiplier = LUASQUARE_PUMP.GetPumpSpeedMultiplier and LUASQUARE_PUMP.GetPumpSpeedMultiplier(pump) or 0,
+                regulate = pump.regulate and true or false,
+                regulationMode = pump.regulationMode,
+                regulationTarget = pump.regulationTarget or 0,
+                regulationLevel = pump.regulationLevel or 0,
+                regulationFactor = pump.regulationFactor or 0,
                 lastFlow = pump.lastFlow or 0,
                 pos = pos
             })
@@ -151,6 +156,7 @@ function LUASQUARE_POWERPLANT.Debug.BuildCoolingTowers()
                 output = tower.output,
                 maxRate = tower.maxRate or 0,
                 enabled = tower.enabled and true or false,
+                working = tower.working and true or false,
                 outputTemperature = tower.outputTemperature or 0,
                 basinAmount = tower.basinAmount or 0,
                 basinMaxAmount = tower.basinMaxAmount or 0,

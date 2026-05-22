@@ -35,6 +35,8 @@ function LUASQUARE_TURBINE.RegisterTurbine(name, data)
         maxSteamRate = maxSteamRate,
         ratedSteamRate = tonumber(data.ratedSteamRate) or maxSteamRate,
         bypassMaxSteamRate = tonumber(data.bypassMaxSteamRate) or maxSteamRate,
+        ratedInletPressure = tonumber(data.ratedInletPressure),
+        ratedPressureDelta = tonumber(data.ratedPressureDelta),
         steamRatio = tonumber(data.steamRatio) or 1600,
         exhaustRatio = tonumber(data.exhaustRatio) or 400,
         condenserRatio = tonumber(data.condenserRatio) or tonumber(data.exhaustRatio) or 400,
@@ -67,7 +69,7 @@ function LUASQUARE_TURBINE.RegisterTurbine(name, data)
         soundMinPitch = tonumber(data.soundMinPitch) or 80,
         soundMaxPitch = tonumber(data.soundMaxPitch) or 140,
         soundStartRPMFraction = tonumber(data.soundStartRPMFraction) or 0.02,
-        soundOptimalRPMFraction = tonumber(data.soundOptimalRPMFraction) or 0.9,
+        soundOptimalRPMFraction = tonumber(data.soundOptimalRPMFraction) or 0.95,
         soundPlaying = false,
         sound2Playing = false,
         shakeEntity = data.shakeEntity,
@@ -358,7 +360,8 @@ function LUASQUARE_TURBINE.GetFlowRequest(turbine, input, output, valve, maxStea
     local pressureDelta = inputPressure - outputPressure
     if pressureDelta <= 0 then return 0 end
 
-    local pressureScale = math.Clamp(pressureDelta / math.max(input.maxPressure or inputPressure, 0.0001), 0, 1)
+    local ratedDelta = turbine.ratedPressureDelta or input.maxPressure or inputPressure
+    local pressureScale = math.Clamp(pressureDelta / math.max(ratedDelta, 0.0001), 0, 1)
     return maxSteamRate * valve * pressureScale * dt
 end
 
@@ -367,7 +370,8 @@ function LUASQUARE_TURBINE.GetCondenserFlowRequest(turbine, input, output, valve
     local inputPressure = LUASQUARE_TURBINE.GetNetworkPressure(input)
     if inputPressure <= 0 then return 0 end
 
-    local pressureScale = math.Clamp(inputPressure / math.max(input.maxPressure or inputPressure, 0.0001), 0, 1)
+    local ratedPressure = turbine.ratedInletPressure or input.maxPressure or inputPressure
+    local pressureScale = math.Clamp(inputPressure / math.max(ratedPressure, 0.0001), 0, 1)
     local outputFree = math.max((output.hardMaxAmount or output.maxAmount) - output.amount, 0)
     return math.min(maxSteamRate * valve * pressureScale * dt, outputFree * LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine))
 end
@@ -443,7 +447,7 @@ function LUASQUARE_TURBINE.UpdateRotor(turbine, steamRate, dt)
         turbine.rpm = Lerp(math.Clamp(dt * turbine.inertia, 0, 1), turbine.rpm, targetRPM)
     else
         local accel = (targetRPM - turbine.rpm) / math.max(turbine.inertia, 0.0001)
-        local drag = turbine.rpm * turbine.friction
+        local drag = turbine.rpm * turbine.friction * math.max(1 - drive, 0)
         turbine.rpm = math.max(turbine.rpm + (accel - drag) * dt, 0)
     end
 
@@ -477,7 +481,10 @@ end
 function LUASQUARE_TURBINE.UpdateSoundEffect(turbine)
     if not turbine.soundEntity then return end
     local rpmFraction = math.Clamp((turbine.rpm or 0) / math.max(turbine.designRPM, 0.0001), 0, 1.25)
+
     local shouldPlay = rpmFraction >= turbine.soundStartRPMFraction and not turbine.tripped
+    local shouldPlay2 = rpmFraction >= turbine.soundOptimalRPMFraction and not turbine.tripped
+
     if shouldPlay and not turbine.soundPlaying then
         turbine.soundPlaying = LUASQUARE_TURBINE.FireEnt(turbine.soundEntity, 'PlaySound')
     elseif not shouldPlay and turbine.soundPlaying then
@@ -486,24 +493,23 @@ function LUASQUARE_TURBINE.UpdateSoundEffect(turbine)
     end
 
     if turbine.soundEntity2 then
-        if rpmFraction >= turbine.soundOptimalRPMFraction and not turbine.sound2Playing then
+        if shouldPlay2 and not turbine.sound2Playing then
             LUASQUARE_TURBINE.FireEnt(turbine.soundEntity2, 'PlaySound')
             turbine.sound2Playing = true
-        elseif rpmFraction < turbine.soundOptimalRPMFraction and turbine.sound2Playing then
+        elseif not shouldPlay2 and turbine.sound2Playing then
             LUASQUARE_TURBINE.FireEnt(turbine.soundEntity2, 'StopSound')
             turbine.sound2Playing = false
         end
     end
-    if not shouldPlay then return end
 
+    if not shouldPlay then return end
     local volume = math.Clamp(Lerp(math.Clamp(rpmFraction, 0, 1), turbine.soundMinVolume, turbine.soundMaxVolume), 0, 10)
     local pitch = math.Clamp(Lerp(math.Clamp(rpmFraction, 0, 1), turbine.soundMinPitch, turbine.soundMaxPitch), 1, 255)
     LUASQUARE_TURBINE.FireEnt(turbine.soundEntity, 'Volume', tostring(volume))
     LUASQUARE_TURBINE.FireEnt(turbine.soundEntity, 'Pitch', tostring(pitch))
-    if turbine.soundEntity2 then
-        LUASQUARE_TURBINE.FireEnt(turbine.soundEntity2, 'Volume', tostring(volume))
-        LUASQUARE_TURBINE.FireEnt(turbine.soundEntity2, 'Pitch', tostring(pitch))
-    end
+    if not shouldPlay2 then return end
+    LUASQUARE_TURBINE.FireEnt(turbine.soundEntity2, 'Volume', tostring(volume))
+    LUASQUARE_TURBINE.FireEnt(turbine.soundEntity2, 'Pitch', tostring(pitch))
 end
 
 function LUASQUARE_TURBINE.UpdateShakeEffect(turbine)
@@ -574,8 +580,8 @@ print('[LUASQUARE_TURBINE] Loaded')
 -- =========================================
 -- LUASQUARE_TURBINE.RegisterTurbine('tg1', {
 --     input = 'main_steam',
---     condenserOutput = 'turbine_hotwell',
---     bypassCondenserOutput = 'turbine_hotwell',
+--     condenserOutput = 'hotwell',
+--     bypassCondenserOutput = 'hotwell',
 --     maxSteamRate = 1000,
 --     valve = 0,
 --     bypassValve = 0,

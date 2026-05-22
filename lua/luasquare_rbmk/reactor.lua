@@ -30,7 +30,7 @@ RBMK.SteamOutletOpen = true
 RBMK.FeedwaterInletOpen = true
 RBMK.DrainValveOpen = false
 RBMK.DrainNetwork = nil
-RBMK.SteamOutletFlowRate = 0.25
+RBMK.SteamOutletFlowRate = 1
 RBMK.DrainFlowRate = 10
 
 RBMK.WaterSpecificHeatKJPerL = 4.186

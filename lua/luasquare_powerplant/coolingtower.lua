@@ -15,6 +15,7 @@ function LUASQUARE_COOLINGTOWER.RegisterCoolingTower(name, data)
         output = data.output,
         maxRate = tonumber(data.maxRate) or 1000,
         enabled = data.enabled and true or false,
+        working = data.working and true or false,
         outputTemperature = tonumber(data.outputTemperature) or 20,
         basinAmount = math.Clamp(math.max(tonumber(data.basinAmount) or 0, 0), 0, basinMaxAmount),
         basinMaxAmount = basinMaxAmount,
@@ -23,6 +24,8 @@ function LUASQUARE_COOLINGTOWER.RegisterCoolingTower(name, data)
         basinMaxPressure = tonumber(data.basinMaxPressure) or 20,
         startRelay = data.startRelay,
         stopRelay = data.stopRelay,
+        workRelay = data.workRelay,
+        idleRelay = data.idleRelay,
         pendingWaterReceived = 0,
         lastWaterReceived = 0,
         lastWaterCooled = 0,
@@ -112,7 +115,14 @@ function LUASQUARE_COOLINGTOWER.UpdateCoolingTower(name, dt)
 
     local outputFree = math.max((output.hardMaxAmount or output.maxAmount) - output.amount, 0)
     local requested = math.min(tower.basinAmount or 0, outputFree, tower.maxRate * dt)
-    if requested <= 0 then return end
+    local wasWorking = tower.working
+    if requested <= 0 then
+        if wasWorking then
+            LUASQUARE_FLUID.FireRelay(tower.stopRelay)
+            tower.working = false
+        end
+        return
+    end
 
     local inputTemperature = tower.basinTemperature or tower.outputTemperature
     tower.basinAmount = math.max((tower.basinAmount or 0) - requested, 0)
@@ -122,6 +132,11 @@ function LUASQUARE_COOLINGTOWER.UpdateCoolingTower(name, dt)
     tower.lastWaterCooled = added / math.max(dt, 0.0001)
     tower.lastHeatRemoved = math.max(inputTemperature - tower.outputTemperature, 0) * added / math.max(dt, 0.0001)
     LUASQUARE_COOLINGTOWER.UpdateBasinPressure(name)
+
+    if not wasWorking then
+        LUASQUARE_FLUID.FireRelay(tower.startRelay)
+        tower.working = true
+    end
 end
 
 function LUASQUARE_COOLINGTOWER.UpdateAll()

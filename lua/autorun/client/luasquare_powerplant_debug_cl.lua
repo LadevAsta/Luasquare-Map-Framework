@@ -77,6 +77,7 @@ function LUASQUARE_POWERPLANT.Debug.RenderPump(pump)
         string.format('FLOW %.2f/s', pump.lastFlow or 0),
         string.format('HEAD %.1f bar', pump.headPressure or 0)
     }
+    if pump.regulate then table.insert(lines, string.format('REG %s %.1f/%.1f %.2fx', tostring(pump.regulationMode or ''), pump.regulationLevel or 0, pump.regulationTarget or 0, pump.regulationFactor or 0)) end
     LUASQUARE_POWERPLANT.Debug.DrawWorldText(pump.pos, table.concat(lines, '\n'), Color(255, 220, 0))
 end
 
@@ -125,6 +126,7 @@ function LUASQUARE_POWERPLANT.Debug.RenderCoolingTower(tower)
         'COOL ' .. tostring(tower.name),
         'BASIN > ' .. tostring(tower.output),
         'EN ' .. tostring(tower.enabled),
+        'WK ' .. tostring(tower.working),
         string.format('IN %.2f/s OUT %.2f/s', tower.lastWaterReceived or 0, tower.lastWaterCooled or 0),
         string.format('B %.1f / %.1f', tower.basinAmount or 0, tower.basinMaxAmount or 0),
         string.format('BP %.1f / %.1f bar', tower.basinPressure or 0, tower.basinMaxPressure or 0),

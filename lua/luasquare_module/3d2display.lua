@@ -22,12 +22,20 @@ end
 
 local function copyVector(value)
     if not value then return nil end
+    if value.x == nil or value.y == nil or value.z == nil then return nil end
     return Vector(value.x or 0, value.y or 0, value.z or 0)
 end
 
 local function copyAngle(value)
     if not value then return nil end
+    if value.p == nil or value.y == nil or value.r == nil then return nil end
     return Angle(value.p or 0, value.y or 0, value.r or 0)
+end
+
+local function addAngle(base, offset)
+    if not base then return nil end
+    if not offset then return base end
+    return Angle((base.p or 0) + (offset.p or 0), (base.y or 0) + (offset.y or 0), (base.r or 0) + (offset.r or 0))
 end
 
 local function roundPositive(value, fallback)
@@ -205,7 +213,7 @@ local function sanitizeDisplay(name, display)
         barColor = copyColor(display.barColor, Color(70, 220, 160)),
         barBackgroundColor = copyColor(display.barBackgroundColor, Color(18, 32, 36, 240)),
         pos = copyVector(display.resolvedPos or display.pos),
-        ang = copyAngle(display.ang or display.angle),
+        ang = copyAngle(display.resolvedAng or display.ang or display.angle),
         lines = normalizeLines(display.content)
     }
 
@@ -240,10 +248,14 @@ if SERVER then
         end
 
         LUASQUARE_3D2D.Displays[name] = {
-            entity = data.entity,
+            entity = data.entity or data.target or data.infoTarget,
+            posTarget = data.posTarget or data.positionTarget,
+            angleTarget = data.angleTarget or data.angTarget,
+            useTargetAngle = data.useTargetAngle or data.targetAngle or ((data.target or data.infoTarget) and true or false),
             pos = data.pos,
             offset = data.offset or Vector(0, 0, 0),
             ang = data.ang or data.angle,
+            angleOffset = data.angleOffset or data.angOffset or Angle(0, 0, 0),
             title = data.title,
             content = data.content or data.lines or '',
             scale = metrics.scale,
@@ -287,11 +299,31 @@ if SERVER then
     end
 
     function LUASQUARE_3D2D.ResolvePosition(display)
-        if display.pos then return display.pos end
-        if not display.entity then return nil end
+        local offset = display.offset or Vector(0, 0, 0)
+        local direct = copyVector(display.pos)
+        if direct then return direct + offset end
 
-        local ent = LUASQUARE_3D2D.GetEnt(display.entity)
-        if IsValid(ent) then return ent:GetPos() + (display.offset or Vector(0, 0, 0)) end
+        local targetName = display.posTarget or (isstring and isstring(display.pos) and display.pos) or display.entity
+        if not targetName then return nil end
+
+        local ent = LUASQUARE_3D2D.GetEnt(targetName)
+        if IsValid(ent) then return ent:GetPos() + offset end
+        return nil
+    end
+
+    function LUASQUARE_3D2D.ResolveAngle(display)
+        local offset = display.angleOffset or Angle(0, 0, 0)
+        local direct = copyAngle(display.ang)
+        if direct then return addAngle(direct, offset) end
+
+        local targetName = display.angleTarget or (isstring and isstring(display.ang) and display.ang)
+        if not targetName and display.useTargetAngle then
+            targetName = display.posTarget or (isstring and isstring(display.pos) and display.pos) or display.entity
+        end
+
+        if not targetName then return nil end
+        local ent = LUASQUARE_3D2D.GetEnt(targetName)
+        if IsValid(ent) then return addAngle(ent:GetAngles(), offset) end
         return nil
     end
 
@@ -303,8 +335,10 @@ if SERVER then
                 local pos = LUASQUARE_3D2D.ResolvePosition(display)
                 if pos then
                     display.resolvedPos = pos
+                    display.resolvedAng = LUASQUARE_3D2D.ResolveAngle(display)
                     table.insert(state.Displays, sanitizeDisplay(name, display))
                     display.resolvedPos = nil
+                    display.resolvedAng = nil
                 elseif not display.warnedMissingPosition then
                     print('[LUASQUARE_3D2D] Missing position/entity for display: ' .. tostring(name))
                     display.warnedMissingPosition = true

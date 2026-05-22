@@ -5,11 +5,12 @@ LUASQUARE_KEYPAD.Pads = {}
 -- REGISTER
 function LUASQUARE_KEYPAD.RegisterKeypad(name, data)
     LUASQUARE_KEYPAD.Pads[name] = {
-        value = '',
+        value = data.initialValue and tostring(math.Clamp(math.floor(tonumber(data.initialValue) or 0), 0, data.maxValue or 10000)) or '',
         maxDigits = data.maxDigits or 3,
         maxValue = data.maxValue or 10000,
         display = data.display,
-        onSubmit = data.onSubmit
+        onSubmit = data.onSubmit,
+        clearOnSubmit = data.clearOnSubmit ~= false
     }
 
     LUASQUARE_KEYPAD.UpdateDisplay(name)
@@ -71,7 +72,12 @@ function LUASQUARE_KEYPAD.Submit(name)
         end
     end
 
-    LUASQUARE_KEYPAD.Clear(name)
+    if pad.clearOnSubmit then
+        LUASQUARE_KEYPAD.Clear(name)
+    else
+        pad.value = tostring(math.Clamp(math.floor(value), 0, pad.maxValue))
+        LUASQUARE_KEYPAD.UpdateDisplay(name)
+    end
 end
 
 print('[LUASQUARE_KEYPAD] Loaded')
