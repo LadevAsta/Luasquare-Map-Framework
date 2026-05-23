@@ -6,7 +6,11 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     Valves = {},
     Condensers = {},
     Turbines = {},
-    CoolingTowers = {}
+    CoolingTowers = {},
+    Grids = {},
+    Breakers = {},
+    Transformers = {},
+    Generators = {}
 }
 
 local function copyMonitorPos(data)
@@ -172,6 +176,113 @@ function LUASQUARE_POWERPLANT.Debug.BuildCoolingTowers()
     end
 end
 
+function LUASQUARE_POWERPLANT.Debug.BuildGrids()
+    LUASQUARE_POWERPLANT.Debug.ClientState.Grids = {}
+    if not LUASQUARE_POWERGRID then return end
+    for name, grid in pairs(LUASQUARE_POWERGRID.Grids) do
+        local pos = copyMonitorPos(grid)
+        if pos then
+            table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.Grids, {
+                name = name,
+                type = grid.type,
+                enabled = grid.enabled and true or false,
+                tripped = grid.tripped and true or false,
+                energized = grid.energized and true or false,
+                stiff = grid.stiff and true or false,
+                frequency = grid.frequency or 0,
+                nominalFrequency = grid.nominalFrequency or 0,
+                voltage = grid.voltage or 0,
+                phase = grid.phase or 0,
+                sourceCapacityMW = grid.sourceCapacityMW or 0,
+                availableImportMW = grid.availableImportMW or 0,
+                lastGenerationMW = grid.lastGenerationMW or 0,
+                lastLoadMW = grid.lastLoadMW or 0,
+                lastImportMW = grid.lastImportMW or 0,
+                lastAvailableMW = grid.lastAvailableMW or 0,
+                lastBalanceMW = grid.lastBalanceMW or 0,
+                tripReason = grid.tripReason,
+                pos = pos
+            })
+        end
+    end
+end
+
+function LUASQUARE_POWERPLANT.Debug.BuildBreakers()
+    LUASQUARE_POWERPLANT.Debug.ClientState.Breakers = {}
+    if not LUASQUARE_POWERGRID then return end
+    for name, breaker in pairs(LUASQUARE_POWERGRID.Breakers) do
+        local pos = copyMonitorPos(breaker)
+        if pos then
+            table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.Breakers, {
+                name = name,
+                grid = breaker.grid,
+                owner = breaker.owner,
+                kind = breaker.kind,
+                closed = breaker.closed and true or false,
+                tripped = breaker.tripped and true or false,
+                maxMW = breaker.maxMW or 0,
+                lastMW = breaker.lastMW or 0,
+                tripReason = breaker.tripReason,
+                pos = pos
+            })
+        end
+    end
+end
+
+function LUASQUARE_POWERPLANT.Debug.BuildTransformers()
+    LUASQUARE_POWERPLANT.Debug.ClientState.Transformers = {}
+    if not LUASQUARE_POWERGRID then return end
+    for name, transformer in pairs(LUASQUARE_POWERGRID.Transformers) do
+        local pos = copyMonitorPos(transformer)
+        if pos then
+            table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.Transformers, {
+                name = name,
+                from = transformer.from,
+                to = transformer.to,
+                enabled = transformer.enabled and true or false,
+                closed = transformer.closed and true or false,
+                bidirectional = transformer.bidirectional and true or false,
+                tripped = transformer.tripped and true or false,
+                available = transformer.available and true or false,
+                maxMW = transformer.maxMW or 0,
+                lastMW = transformer.lastMW or 0,
+                pos = pos
+            })
+        end
+    end
+end
+
+function LUASQUARE_POWERPLANT.Debug.BuildGenerators()
+    LUASQUARE_POWERPLANT.Debug.ClientState.Generators = {}
+    if not LUASQUARE_POWERGENERATOR then return end
+    for name, generator in pairs(LUASQUARE_POWERGENERATOR.Generators) do
+        local pos = copyMonitorPos(generator)
+        if pos then
+            table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.Generators, {
+                name = name,
+                type = generator.type,
+                grid = generator.grid,
+                breaker = generator.breaker,
+                enabled = generator.enabled and true or false,
+                tripped = generator.tripped and true or false,
+                synced = generator.synced and true or false,
+                turbine = generator.turbine,
+                ratedMW = generator.ratedMW or 0,
+                maxMW = generator.maxMW or 0,
+                outputMW = generator.outputMW or 0,
+                targetMW = generator.targetMW or 0,
+                lastMW = generator.lastMW or 0,
+                lastAcceptedMW = generator.lastAcceptedMW or 0,
+                lastRPMError = generator.lastRPMError or 0,
+                lastPhaseError = generator.lastPhaseError or 0,
+                lastSyncBlockReason = generator.lastSyncBlockReason,
+                tripReason = generator.tripReason,
+                pos = pos
+            })
+        end
+    end
+end
+
 function LUASQUARE_POWERPLANT.Debug.Tick()
     LUASQUARE_POWERPLANT.Debug.BuildNetworks()
     LUASQUARE_POWERPLANT.Debug.BuildPumps()
@@ -179,6 +290,10 @@ function LUASQUARE_POWERPLANT.Debug.Tick()
     LUASQUARE_POWERPLANT.Debug.BuildCondensers()
     LUASQUARE_POWERPLANT.Debug.BuildTurbines()
     LUASQUARE_POWERPLANT.Debug.BuildCoolingTowers()
+    LUASQUARE_POWERPLANT.Debug.BuildGrids()
+    LUASQUARE_POWERPLANT.Debug.BuildBreakers()
+    LUASQUARE_POWERPLANT.Debug.BuildTransformers()
+    LUASQUARE_POWERPLANT.Debug.BuildGenerators()
     LUASQUARE_POWERPLANT.Debug.Broadcast()
 end
 

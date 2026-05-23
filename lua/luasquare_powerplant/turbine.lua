@@ -55,6 +55,7 @@ function LUASQUARE_TURBINE.RegisterTurbine(name, data)
         mwPerSteamPerSecond = tonumber(data.mwPerSteamPerSecond) or 0.02,
         loadMW = tonumber(data.loadMW),
         maxMW = tonumber(data.maxMW) or 1000,
+        generator = data.generator,
         vibration = 0,
         tripVibration = tripVibration,
         startRelay = data.startRelay,
@@ -129,6 +130,10 @@ function LUASQUARE_TURBINE.SetEnabled(name, enabled)
     turbine.enabled = enabled and true or false
     if turbine.enabled and not wasEnabled then LUASQUARE_TURBINE.FireRelay(turbine.startRelay) end
     if not turbine.enabled and wasEnabled then
+        if turbine.generator and LUASQUARE_POWERGENERATOR then
+            local generator = LUASQUARE_POWERGENERATOR.GetGenerator(turbine.generator)
+            if generator and generator.synced then LUASQUARE_POWERGENERATOR.Unsync(turbine.generator) end
+        end
         turbine.synced = false
         LUASQUARE_TURBINE.FireRelay(turbine.stopRelay)
     end
@@ -229,6 +234,10 @@ function LUASQUARE_TURBINE.Trip(name, reason)
     turbine.bypassValve = 0
     turbine.valve = 0
     turbine.tripReason = reason or 'UNKNOWN'
+    if turbine.generator and LUASQUARE_POWERGENERATOR then
+        local generator = LUASQUARE_POWERGENERATOR.GetGenerator(turbine.generator)
+        if generator and not generator.tripped then LUASQUARE_POWERGENERATOR.Trip(turbine.generator, turbine.tripReason) end
+    end
     LUASQUARE_TURBINE.FireRelay(turbine.tripRelay)
     print('[LUASQUARE_TURBINE] Trip ' .. tostring(name) .. ': ' .. tostring(turbine.tripReason))
     return true
@@ -244,6 +253,10 @@ function LUASQUARE_TURBINE.ResetTrip(name)
     turbine.tripped = false
     turbine.tripReason = nil
     turbine.enabled = true
+    if turbine.generator and LUASQUARE_POWERGENERATOR then
+        local generator = LUASQUARE_POWERGENERATOR.GetGenerator(turbine.generator)
+        if generator and generator.tripped then LUASQUARE_POWERGENERATOR.ResetTrip(turbine.generator) end
+    end
     LUASQUARE_TURBINE.FireRelay(turbine.resetRelay)
     return true
 end
@@ -267,6 +280,11 @@ function LUASQUARE_TURBINE.Sync(name)
         return false
     end
 
+    if turbine.generator and LUASQUARE_POWERGENERATOR then
+        print('[LUASQUARE_TURBINE] Sync is owned by generator for turbine: ' .. tostring(name))
+        return false
+    end
+
     if LUASQUARE_TURBINE.CanSync(turbine) then
         turbine.synced = true
         turbine.phase = 0
@@ -283,6 +301,11 @@ function LUASQUARE_TURBINE.Unsync(name)
     local turbine = LUASQUARE_TURBINE.GetTurbine(name)
     if not turbine then
         print('[LUASQUARE_TURBINE] Unknown turbine: ' .. tostring(name))
+        return false
+    end
+
+    if turbine.generator and LUASQUARE_POWERGENERATOR then
+        print('[LUASQUARE_TURBINE] Unsync is owned by generator for turbine: ' .. tostring(name))
         return false
     end
 
@@ -543,7 +566,7 @@ function LUASQUARE_TURBINE.UpdateTurbine(name, dt)
     LUASQUARE_TURBINE.DoBypassFlow(turbine, dt)
     local steamRate = LUASQUARE_TURBINE.DoTurbineFlow(turbine, dt)
     LUASQUARE_TURBINE.UpdateRotor(turbine, steamRate, dt)
-    if turbine.autoSync and not turbine.synced and LUASQUARE_TURBINE.CanSync(turbine) then LUASQUARE_TURBINE.Sync(name) end
+    if turbine.autoSync and not turbine.generator and not turbine.synced and LUASQUARE_TURBINE.CanSync(turbine) then LUASQUARE_TURBINE.Sync(name) end
     LUASQUARE_TURBINE.UpdatePower(turbine)
     LUASQUARE_TURBINE.UpdateTrips(name, turbine)
     LUASQUARE_TURBINE.UpdateEffects(turbine)
@@ -592,5 +615,5 @@ print('[LUASQUARE_TURBINE] Loaded')
 -- })
 -- LUASQUARE_TURBINE.AdjustValvePercent('tg1', 1)
 -- LUASQUARE_TURBINE.AdjustBypassValvePercent('tg1', -1)
--- LUASQUARE_TURBINE.Sync('tg1')
+-- Use LUASQUARE_POWERGENERATOR.Sync('tg1_generator') for grid-connected turbine generators.
 -- LUASQUARE_TURBINE.Start()

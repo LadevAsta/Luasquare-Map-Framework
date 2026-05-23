@@ -7,7 +7,11 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     Valves = {},
     Condensers = {},
     Turbines = {},
-    CoolingTowers = {}
+    CoolingTowers = {},
+    Grids = {},
+    Breakers = {},
+    Transformers = {},
+    Generators = {}
 }
 
 timer.Simple(10, function()
@@ -23,7 +27,11 @@ timer.Simple(10, function()
             Valves = {},
             Condensers = {},
             Turbines = {},
-            CoolingTowers = {}
+            CoolingTowers = {},
+            Grids = {},
+            Breakers = {},
+            Transformers = {},
+            Generators = {}
         }
     end)
 
@@ -137,6 +145,57 @@ function LUASQUARE_POWERPLANT.Debug.RenderCoolingTower(tower)
     LUASQUARE_POWERPLANT.Debug.DrawWorldText(tower.pos, table.concat(lines, '\n'), Color(120, 220, 255))
 end
 
+function LUASQUARE_POWERPLANT.Debug.RenderGrid(grid)
+    local lines = {
+        'GRID ' .. tostring(grid.name),
+        tostring(grid.type) .. ' EN ' .. tostring(grid.energized),
+        string.format('F %.2f / %.2f Hz', grid.frequency or 0, grid.nominalFrequency or 0),
+        string.format('V %.0f PH %.1f', grid.voltage or 0, grid.phase or 0),
+        string.format('GEN %.1f LOAD %.1f MW', grid.lastGenerationMW or 0, grid.lastLoadMW or 0),
+        string.format('IMP %.1f AV %.1f MW', grid.lastImportMW or 0, grid.lastAvailableMW or 0),
+        string.format('BAL %.1f MW', grid.lastBalanceMW or 0)
+    }
+    if grid.tripped then table.insert(lines, 'TRIP ' .. tostring(grid.tripReason or '')) end
+    LUASQUARE_POWERPLANT.Debug.DrawWorldText(grid.pos, table.concat(lines, '\n'), Color(180, 255, 180))
+end
+
+function LUASQUARE_POWERPLANT.Debug.RenderBreaker(breaker)
+    local lines = {
+        'BRKR ' .. tostring(breaker.name),
+        tostring(breaker.kind) .. ' ' .. tostring(breaker.owner or ''),
+        'GRID ' .. tostring(breaker.grid),
+        'CLOSED ' .. tostring(breaker.closed),
+        string.format('MW %.1f / %.1f', breaker.lastMW or 0, breaker.maxMW or 0)
+    }
+    if breaker.tripped then table.insert(lines, 'TRIP ' .. tostring(breaker.tripReason or '')) end
+    LUASQUARE_POWERPLANT.Debug.DrawWorldText(breaker.pos, table.concat(lines, '\n'), Color(255, 255, 160))
+end
+
+function LUASQUARE_POWERPLANT.Debug.RenderTransformer(transformer)
+    local lines = {
+        'XFMR ' .. tostring(transformer.name),
+        tostring(transformer.from) .. ' > ' .. tostring(transformer.to),
+        'EN ' .. tostring(transformer.enabled) .. ' CLOSED ' .. tostring(transformer.closed),
+        'AVAIL ' .. tostring(transformer.available) .. ' BI ' .. tostring(transformer.bidirectional),
+        string.format('MW %.1f / %.1f', transformer.lastMW or 0, transformer.maxMW or 0)
+    }
+    LUASQUARE_POWERPLANT.Debug.DrawWorldText(transformer.pos, table.concat(lines, '\n'), Color(210, 255, 180))
+end
+
+function LUASQUARE_POWERPLANT.Debug.RenderGenerator(generator)
+    local lines = {
+        'GEN ' .. tostring(generator.name),
+        tostring(generator.type) .. ' > ' .. tostring(generator.grid),
+        'EN ' .. tostring(generator.enabled) .. ' SYNC ' .. tostring(generator.synced),
+        'BRKR ' .. tostring(generator.breaker),
+        string.format('MW %.1f / %.1f', generator.lastAcceptedMW or 0, generator.maxMW or 0),
+        string.format('ERR %.1f RPM %.1f DEG', generator.lastRPMError or 0, generator.lastPhaseError or 0)
+    }
+    if generator.lastSyncBlockReason then table.insert(lines, 'SYNC ' .. tostring(generator.lastSyncBlockReason)) end
+    if generator.tripped then table.insert(lines, 'TRIP ' .. tostring(generator.tripReason or '')) end
+    LUASQUARE_POWERPLANT.Debug.DrawWorldText(generator.pos, table.concat(lines, '\n'), Color(220, 220, 255))
+end
+
 function LUASQUARE_POWERPLANT.Debug.Render()
     if not LUASQUARE_POWERPLANT.Debug.GetSetting('debug_enabled', false) then return end
     local state = LUASQUARE_POWERPLANT.Debug.ClientState
@@ -168,6 +227,24 @@ function LUASQUARE_POWERPLANT.Debug.Render()
     if LUASQUARE_POWERPLANT.Debug.GetSetting('show_coolingtowers', true) then
         for _, tower in ipairs(state.CoolingTowers or {}) do
             LUASQUARE_POWERPLANT.Debug.RenderCoolingTower(tower)
+        end
+    end
+    if LUASQUARE_POWERPLANT.Debug.GetSetting('show_grids', true) then
+        for _, grid in ipairs(state.Grids or {}) do
+            LUASQUARE_POWERPLANT.Debug.RenderGrid(grid)
+        end
+        for _, transformer in ipairs(state.Transformers or {}) do
+            LUASQUARE_POWERPLANT.Debug.RenderTransformer(transformer)
+        end
+    end
+    if LUASQUARE_POWERPLANT.Debug.GetSetting('show_breakers', true) then
+        for _, breaker in ipairs(state.Breakers or {}) do
+            LUASQUARE_POWERPLANT.Debug.RenderBreaker(breaker)
+        end
+    end
+    if LUASQUARE_POWERPLANT.Debug.GetSetting('show_generators', true) then
+        for _, generator in ipairs(state.Generators or {}) do
+            LUASQUARE_POWERPLANT.Debug.RenderGenerator(generator)
         end
     end
 end

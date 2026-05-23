@@ -42,6 +42,8 @@ LUASQUARE_VALVE.TickInterval = 0.1
 LUASQUARE_PUMP.TickInterval = 0.1
 LUASQUARE_TURBINE.TickInterval = 0.1
 LUASQUARE_COOLINGTOWER.TickInterval = 0.1
+LUASQUARE_POWERGRID.TickInterval = 0.1
+LUASQUARE_POWERGENERATOR.TickInterval = 0.1
 
 -- =========================================
 -- REACTOR SETTINGS
@@ -141,6 +143,37 @@ local MAPDEF_feedwaterTargetPercent = 80
 local MAPDEF_hotwellTargetPercent = 35
 -- Debug monitor positions can be Vector(...) or monitorTarget = 'named_info_target'.
 
+LUASQUARE_POWERGRID.RegisterGrid('offsite_grid', {
+    type = 'offsite',
+    nominalFrequency = 60,
+    voltage = 230000,
+    sourceCapacityMW = 1000,
+    stiff = true,
+    enabled = true,
+    monitorPos = 'tar_grid_offsite'
+})
+
+LUASQUARE_POWERGRID.RegisterGrid('station_grid', {
+    type = 'onsite',
+    nominalFrequency = 60,
+    voltage = 13800,
+    sourceCapacityMW = 0,
+    enabled = true,
+    inertia = 6,
+    droopHz = 1.5,
+    monitorPos = 'tar_grid_station'
+})
+
+LUASQUARE_POWERGRID.RegisterTransformer('offsite_station_transformer', {
+    from = 'offsite_grid',
+    to = 'station_grid',
+    maxMW = 250,
+    closed = true,
+    enabled = true,
+    bidirectional = true,
+    monitorPos = 'tar_transformer_offsite_station'
+})
+
 LUASQUARE_FLUID.RegisterNetwork('main_steam', {
     type = LUASQUARE_FLUID.TYPE_STEAMLINE,
     fluidType = 'steam',
@@ -215,7 +248,7 @@ LUASQUARE_PUMP.RegisterPump('feedwater_pump_a', {
     regulationSensor = 'rbmk_water_percent',
     regulationTarget = MAPDEF_feedwaterTargetPercent,
     regulationDeadband = 0.5,
-    regulationGain = 0.1,
+    regulationGain = 0.3,
     regulationMinOutput = 0.1,
     speedLevels = {0, 0.25, 0.5, 1},
     speedLevel = 3,
@@ -234,7 +267,7 @@ LUASQUARE_PUMP.RegisterPump('feedwater_pump_b', {
     regulationSensor = 'rbmk_water_percent',
     regulationTarget = MAPDEF_feedwaterTargetPercent,
     regulationDeadband = 0.5,
-    regulationGain = 0.1,
+    regulationGain = 0.3,
     regulationMinOutput = 0.1,
     speedLevels = {0, 0.25, 0.5, 1},
     speedLevel = 1,
@@ -267,7 +300,7 @@ LUASQUARE_TURBINE.RegisterTurbine('tg1', {
     condenserOutputTemperature = 80,
     bypassCondenserOutputTemperature = 95,
     maxSteamRate = 500000,
-    ratedSteamRate = 350000,
+    ratedSteamRate = 300000,
     bypassMaxSteamRate = 500000,
     ratedInletPressure = 10,
     valve = 0,
@@ -283,7 +316,23 @@ LUASQUARE_TURBINE.RegisterTurbine('tg1', {
     shakeEntity = 'tg1_turbine_shake',
     shakeMaxAmplitude = 16,
     shakeMaxFrequency = 255,
+    tripVibration = 50,
     tripRelay = 'tg1_trip_relay',
+    monitorPos = 'tar_turbine_a'
+})
+
+LUASQUARE_POWERGENERATOR.RegisterTurbineGenerator('tg1_generator', {
+    turbine = 'tg1',
+    grid = 'station_grid',
+    breaker = 'tg1_generator_breaker',
+    ratedMW = 3000,
+    maxMW = 18000,
+    gridRPM = 1800,
+    syncRPMTolerance = 8,
+    syncPhaseTolerance = 8,
+    syncFailureTrips = true,
+    gridLossTrips = true,
+    enabled = true,
     monitorPos = 'tar_turbine_generator_a'
 })
 
@@ -645,22 +694,27 @@ LUASQUARE_3D2D.BindDisplay('rpv_status_panel', function()
     }
 end)
 
-LUASQUARE_3D2D.RegisterDisplay('tg1_status_panel', MAPDEF_panelBase(
-    'TURBINE A',
-    Vector(91, -624, 598), 44, 22,
-    Angle(0, -90, 90)
-))
+LUASQUARE_3D2D.RegisterDisplay('tg1_status_panel', MAPDEF_panelBase({
+    title = 'TURBINE A',
+    target = 'tar_display_tg1',
+    width = 44,
+    height = 32
+}))
 LUASQUARE_3D2D.BindDisplay('tg1_status_panel', function()
     local data = LUASQUARE_TURBINE.GetTurbine('tg1')
+    local generator = LUASQUARE_POWERGENERATOR.GetGenerator('tg1_generator') or {}
+    local grid = LUASQUARE_POWERGRID.GetGrid('station_grid') or {}
     return {
         { type = 'value', label = 'RPM', value = data.rpm or 0, decimals = 2 , unit = 'RPM'},
+        { type = 'value', label = 'Grid Frequency', value = grid.frequency or 0, decimals = 2, unit = 'Hz' },
+        { type = 'value', label = 'Sync Error', value = generator.lastPhaseError or 0, decimals = 1, unit = 'deg' },
         { type = 'value', label = 'Turbine Valve', value = data.valve * 100 or 0, decimals = 1 },
         { type = 'bar', fraction = data.valve, height = 5 },
         { type = 'value', label = 'Bypass Valve', value = data.bypassValve * 100 or 0, decimals = 1 },
         { type = 'bar', fraction = data.bypassValve, height = 5 },
-        { type = 'value', label = 'Vibration', value = data.vibration or 0, decimals = 2, unit = '%'},
-        { type = 'bar', fraction = data.vibration / 100, height = 5 },
-        { type = 'value', label = 'Load', value = data.loadMW or 0, decimals = 2, unit = 'MW' },
+        { type = 'value', label = 'Vibration', value = (data.vibration / data.tripVibration) * 100 or 0, decimals = 2, unit = '%'},
+        { type = 'bar', fraction = data.vibration / data.tripVibration, height = 5 },
+        { type = 'value', label = 'Generator Output', value = generator.lastAcceptedMW or data.lastMW or 0, decimals = 2, unit = 'MW' },
     }
 end)
 
@@ -840,6 +894,8 @@ LUASQUARE_PUMP.Start()
 LUASQUARE_CONDENSER.Start()
 LUASQUARE_TURBINE.Start()
 LUASQUARE_COOLINGTOWER.Start()
+LUASQUARE_POWERGRID.Start()
+LUASQUARE_POWERGENERATOR.Start()
 LUASQUARE_POWERPLANT.Debug.Start()
 
 print('[LUASQUARE RBMK] RBMK Reactor Initialization Finished.')
