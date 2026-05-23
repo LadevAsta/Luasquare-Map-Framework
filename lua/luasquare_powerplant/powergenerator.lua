@@ -2,5 +2,8 @@
 
 -- Simple, use fuel(or not), add power to grid load. No sync needed.
 
--- Fuel Combustion Generator.
--- Static Fire Turbofan Generator (Not very realistic but its cool).
+-- Industrial Diesel Generator.
+-- Static Fire Turbofan Generator (Aeroderivative Generator).
+-- Dark Energy Generator (those combine balls trap).
+
+-- Debug Power Generator.

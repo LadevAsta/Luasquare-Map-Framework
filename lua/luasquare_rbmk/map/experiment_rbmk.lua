@@ -176,7 +176,7 @@ LUASQUARE_FLUID.RegisterNetwork('hotwell', {
     hardMaxAmount = RBMK.MaxWater,
     maxPressure = 20,
     temperature = 80,
-    thermalLossRate = 0.01,
+    thermalLossRate = 0.001,
     serviceRate = 0,
     monitorPos = 'tar_hotwell'
 })
@@ -439,6 +439,28 @@ LUASQUARE_GAUGE.BindGauge('gauge_rpvpressure', function()
     return (RBMK.RPVPressure / RBMK.RPVMaxPressure) * 100 or 0
 end)
 
+LUASQUARE_GAUGE.RegisterGauge('gauge_hotwell', {
+    entity = 'gauge_hotwell',
+    min = 0,
+    max = 100,
+    speed = 18
+})
+LUASQUARE_GAUGE.BindGauge('gauge_hotwell', function()
+    local network = LUASQUARE_FLUID.GetNetwork('hotwell')
+    return (network.amount / network.maxAmount) * 100 or 0
+end)
+
+LUASQUARE_GAUGE.RegisterGauge('gauge_hotwell_temp', {
+    entity = 'gauge_hotwell_temp',
+    min = 0,
+    max = 140,
+    speed = 18
+})
+LUASQUARE_GAUGE.BindGauge('gauge_hotwell_temp', function()
+    local network = LUASQUARE_FLUID.GetNetwork('hotwell')
+    return network.temperature or 0
+end)
+
 -- =========================================
 -- 3D2D PANEL DISPLAYS FUNCTION
 -- =========================================
@@ -613,7 +635,7 @@ LUASQUARE_3D2D.BindDisplay('rpv_status_panel', function()
     if RBMK.RPVMaxPressure and RBMK.RPVMaxPressure > 0 then pressureFraction = math.Clamp((RBMK.RPVPressure or 0) / RBMK.RPVMaxPressure, 0, 1) end
 
     return {
-        { type = 'value', label = 'MWt', value = RBMK.LastThermalMW or 0, decimals = 0 },
+        { type = 'value', label = 'MWth', value = RBMK.LastThermalMW or 0, decimals = 0 },
         { type = 'value', label = 'RPV Pressure', value = RBMK.RPVPressure or 0, decimals = 1, unit = 'bar', warn = pressureFraction > 0.85 },
         { type = 'bar', fraction = pressureFraction, height = 5 },
         { type = 'bar', label = 'Water Level', fraction = waterFraction, height = 5 },
@@ -638,7 +660,7 @@ LUASQUARE_3D2D.BindDisplay('tg1_status_panel', function()
         { type = 'bar', fraction = data.bypassValve, height = 5 },
         { type = 'value', label = 'Vibration', value = data.vibration or 0, decimals = 2, unit = '%'},
         { type = 'bar', fraction = data.vibration / 100, height = 5 },
-        { type = 'value', label = 'Load', value = data.loadMW or 0, decimals = 2 },
+        { type = 'value', label = 'Load', value = data.loadMW or 0, decimals = 2, unit = 'MW' },
     }
 end)
 

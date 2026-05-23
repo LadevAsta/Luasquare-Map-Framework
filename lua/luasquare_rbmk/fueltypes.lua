@@ -48,3 +48,15 @@ RBMK.FuelTypes.HEU = {
     xenonGen = function(x) return x * 0.05 end,
     xenonBurn = function(x) return (x * x) / 500 end
 }
+
+RBMK.FuelTypes.YME = {
+    name = 'Yaemikium-837 Experimental Fuel',
+    yield = 100000000,
+    depletion = 0.0,
+    meltingPoint = 2995,
+    heatFactor = 1.5,
+    diffusion = 0.02,
+    fluxFunction = function(x) return math.sqrt(x) * 20 end,
+    xenonGen = function(x) return x * 0.05 end,
+    xenonBurn = function(x) return (x * x) / 500 end
+}

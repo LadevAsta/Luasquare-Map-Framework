@@ -1,8 +1,16 @@
 -- This module contains system for powergrid.
 
 -- Power Grids. (Site's Grid and Offsite's grid) Which allow going on-grid or off-grid.
--- Grid load.
+-- 2 Grid Types. onsite and offsite. offsite grid is more static while onsite is more dynamic.
+-- Grid have phases, frequency, load or something. Not sure.
+-- Rectifier and batteries that can store power for some grid that have it. (we dont need to overcomplicate this, it is simply a power storage.)
+-- Transformers (A rated transformer with on/off switch to connect between different grids or offsite. It have load capacity, adds to the grid)
+-- Voltage?
+-- Onsite grid receives load from either it's own generators or offsite via transformer.
+-- Grid can overload. If overloading for too long or has completely exceeded it's current max load when it have no stored power, it trips and need reset.
 -- Generator and Consumer. (eg. Turbines, Pumps/CoolingSystems/Auxiliary)
--- Bridge Transformers (We'll just make them on/off switches to connect between different grids)
--- Breakers (resetting them re-enable pump after they TRIP)
--- Actual electrical physic??? Adding a generator require them to be synced. Via API to this module. and callback if they did it or not.
+-- Adding a turbine generator require them to be synced. Via API to this module. and callback if they did it or not.
+-- Breaker is the connection point for power consumers with the grid. It can either have turnable or simply just be a connection point.
+-- (If the consumer(like pumps) trips, it do it on the breaker too)
+-- Some Breakers can lock and disable unless it detects that a certain required grid is connected OR the current grid have it's maximum load capacity exceed what's expected.
+-- 'Virtual' power consumers. mostly works with logic_relay to react physically with the current situation of the grid (getting unstable, something got shocked, overloading, etc) (controlling something like maplight, etc).
