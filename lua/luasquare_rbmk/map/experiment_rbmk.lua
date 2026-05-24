@@ -1,7 +1,3 @@
-if LUASQUARE_RBMK_INITIALIZED then
-    print('[LUASQUARE RBMK] BOOTSTRAP FAILED!\n[LUASQUARE RBMK] It already happened once in this session. Reload map.')
-return end
-
 -- =========================================
 -- MAP DEFINITION AND BOOTSTRAP
 -- =========================================
@@ -9,6 +5,21 @@ return end
 -- This is orchestration script to set up map integration.
 -- Deploy THIS SCRIPT using a lua_run in the map :
 -- include('luasquare_rbmk/map/experiment_rbmk.lua')
+
+-- =========================================
+-- PRE-FLIGHT CHECKS
+-- =========================================
+
+-- Luasquare script's presence (This file)
+-- As of now, Luasquare is designed to be impervious to 'Clean Up Everything'. Reload is the only option.
+if LUASQUARE_RBMK_INITIALIZED then
+    print('[LUASQUARE RBMK] BOOTSTRAP FAILED!\n[LUASQUARE RBMK] It already happened once in this session. Reload map.')
+return end
+
+-- Addon Dependencies
+-- NYI.
+-- Detect if the player (or server) has Luasquare Modules installed. if not, fire a map relay if mapper made a relay for it.
+-- That relay intended to auto-configure the map into 'static' idle state where no simulation takes place.
 
 -- =========================================
 -- CORE MODULES
@@ -135,13 +146,15 @@ include('luasquare_rbmk/layouts/LRBMKP-400.lua')
 RBMK.AddInitialWater(85)
 
 -- =========================================
--- FLUID NETWORKS
+-- THERMAL PLANT SYSTEMS
 -- =========================================
 
 local MAPDEF_monitorZoffset = 128
 local MAPDEF_feedwaterTargetPercent = 80
 local MAPDEF_hotwellTargetPercent = 35
 -- Debug monitor positions can be Vector(...) or monitorTarget = 'named_info_target'.
+
+-- Power Grid
 
 LUASQUARE_POWERGRID.RegisterGrid('offsite_grid', {
     type = 'offsite',
@@ -173,6 +186,8 @@ LUASQUARE_POWERGRID.RegisterTransformer('offsite_station_transformer', {
     bidirectional = true,
     monitorPos = 'tar_transformer_offsite_station'
 })
+
+-- Fluid Network
 
 LUASQUARE_FLUID.RegisterNetwork('main_steam', {
     type = LUASQUARE_FLUID.TYPE_STEAMLINE,
@@ -295,6 +310,8 @@ LUASQUARE_PUMP.RegisterPump('condensate_pump_a1', {
 
 LUASQUARE_TURBINE.RegisterTurbine('tg1', {
     input = 'main_steam',
+    boiler = 'rbmk',
+    cycleEfficiency = 0.32,
     condenserOutput = 'hotwell',
     bypassCondenserOutput = 'hotwell',
     condenserOutputTemperature = 80,
@@ -325,8 +342,8 @@ LUASQUARE_POWERGENERATOR.RegisterTurbineGenerator('tg1_generator', {
     turbine = 'tg1',
     grid = 'station_grid',
     breaker = 'tg1_generator_breaker',
-    ratedMW = 3000,
-    maxMW = 18000,
+    ratedMW = 160,
+    maxMW = 480,
     gridRPM = 1800,
     syncRPMTolerance = 8,
     syncPhaseTolerance = 8,

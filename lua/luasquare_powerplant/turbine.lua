@@ -11,6 +11,7 @@ LUASQUARE_TURBINE.TickInterval = LUASQUARE_TURBINE.TickInterval or 0.1
 function LUASQUARE_TURBINE.RegisterTurbine(name, data)
     data = data or {}
     local maxSteamRate = tonumber(data.maxSteamRate) or 1000
+    local boiler = data.boiler or data.thermalSource
     local tripVibration = tonumber(data.tripVibration) or 100
     local shakeStartVibration = tonumber(data.shakeStartVibration)
     if not shakeStartVibration and data.shakeStartRPMFraction then
@@ -26,6 +27,8 @@ function LUASQUARE_TURBINE.RegisterTurbine(name, data)
         bypassCondenserOutput = data.bypassCondenserOutput or data.condenserOutput or data.condensateOutput,
         condenserOutputTemperature = tonumber(data.condenserOutputTemperature) or 80,
         bypassCondenserOutputTemperature = tonumber(data.bypassCondenserOutputTemperature) or tonumber(data.condenserOutputTemperature) or 95,
+        condenserSteamTemperatureInfluence = math.Clamp(tonumber(data.condenserSteamTemperatureInfluence) or 0.08, 0, 1),
+        bypassSteamTemperatureInfluence = math.Clamp(tonumber(data.bypassSteamTemperatureInfluence) or tonumber(data.condenserSteamTemperatureInfluence) or 0.16, 0, 1),
         enabled = data.enabled and true or false,
         tripped = data.tripped and true or false,
         synced = data.synced and true or false,
@@ -52,9 +55,11 @@ function LUASQUARE_TURBINE.RegisterTurbine(name, data)
         syncFailureTrips = data.syncFailureTrips ~= false,
         phase = tonumber(data.phase) or 0,
         efficiency = tonumber(data.efficiency) or 0.32,
+        cycleEfficiency = tonumber(data.cycleEfficiency) or tonumber(data.efficiency) or 0.32,
+        boiler = boiler,
         mwPerSteamPerSecond = tonumber(data.mwPerSteamPerSecond) or 0.02,
         loadMW = tonumber(data.loadMW),
-        maxMW = tonumber(data.maxMW) or 1000,
+        maxMW = tonumber(data.maxMW) or (boiler and 1000000000 or 1000),
         generator = data.generator,
         vibration = 0,
         tripVibration = tripVibration,
@@ -75,14 +80,22 @@ function LUASQUARE_TURBINE.RegisterTurbine(name, data)
         sound2Playing = false,
         shakeEntity = data.shakeEntity,
         shakeMaxAmplitude = tonumber(data.shakeMaxAmplitude) or 16,
-        shakeMaxFrequency = tonumber(data.shakeMaxFrequency) or 128,
+        shakeMinAmplitude = tonumber(data.shakeMinAmplitude) or 1,
+        shakeMaxFrequency = tonumber(data.shakeMaxFrequency) or 255,
+        shakeMinFrequency = tonumber(data.shakeMinFrequency) or 120,
         shakeStartVibration = shakeStartVibration or 1,
+        shakeRepeatInterval = tonumber(data.shakeRepeatInterval) or tonumber(data.shakePulseInterval) or 2,
+        nextShakeTime = 0,
         shakeActive = false,
         lastSteamUsed = 0,
         lastBypassSteam = 0,
         lastExhaustMade = 0,
         lastCondensateMade = 0,
         lastBypassCondensateMade = 0,
+        lastCondensateTemperature = tonumber(data.condenserOutputTemperature) or 80,
+        lastBypassCondensateTemperature = tonumber(data.bypassCondenserOutputTemperature) or tonumber(data.condenserOutputTemperature) or 95,
+        lastBoilerMW = 0,
+        lastSteamShare = 0,
         lastMW = 0,
         lastFlowLimited = false,
         tripReason = nil,
@@ -107,6 +120,11 @@ end
 
 function LUASQUARE_TURBINE.FireRelay(relay)
     if relay and LUASQUARE_FLUID then LUASQUARE_FLUID.FireRelay(relay) end
+end
+
+function LUASQUARE_TURBINE.GetTime()
+    if CurTime then return CurTime() end
+    return os.clock()
 end
 
 function LUASQUARE_TURBINE.FireEnt(name, input, value)
@@ -349,6 +367,13 @@ function LUASQUARE_TURBINE.MoveSteam(inputName, outputName, amount, exhaustRatio
     return removed, exhaustMade
 end
 
+function LUASQUARE_TURBINE.GetCondensateOutputTemperature(turbine, input, baseTemperature, influence)
+    local base = tonumber(baseTemperature) or 80
+    local steamTemperature = input and tonumber(input.temperature) or base
+    local factor = math.Clamp(tonumber(influence) or 0, 0, 1)
+    return math.max(base, Lerp(factor, base, steamTemperature))
+end
+
 function LUASQUARE_TURBINE.CondenseSteamToWater(inputName, outputName, amount, waterRatio, outputTemperature)
     if not LUASQUARE_FLUID or amount <= 0 then return 0, 0 end
     local input = LUASQUARE_FLUID.GetNetwork(inputName)
@@ -418,7 +443,9 @@ function LUASQUARE_TURBINE.DoBypassFlow(turbine, dt)
     local condensate = 0
     if turbine.bypassCondenserOutput then
         requested = LUASQUARE_TURBINE.GetCondenserFlowRequest(turbine, input, output, turbine.bypassValve, turbine.bypassMaxSteamRate, dt)
-        moved, condensate = LUASQUARE_TURBINE.CondenseSteamToWater(turbine.input, turbine.bypassCondenserOutput, requested, LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine), turbine.bypassCondenserOutputTemperature)
+        local outputTemperature = LUASQUARE_TURBINE.GetCondensateOutputTemperature(turbine, input, turbine.bypassCondenserOutputTemperature, turbine.bypassSteamTemperatureInfluence)
+        moved, condensate = LUASQUARE_TURBINE.CondenseSteamToWater(turbine.input, turbine.bypassCondenserOutput, requested, LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine), outputTemperature)
+        turbine.lastBypassCondensateTemperature = outputTemperature
     else
         requested = LUASQUARE_TURBINE.GetFlowRequest(turbine, input, output, turbine.bypassValve, turbine.bypassMaxSteamRate, dt)
         moved = LUASQUARE_TURBINE.MoveSteam(turbine.input, turbine.bypassOutput, requested, turbine.exhaustRatio, turbine.steamRatio)
@@ -445,7 +472,9 @@ function LUASQUARE_TURBINE.DoTurbineFlow(turbine, dt)
     local condensate = 0
     if turbine.condenserOutput then
         requested = LUASQUARE_TURBINE.GetCondenserFlowRequest(turbine, input, output, turbine.valve, turbine.maxSteamRate, dt)
-        moved, condensate = LUASQUARE_TURBINE.CondenseSteamToWater(turbine.input, turbine.condenserOutput, requested, LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine), turbine.condenserOutputTemperature)
+        local outputTemperature = LUASQUARE_TURBINE.GetCondensateOutputTemperature(turbine, input, turbine.condenserOutputTemperature, turbine.condenserSteamTemperatureInfluence)
+        moved, condensate = LUASQUARE_TURBINE.CondenseSteamToWater(turbine.input, turbine.condenserOutput, requested, LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine), outputTemperature)
+        turbine.lastCondensateTemperature = outputTemperature
     else
         requested = LUASQUARE_TURBINE.GetFlowRequest(turbine, input, output, turbine.valve, turbine.maxSteamRate, dt)
         moved, exhaust = LUASQUARE_TURBINE.MoveSteam(turbine.input, turbine.output, requested, turbine.exhaustRatio, turbine.steamRatio)
@@ -478,13 +507,56 @@ function LUASQUARE_TURBINE.UpdateRotor(turbine, steamRate, dt)
     turbine.vibration = math.abs(turbine.rpm - targetRPM) * 0.05 + math.max(turbine.rpm - turbine.designRPM, 0) * 0.1
 end
 
+function LUASQUARE_TURBINE.GetBoilerThermalMW(turbine)
+    local boiler = turbine.boiler
+    if not boiler then return nil end
+
+    if boiler == 'rbmk' then
+        if not RBMK then return nil end
+        return math.max((RBMK.LastThermalMW or 0) + (RBMK.LastFlashBoilMW or 0), 0)
+    end
+
+    if type(boiler) == 'function' then return math.max(tonumber(boiler(turbine)) or 0, 0) end
+    if type(boiler) == 'table' then
+        return math.max((boiler.LastThermalMW or boiler.lastThermalMW or 0) + (boiler.LastFlashBoilMW or boiler.lastFlashBoilMW or 0), 0)
+    end
+
+    return nil
+end
+
+function LUASQUARE_TURBINE.GetBoilerSteamUse(turbine)
+    if not turbine.boiler then return turbine.lastSteamUsed or 0 end
+
+    local total = 0
+    for _, other in pairs(LUASQUARE_TURBINE.Turbines) do
+        if other.boiler == turbine.boiler then total = total + math.max(other.lastSteamUsed or 0, 0) end
+    end
+
+    return math.max(total, turbine.lastSteamUsed or 0)
+end
+
 function LUASQUARE_TURBINE.UpdatePower(turbine)
     if not turbine.synced or turbine.tripped then
         turbine.lastMW = 0
+        turbine.lastBoilerMW = 0
+        turbine.lastSteamShare = 0
         return
     end
 
-    local rawMW = turbine.lastSteamUsed * turbine.mwPerSteamPerSecond * turbine.efficiency
+    local boilerMW = LUASQUARE_TURBINE.GetBoilerThermalMW(turbine)
+    local rawMW
+    if boilerMW then
+        local totalSteamUse = LUASQUARE_TURBINE.GetBoilerSteamUse(turbine)
+        local steamShare = totalSteamUse > 0 and math.Clamp((turbine.lastSteamUsed or 0) / totalSteamUse, 0, 1) or 0
+        turbine.lastBoilerMW = boilerMW
+        turbine.lastSteamShare = steamShare
+        rawMW = boilerMW * math.Clamp(turbine.cycleEfficiency or turbine.efficiency or 0.32, 0, 1) * steamShare
+    else
+        turbine.lastBoilerMW = 0
+        turbine.lastSteamShare = 0
+        rawMW = turbine.lastSteamUsed * turbine.mwPerSteamPerSecond * turbine.efficiency
+    end
+
     if turbine.loadMW and turbine.loadMW > 0 then rawMW = math.min(rawMW, turbine.loadMW) end
     turbine.lastMW = math.Clamp(rawMW, 0, turbine.maxMW)
 end
@@ -539,19 +611,35 @@ function LUASQUARE_TURBINE.UpdateShakeEffect(turbine)
     if not turbine.shakeEntity then return end
     local vibration = turbine.vibration or 0
     local shouldShake = vibration >= turbine.shakeStartVibration and not turbine.tripped
-    if shouldShake and not turbine.shakeActive then
-        turbine.shakeActive = LUASQUARE_TURBINE.FireEnt(turbine.shakeEntity, 'StartShake')
-    elseif not shouldShake and turbine.shakeActive then
-        LUASQUARE_TURBINE.FireEnt(turbine.shakeEntity, 'StopShake')
-        turbine.shakeActive = false
+    if not shouldShake then
+        turbine.nextShakeTime = 0
+        if turbine.shakeActive then
+            LUASQUARE_TURBINE.FireEnt(turbine.shakeEntity, 'StopShake')
+            turbine.shakeActive = false
+        end
+        return
     end
 
-    if not shouldShake then return end
     local vibrationScale = math.Clamp(vibration / math.max(turbine.tripVibration, 0.0001), 0, 1)
-    local amplitude = Lerp(vibrationScale, 0, turbine.shakeMaxAmplitude)
-    local frequency = Lerp(vibrationScale, 1, turbine.shakeMaxFrequency)
+    local amplitude = Lerp(vibrationScale, turbine.shakeMinAmplitude, turbine.shakeMaxAmplitude)
+    local frequency = Lerp(vibrationScale, turbine.shakeMinFrequency, turbine.shakeMaxFrequency)
     LUASQUARE_TURBINE.FireEnt(turbine.shakeEntity, 'Amplitude', tostring(amplitude))
     LUASQUARE_TURBINE.FireEnt(turbine.shakeEntity, 'Frequency', tostring(frequency))
+
+    local now = LUASQUARE_TURBINE.GetTime()
+    if now >= (turbine.nextShakeTime or 0) then
+        turbine.shakeActive = LUASQUARE_TURBINE.FireEnt(turbine.shakeEntity, 'StartShake') or turbine.shakeActive
+        turbine.nextShakeTime = now + math.max(turbine.shakeRepeatInterval or 2, 0.1)
+    end
+end
+
+function LUASQUARE_TURBINE.ClearShakeEffect(turbine)
+    if not turbine.shakeEntity then return end
+    if turbine.shakeActive then
+        LUASQUARE_TURBINE.FireEnt(turbine.shakeEntity, 'StopShake')
+    end
+    turbine.shakeActive = false
+    turbine.nextShakeTime = 0
 end
 
 function LUASQUARE_TURBINE.UpdateEffects(turbine)
@@ -559,7 +647,7 @@ function LUASQUARE_TURBINE.UpdateEffects(turbine)
     LUASQUARE_TURBINE.UpdateShakeEffect(turbine)
 end
 
-function LUASQUARE_TURBINE.UpdateTurbine(name, dt)
+function LUASQUARE_TURBINE.UpdateTurbine(name, dt, skipPower)
     local turbine = LUASQUARE_TURBINE.GetTurbine(name)
     if not turbine then return end
 
@@ -567,6 +655,8 @@ function LUASQUARE_TURBINE.UpdateTurbine(name, dt)
     local steamRate = LUASQUARE_TURBINE.DoTurbineFlow(turbine, dt)
     LUASQUARE_TURBINE.UpdateRotor(turbine, steamRate, dt)
     if turbine.autoSync and not turbine.generator and not turbine.synced and LUASQUARE_TURBINE.CanSync(turbine) then LUASQUARE_TURBINE.Sync(name) end
+    if skipPower then return end
+
     LUASQUARE_TURBINE.UpdatePower(turbine)
     LUASQUARE_TURBINE.UpdateTrips(name, turbine)
     LUASQUARE_TURBINE.UpdateEffects(turbine)
@@ -575,7 +665,13 @@ end
 function LUASQUARE_TURBINE.UpdateAll()
     local dt = LUASQUARE_TURBINE.TickInterval
     for name, _ in pairs(LUASQUARE_TURBINE.Turbines) do
-        LUASQUARE_TURBINE.UpdateTurbine(name, dt)
+        LUASQUARE_TURBINE.UpdateTurbine(name, dt, true)
+    end
+
+    for name, turbine in pairs(LUASQUARE_TURBINE.Turbines) do
+        LUASQUARE_TURBINE.UpdatePower(turbine)
+        LUASQUARE_TURBINE.UpdateTrips(name, turbine)
+        LUASQUARE_TURBINE.UpdateEffects(turbine)
     end
 end
 
@@ -589,9 +685,8 @@ function LUASQUARE_TURBINE.Stop()
     if timer.Exists('LUASQUARE_TURBINE_UpdateTimer') then timer.Remove('LUASQUARE_TURBINE_UpdateTimer') end
     for _, turbine in pairs(LUASQUARE_TURBINE.Turbines) do
         if turbine.soundPlaying then LUASQUARE_TURBINE.FireEnt(turbine.soundEntity, 'StopSound') end
-        if turbine.shakeActive then LUASQUARE_TURBINE.FireEnt(turbine.shakeEntity, 'StopShake') end
+        LUASQUARE_TURBINE.ClearShakeEffect(turbine)
         turbine.soundPlaying = false
-        turbine.shakeActive = false
     end
     print('[LUASQUARE_TURBINE] Stopped')
 end

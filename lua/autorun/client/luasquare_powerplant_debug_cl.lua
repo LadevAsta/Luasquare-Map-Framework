@@ -117,12 +117,14 @@ function LUASQUARE_POWERPLANT.Debug.RenderTurbine(turbine)
     local lines = {
         'TURB ' .. tostring(turbine.name),
         tostring(turbine.input) .. ' > ' .. tostring(outputName),
+        'BOILER ' .. tostring(turbine.boiler or 'none'),
         'EN ' .. tostring(turbine.enabled) .. ' SYNC ' .. tostring(turbine.synced),
         string.format('VLV %.1f%% BYP %.1f%%', (turbine.valve or 0) * 100, (turbine.bypassValve or 0) * 100),
         string.format('RPM %.0f PH %.1f', turbine.rpm or 0, turbine.phase or 0),
         string.format('RATED %.0f/s MAX %.0f/s', turbine.ratedSteamRate or 0, turbine.maxSteamRate or 0),
         string.format('S %.1f/s B %.1f/s', turbine.lastSteamUsed or 0, turbine.lastBypassSteam or 0),
-        string.format('HW %.3f/s BHW %.3f/s', turbine.lastCondensateMade or 0, turbine.lastBypassCondensateMade or 0),
+        string.format('HW %.3f/s %.1fC BHW %.3f/s %.1fC', turbine.lastCondensateMade or 0, turbine.lastCondensateTemperature or 0, turbine.lastBypassCondensateMade or 0, turbine.lastBypassCondensateTemperature or 0),
+        string.format('MWth %.1f SHARE %.0f%% EFF %.0f%%', turbine.lastBoilerMW or 0, (turbine.lastSteamShare or 0) * 100, (turbine.cycleEfficiency or 0) * 100),
         string.format('MW %.1f VIB %.1f', turbine.lastMW or 0, turbine.vibration or 0)
     }
     if turbine.tripped then table.insert(lines, 'TRIP ' .. tostring(turbine.tripReason or '')) end
