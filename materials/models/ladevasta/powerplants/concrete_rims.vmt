@@ -1,0 +1,12 @@
+VertexLitGeneric
+{
+    $basetexture "models/ladevasta/powerplants/concrete_worn_diff"
+    $color2 "[ 0.37 0.37 0.37 ]"
+    $bumpmap "models/ladevasta/powerplants/concrete_worn_norm"
+
+    $phong 1
+    $phongboost 0.50
+    $phongexponent 17.10
+    $phongfresnelranges "[ 0.20 0.80 1.00 ]"
+
+}

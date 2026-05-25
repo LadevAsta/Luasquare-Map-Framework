@@ -1,0 +1,11 @@
+VertexLitGeneric
+{
+    $basetexture "models/ladevasta/powerplants/concrete_cladding_diff"
+    $bumpmap "models/ladevasta/powerplants/concrete_cladding_norm"
+
+    $phong 1
+    $phongboost 1.00
+    $phongexponent 8.70
+    $phongfresnelranges "[ 0.00 0.20 0.00 ]"
+
+}
