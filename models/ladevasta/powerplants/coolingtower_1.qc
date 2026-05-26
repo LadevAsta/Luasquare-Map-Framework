@@ -12,8 +12,6 @@ $cdmaterials "models/ladevasta/powerplants"
 
 $sequence "idle" "coolingtower_1.smd" fps 1
 
-// Static props are lit by the map compiler as props, not brush lightmapped surfaces.
-// For a very large model, prefer func_detail/world collision in Hammer if this mesh is too heavy.
 $collisionmodel "coolingtower_1_phys.smd"
 {
     $mass 100000

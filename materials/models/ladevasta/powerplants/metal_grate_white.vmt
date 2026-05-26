@@ -1,0 +1,7 @@
+VertexLitGeneric
+{
+    $basetexture "models/ladevasta/powerplants/c1a4d_generator_grate_model"
+
+    $translucent "1"
+    //$alphatest "1"
+}

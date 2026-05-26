@@ -1,0 +1,12 @@
+VertexLitGeneric
+{
+    $basetexture "models/ladevasta/powerplants/metal_galvzinc_diff"
+    $color2 "[ 0.29 0.29 0.29 ]"
+    $bumpmap "models/ladevasta/powerplants/metal_galvzinc_norm"
+
+    $phong 1
+    $phongboost 1.00
+    $phongexponent 27.50
+    $phongfresnelranges "[ 0.20 0.40 1.00 ]"
+
+}

@@ -1,0 +1,5 @@
+VertexLitGeneric
+{
+    $basetexture "models/ladevasta/powerplants/metal_galvsteel_diff"
+
+}
