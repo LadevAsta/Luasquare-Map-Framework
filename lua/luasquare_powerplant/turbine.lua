@@ -38,6 +38,8 @@ function LUASQUARE_TURBINE.RegisterTurbine(name, data)
         maxSteamRate = maxSteamRate,
         ratedSteamRate = tonumber(data.ratedSteamRate) or maxSteamRate,
         bypassMaxSteamRate = tonumber(data.bypassMaxSteamRate) or maxSteamRate,
+        inletMaxSteamRate = tonumber(data.inletMaxSteamRate) or math.max(maxSteamRate, tonumber(data.bypassMaxSteamRate) or maxSteamRate),
+        maxPressureFlowScale = tonumber(data.maxPressureFlowScale) or 2,
         ratedInletPressure = tonumber(data.ratedInletPressure),
         ratedPressureDelta = tonumber(data.ratedPressureDelta),
         steamRatio = tonumber(data.steamRatio) or 1600,
@@ -67,9 +69,22 @@ function LUASQUARE_TURBINE.RegisterTurbine(name, data)
         stopRelay = data.stopRelay,
         syncRelay = data.syncRelay,
         tripRelay = data.tripRelay,
+        severeTripRelay = data.severeTripRelay,
+        severeTripStopRelay = data.severeTripStopRelay,
+        severeTripRPM = tonumber(data.severeTripRPM) or 100,
+        severeTripBrakeRPM = tonumber(data.severeTripBrakeRPM) or 20,
+        severeTripFired = false,
+        severeTripStopFired = false,
+        extremeTripRelay = data.extremeTripRelay,
+        extremeTripRPM = tonumber(data.extremeTripRPM) or 1900,
+        extremeTripFlowFraction = tonumber(data.extremeTripFlowFraction) or 1,
+        extremeTripChance = tonumber(data.extremeTripChance) or 0.25,
+        extremeTripFired = false,
+        repairRelay = data.repairRelay,
         resetRelay = data.resetRelay,
         soundEntity = data.soundEntity,
         soundEntity2 = data.soundEntity2,
+        soundStopRPM = tonumber(data.soundStopRPM) or 0,
         soundMinVolume = tonumber(data.soundMinVolume) or 1,
         soundMaxVolume = tonumber(data.soundMaxVolume) or 10,
         soundMinPitch = tonumber(data.soundMinPitch) or 80,
@@ -89,6 +104,8 @@ function LUASQUARE_TURBINE.RegisterTurbine(name, data)
         shakeActive = false,
         lastSteamUsed = 0,
         lastBypassSteam = 0,
+        lastInletSteam = 0,
+        lastInletPressureScale = 0,
         lastExhaustMade = 0,
         lastCondensateMade = 0,
         lastBypassCondensateMade = 0,
@@ -96,9 +113,13 @@ function LUASQUARE_TURBINE.RegisterTurbine(name, data)
         lastBypassCondensateTemperature = tonumber(data.bypassCondenserOutputTemperature) or tonumber(data.condenserOutputTemperature) or 95,
         lastBoilerMW = 0,
         lastSteamShare = 0,
+        lastTurbineSteamFraction = 0,
         lastMW = 0,
         lastFlowLimited = false,
         tripReason = nil,
+        tripLevel = nil,
+        tripRelayFired = false,
+        catastrophicFailed = data.catastrophicFailed and true or false,
         monitorPos = data.monitorPos,
         monitorTarget = data.monitorTarget or data.monitorEntity or data.monitorName,
         monitorOffset = data.monitorOffset or Vector(0, 0, 0)
@@ -141,6 +162,11 @@ function LUASQUARE_TURBINE.SetEnabled(name, enabled)
     local turbine = LUASQUARE_TURBINE.GetTurbine(name)
     if not turbine then
         print('[LUASQUARE_TURBINE] Unknown turbine: ' .. tostring(name))
+        return false
+    end
+
+    if enabled and turbine.catastrophicFailed then
+        print('[LUASQUARE_TURBINE] Cannot enable catastrophically failed turbine: ' .. tostring(name))
         return false
     end
 
@@ -238,7 +264,74 @@ function LUASQUARE_TURBINE.SetLoadMW(name, mw)
     return true
 end
 
-function LUASQUARE_TURBINE.Trip(name, reason)
+function LUASQUARE_TURBINE.FireTripRelay(turbine)
+    if turbine.tripRelayFired then return false end
+    turbine.tripRelayFired = true
+    LUASQUARE_TURBINE.FireRelay(turbine.tripRelay)
+    return true
+end
+
+function LUASQUARE_TURBINE.GetTripSteamFlowFraction(turbine)
+    local maxRate = math.max(turbine.maxSteamRate or turbine.ratedSteamRate or 0, 0.0001)
+    return math.max(turbine.lastSteamUsed or 0, 0) / maxRate
+end
+
+function LUASQUARE_TURBINE.RollChance(chance)
+    chance = math.Clamp(tonumber(chance) or 0, 0, 1)
+    if chance <= 0 then return false end
+    if chance >= 1 then return true end
+    if math.Rand then return math.Rand(0, 1) <= chance end
+    return math.random() <= chance
+end
+
+function LUASQUARE_TURBINE.ShouldExtremeTrip(turbine)
+    if (turbine.rpm or 0) < (turbine.extremeTripRPM or 1900) then return false end
+    if LUASQUARE_TURBINE.GetTripSteamFlowFraction(turbine) < (turbine.extremeTripFlowFraction or 1) then return false end
+    return LUASQUARE_TURBINE.RollChance(turbine.extremeTripChance)
+end
+
+function LUASQUARE_TURBINE.ShutdownForTrip(turbine)
+    turbine.tripped = true
+    turbine.synced = false
+    turbine.enabled = false
+    turbine.bypassValve = 0
+    turbine.valve = 0
+end
+
+function LUASQUARE_TURBINE.TripGenerator(turbine)
+    if not turbine.generator or not LUASQUARE_POWERGENERATOR then return end
+    local generator = LUASQUARE_POWERGENERATOR.GetGenerator(turbine.generator)
+    if generator and not generator.tripped then LUASQUARE_POWERGENERATOR.Trip(turbine.generator, turbine.tripReason) end
+end
+
+function LUASQUARE_TURBINE.ExtremeTrip(name, reason)
+    local turbine = LUASQUARE_TURBINE.GetTurbine(name)
+    if not turbine then
+        print('[LUASQUARE_TURBINE] Unknown turbine: ' .. tostring(name))
+        return false
+    end
+
+    if turbine.catastrophicFailed then return true end
+
+    LUASQUARE_TURBINE.ShutdownForTrip(turbine)
+    turbine.catastrophicFailed = true
+    turbine.tripLevel = 'extreme'
+    turbine.tripReason = reason or 'EXTREME_TRIP'
+    turbine.extremeTripFired = true
+    turbine.severeTripFired = false
+    turbine.severeTripStopFired = false
+    turbine.tripRelayFired = false
+    LUASQUARE_TURBINE.TripGenerator(turbine)
+    LUASQUARE_TURBINE.FireRelay(turbine.extremeTripRelay)
+    print('[LUASQUARE_TURBINE] EXTREME TRIP ' .. tostring(name) .. ': ' .. tostring(turbine.tripReason))
+    return true
+end
+
+function LUASQUARE_TURBINE.TestExtremeTrip(name)
+    return LUASQUARE_TURBINE.ExtremeTrip(name, 'EXTREME_TRIP_TEST')
+end
+
+function LUASQUARE_TURBINE.Trip(name, reason, forceLevel)
     local turbine = LUASQUARE_TURBINE.GetTurbine(name)
     if not turbine then
         print('[LUASQUARE_TURBINE] Unknown turbine: ' .. tostring(name))
@@ -246,18 +339,31 @@ function LUASQUARE_TURBINE.Trip(name, reason)
     end
 
     if turbine.tripped then return true end
-    turbine.tripped = true
-    turbine.synced = false
-    turbine.enabled = false
-    turbine.bypassValve = 0
-    turbine.valve = 0
-    turbine.tripReason = reason or 'UNKNOWN'
-    if turbine.generator and LUASQUARE_POWERGENERATOR then
-        local generator = LUASQUARE_POWERGENERATOR.GetGenerator(turbine.generator)
-        if generator and not generator.tripped then LUASQUARE_POWERGENERATOR.Trip(turbine.generator, turbine.tripReason) end
+    if turbine.catastrophicFailed then return false end
+
+    if forceLevel == 'extreme' or (forceLevel ~= 'normal' and forceLevel ~= 'severe' and LUASQUARE_TURBINE.ShouldExtremeTrip(turbine)) then
+        return LUASQUARE_TURBINE.ExtremeTrip(name, reason or 'EXTREME_TRIP')
     end
-    LUASQUARE_TURBINE.FireRelay(turbine.tripRelay)
-    print('[LUASQUARE_TURBINE] Trip ' .. tostring(name) .. ': ' .. tostring(turbine.tripReason))
+
+    LUASQUARE_TURBINE.ShutdownForTrip(turbine)
+    turbine.tripReason = reason or 'UNKNOWN'
+    turbine.tripRelayFired = false
+    turbine.severeTripStopFired = false
+    turbine.extremeTripFired = false
+    local severe = forceLevel == 'severe' or (forceLevel ~= 'normal' and (turbine.rpm or 0) >= (turbine.severeTripRPM or 100))
+    if severe then
+        turbine.tripLevel = 'severe'
+        turbine.severeTripFired = true
+        LUASQUARE_TURBINE.FireRelay(turbine.severeTripRelay)
+    else
+        turbine.tripLevel = 'normal'
+        turbine.severeTripFired = false
+        LUASQUARE_TURBINE.FireTripRelay(turbine)
+    end
+
+    LUASQUARE_TURBINE.TripGenerator(turbine)
+    LUASQUARE_TURBINE.UpdateSevereTrip(name, turbine)
+    print('[LUASQUARE_TURBINE] ' .. string.upper(turbine.tripLevel or 'normal') .. ' trip ' .. tostring(name) .. ': ' .. tostring(turbine.tripReason))
     return true
 end
 
@@ -268,8 +374,18 @@ function LUASQUARE_TURBINE.ResetTrip(name)
         return false
     end
 
+    if turbine.catastrophicFailed then
+        print('[LUASQUARE_TURBINE] Cannot reset catastrophically failed turbine, repair required: ' .. tostring(name))
+        return false
+    end
+
     turbine.tripped = false
     turbine.tripReason = nil
+    turbine.tripLevel = nil
+    turbine.tripRelayFired = false
+    turbine.severeTripFired = false
+    turbine.severeTripStopFired = false
+    turbine.extremeTripFired = false
     turbine.enabled = true
     if turbine.generator and LUASQUARE_POWERGENERATOR then
         local generator = LUASQUARE_POWERGENERATOR.GetGenerator(turbine.generator)
@@ -279,12 +395,38 @@ function LUASQUARE_TURBINE.ResetTrip(name)
     return true
 end
 
+function LUASQUARE_TURBINE.RepairCatastrophicFailure(name, enabled)
+    local turbine = LUASQUARE_TURBINE.GetTurbine(name)
+    if not turbine then
+        print('[LUASQUARE_TURBINE] Unknown turbine: ' .. tostring(name))
+        return false
+    end
+
+    turbine.catastrophicFailed = false
+    turbine.tripped = false
+    turbine.tripReason = nil
+    turbine.tripLevel = nil
+    turbine.tripRelayFired = false
+    turbine.severeTripFired = false
+    turbine.severeTripStopFired = false
+    turbine.extremeTripFired = false
+    turbine.enabled = enabled ~= false
+    LUASQUARE_TURBINE.FireRelay(turbine.repairRelay)
+    LUASQUARE_TURBINE.FireRelay(turbine.resetRelay)
+    return true
+end
+
+function LUASQUARE_TURBINE.Repair(name, enabled)
+    return LUASQUARE_TURBINE.RepairCatastrophicFailure(name, enabled)
+end
+
 function LUASQUARE_TURBINE.GetPhaseError(turbine)
     local phase = ((turbine.phase or 0) + 180) % 360 - 180
     return phase
 end
 
 function LUASQUARE_TURBINE.CanSync(turbine)
+    if turbine.catastrophicFailed then return false end
     if turbine.tripped or not turbine.enabled then return false end
     local rpmError = math.abs((turbine.rpm or 0) - (turbine.gridRPM or turbine.designRPM))
     local phaseError = math.abs(LUASQUARE_TURBINE.GetPhaseError(turbine))
@@ -428,62 +570,125 @@ function LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine)
     return math.max(turbine.steamRatio, 0.0001) * math.max(turbine.condenserRatio, 0.0001) / math.max(turbine.exhaustRatio, 0.0001)
 end
 
-function LUASQUARE_TURBINE.DoBypassFlow(turbine, dt)
-    turbine.lastBypassSteam = 0
-    turbine.lastBypassCondensateMade = 0
-    if (not turbine.bypassOutput and not turbine.bypassCondenserOutput) or turbine.bypassValve <= 0 then return end
-    if not LUASQUARE_FLUID then return end
-    local input = LUASQUARE_FLUID.GetNetwork(turbine.input)
-    local outputName = turbine.bypassCondenserOutput or turbine.bypassOutput
-    local output = LUASQUARE_FLUID.GetNetwork(outputName)
-    if not input or not output then return end
-
-    local requested
-    local moved
-    local condensate = 0
-    if turbine.bypassCondenserOutput then
-        requested = LUASQUARE_TURBINE.GetCondenserFlowRequest(turbine, input, output, turbine.bypassValve, turbine.bypassMaxSteamRate, dt)
-        local outputTemperature = LUASQUARE_TURBINE.GetCondensateOutputTemperature(turbine, input, turbine.bypassCondenserOutputTemperature, turbine.bypassSteamTemperatureInfluence)
-        moved, condensate = LUASQUARE_TURBINE.CondenseSteamToWater(turbine.input, turbine.bypassCondenserOutput, requested, LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine), outputTemperature)
-        turbine.lastBypassCondensateTemperature = outputTemperature
-    else
-        requested = LUASQUARE_TURBINE.GetFlowRequest(turbine, input, output, turbine.bypassValve, turbine.bypassMaxSteamRate, dt)
-        moved = LUASQUARE_TURBINE.MoveSteam(turbine.input, turbine.bypassOutput, requested, turbine.exhaustRatio, turbine.steamRatio)
-    end
-    turbine.lastBypassSteam = moved / math.max(dt, 0.0001)
-    turbine.lastBypassCondensateMade = condensate / math.max(dt, 0.0001)
-end
-
-function LUASQUARE_TURBINE.DoTurbineFlow(turbine, dt)
+function LUASQUARE_TURBINE.ResetFlowTelemetry(turbine)
     turbine.lastSteamUsed = 0
+    turbine.lastBypassSteam = 0
+    turbine.lastInletSteam = 0
+    turbine.lastInletPressureScale = 0
     turbine.lastExhaustMade = 0
     turbine.lastCondensateMade = 0
+    turbine.lastBypassCondensateMade = 0
     turbine.lastFlowLimited = false
-    if turbine.tripped or not turbine.enabled then return 0 end
-    if not LUASQUARE_FLUID then return 0 end
-    local input = LUASQUARE_FLUID.GetNetwork(turbine.input)
-    local outputName = turbine.condenserOutput or turbine.output
-    local output = LUASQUARE_FLUID.GetNetwork(outputName)
-    if not input or not output then return 0 end
+end
 
-    local requested
+function LUASQUARE_TURBINE.GetOutputFreeSteam(turbine, output, branch)
+    if not output then return 0 end
+    local free = math.max((output.hardMaxAmount or output.maxAmount) - output.amount, 0)
+    if branch == 'turbine' and turbine.condenserOutput then return free * LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine) end
+    if branch == 'bypass' and turbine.bypassCondenserOutput then return free * LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine) end
+    return free * math.max(turbine.steamRatio, 0.0001) / math.max(turbine.exhaustRatio, 0.0001)
+end
+
+function LUASQUARE_TURBINE.GetInletPressureScale(turbine, input)
+    local inputPressure = LUASQUARE_TURBINE.GetNetworkPressure(input)
+    if inputPressure <= 0 then return 0 end
+
+    local ratedPressure = turbine.ratedInletPressure or input.maxPressure or inputPressure
+    local pressureScale = inputPressure / math.max(ratedPressure, 0.0001)
+    return math.Clamp(pressureScale, 0, math.max(turbine.maxPressureFlowScale or 1, 1))
+end
+
+function LUASQUARE_TURBINE.GetSharedFlowRequests(turbine, input, turbineOutput, bypassOutput, dt)
+    local turbineWeight = 0
+    local bypassWeight = 0
+    if turbine.valve > 0 and turbineOutput then turbineWeight = turbine.valve * math.max(turbine.maxSteamRate or 0, 0) end
+    if turbine.bypassValve > 0 and bypassOutput then bypassWeight = turbine.bypassValve * math.max(turbine.bypassMaxSteamRate or 0, 0) end
+
+    local totalWeight = turbineWeight + bypassWeight
+    if totalWeight <= 0 then return 0, 0, 0, 0 end
+
+    local pressureScale = LUASQUARE_TURBINE.GetInletPressureScale(turbine, input)
+    if pressureScale <= 0 then return 0, 0, 0, pressureScale end
+
+    local inletLimit = math.max(turbine.inletMaxSteamRate or turbine.maxSteamRate or 0, 0) * pressureScale * dt
+    local valveDemand = totalWeight * pressureScale * dt
+    local requested = math.min(inletLimit, valveDemand, input.amount or inletLimit)
+    local turbineRequest = requested * (turbineWeight / totalWeight)
+    local bypassRequest = requested * (bypassWeight / totalWeight)
+
+    if turbineOutput then turbineRequest = math.min(turbineRequest, LUASQUARE_TURBINE.GetOutputFreeSteam(turbine, turbineOutput, 'turbine')) end
+    if bypassOutput then bypassRequest = math.min(bypassRequest, LUASQUARE_TURBINE.GetOutputFreeSteam(turbine, bypassOutput, 'bypass')) end
+
+    return turbineRequest, bypassRequest, requested, pressureScale
+end
+
+function LUASQUARE_TURBINE.MoveTurbineBranchSteam(turbine, amount, input)
+    if amount <= 0 then return 0 end
     local moved
     local exhaust = 0
     local condensate = 0
     if turbine.condenserOutput then
-        requested = LUASQUARE_TURBINE.GetCondenserFlowRequest(turbine, input, output, turbine.valve, turbine.maxSteamRate, dt)
         local outputTemperature = LUASQUARE_TURBINE.GetCondensateOutputTemperature(turbine, input, turbine.condenserOutputTemperature, turbine.condenserSteamTemperatureInfluence)
-        moved, condensate = LUASQUARE_TURBINE.CondenseSteamToWater(turbine.input, turbine.condenserOutput, requested, LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine), outputTemperature)
+        moved, condensate = LUASQUARE_TURBINE.CondenseSteamToWater(turbine.input, turbine.condenserOutput, amount, LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine), outputTemperature)
         turbine.lastCondensateTemperature = outputTemperature
     else
-        requested = LUASQUARE_TURBINE.GetFlowRequest(turbine, input, output, turbine.valve, turbine.maxSteamRate, dt)
-        moved, exhaust = LUASQUARE_TURBINE.MoveSteam(turbine.input, turbine.output, requested, turbine.exhaustRatio, turbine.steamRatio)
+        moved, exhaust = LUASQUARE_TURBINE.MoveSteam(turbine.input, turbine.output, amount, turbine.exhaustRatio, turbine.steamRatio)
     end
-    turbine.lastSteamUsed = moved / math.max(dt, 0.0001)
-    turbine.lastExhaustMade = exhaust / math.max(dt, 0.0001)
-    turbine.lastCondensateMade = condensate / math.max(dt, 0.0001)
-    turbine.lastFlowLimited = requested > 0 and moved < requested * 0.99
+
+    turbine.lastExhaustMade = exhaust
+    turbine.lastCondensateMade = condensate
+    return moved
+end
+
+function LUASQUARE_TURBINE.MoveBypassBranchSteam(turbine, amount, input)
+    if amount <= 0 then return 0 end
+    local moved
+    local condensate = 0
+    if turbine.bypassCondenserOutput then
+        local outputTemperature = LUASQUARE_TURBINE.GetCondensateOutputTemperature(turbine, input, turbine.bypassCondenserOutputTemperature, turbine.bypassSteamTemperatureInfluence)
+        moved, condensate = LUASQUARE_TURBINE.CondenseSteamToWater(turbine.input, turbine.bypassCondenserOutput, amount, LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine), outputTemperature)
+        turbine.lastBypassCondensateTemperature = outputTemperature
+    else
+        moved = LUASQUARE_TURBINE.MoveSteam(turbine.input, turbine.bypassOutput, amount, turbine.exhaustRatio, turbine.steamRatio)
+    end
+
+    turbine.lastBypassCondensateMade = condensate
+    return moved
+end
+
+function LUASQUARE_TURBINE.DoSharedSteamFlow(turbine, dt)
+    LUASQUARE_TURBINE.ResetFlowTelemetry(turbine)
+    if turbine.tripped or not turbine.enabled then return 0 end
+    if not LUASQUARE_FLUID then return 0 end
+    local input = LUASQUARE_FLUID.GetNetwork(turbine.input)
+    if not input then return 0 end
+
+    local turbineOutputName = turbine.condenserOutput or turbine.output
+    local bypassOutputName = turbine.bypassCondenserOutput or turbine.bypassOutput
+    local turbineOutput = turbineOutputName and LUASQUARE_FLUID.GetNetwork(turbineOutputName) or nil
+    local bypassOutput = bypassOutputName and LUASQUARE_FLUID.GetNetwork(bypassOutputName) or nil
+
+    local turbineRequest, bypassRequest, sharedRequest, pressureScale = LUASQUARE_TURBINE.GetSharedFlowRequests(turbine, input, turbineOutput, bypassOutput, dt)
+    local turbineMoved = LUASQUARE_TURBINE.MoveTurbineBranchSteam(turbine, turbineRequest, input)
+    local bypassMoved = LUASQUARE_TURBINE.MoveBypassBranchSteam(turbine, bypassRequest, input)
+
+    turbine.lastSteamUsed = turbineMoved / math.max(dt, 0.0001)
+    turbine.lastBypassSteam = bypassMoved / math.max(dt, 0.0001)
+    turbine.lastInletSteam = turbine.lastSteamUsed + turbine.lastBypassSteam
+    turbine.lastInletPressureScale = pressureScale or 0
+    turbine.lastExhaustMade = turbine.lastExhaustMade / math.max(dt, 0.0001)
+    turbine.lastCondensateMade = turbine.lastCondensateMade / math.max(dt, 0.0001)
+    turbine.lastBypassCondensateMade = turbine.lastBypassCondensateMade / math.max(dt, 0.0001)
+    turbine.lastFlowLimited = sharedRequest > 0 and (turbineMoved + bypassMoved) < sharedRequest * 0.99
     return turbine.lastSteamUsed
+end
+
+function LUASQUARE_TURBINE.DoBypassFlow(turbine, dt)
+    return LUASQUARE_TURBINE.DoSharedSteamFlow(turbine, dt)
+end
+
+function LUASQUARE_TURBINE.DoTurbineFlow(turbine, dt)
+    return LUASQUARE_TURBINE.DoSharedSteamFlow(turbine, dt)
 end
 
 -- =========================================
@@ -540,6 +745,7 @@ function LUASQUARE_TURBINE.UpdatePower(turbine)
         turbine.lastMW = 0
         turbine.lastBoilerMW = 0
         turbine.lastSteamShare = 0
+        turbine.lastTurbineSteamFraction = 0
         return
     end
 
@@ -548,12 +754,15 @@ function LUASQUARE_TURBINE.UpdatePower(turbine)
     if boilerMW then
         local totalSteamUse = LUASQUARE_TURBINE.GetBoilerSteamUse(turbine)
         local steamShare = totalSteamUse > 0 and math.Clamp((turbine.lastSteamUsed or 0) / totalSteamUse, 0, 1) or 0
+        local steamFraction = math.Clamp((turbine.lastSteamUsed or 0) / math.max(turbine.ratedSteamRate or turbine.maxSteamRate, 0.0001), 0, 1)
         turbine.lastBoilerMW = boilerMW
         turbine.lastSteamShare = steamShare
-        rawMW = boilerMW * math.Clamp(turbine.cycleEfficiency or turbine.efficiency or 0.32, 0, 1) * steamShare
+        turbine.lastTurbineSteamFraction = steamFraction
+        rawMW = boilerMW * math.Clamp(turbine.cycleEfficiency or turbine.efficiency or 0.32, 0, 1) * math.min(steamShare, steamFraction)
     else
         turbine.lastBoilerMW = 0
         turbine.lastSteamShare = 0
+        turbine.lastTurbineSteamFraction = 0
         rawMW = turbine.lastSteamUsed * turbine.mwPerSteamPerSecond * turbine.efficiency
     end
 
@@ -573,12 +782,24 @@ function LUASQUARE_TURBINE.UpdateTrips(name, turbine)
     end
 end
 
+function LUASQUARE_TURBINE.UpdateSevereTrip(name, turbine)
+    if not turbine.tripped or turbine.tripLevel ~= 'severe' then return end
+    if turbine.tripRelayFired then return end
+    if (turbine.rpm or 0) > (turbine.severeTripBrakeRPM or 20) then return end
+
+    turbine.severeTripStopFired = true
+    LUASQUARE_TURBINE.FireRelay(turbine.severeTripStopRelay)
+    LUASQUARE_TURBINE.FireTripRelay(turbine)
+    print('[LUASQUARE_TURBINE] Severe trip braked ' .. tostring(name) .. ' at ' .. string.format('%.1f', turbine.rpm or 0) .. ' RPM')
+end
+
 function LUASQUARE_TURBINE.UpdateSoundEffect(turbine)
     if not turbine.soundEntity then return end
+    local rpm = turbine.rpm or 0
     local rpmFraction = math.Clamp((turbine.rpm or 0) / math.max(turbine.designRPM, 0.0001), 0, 1.25)
 
-    local shouldPlay = rpmFraction >= turbine.soundStartRPMFraction and not turbine.tripped
-    local shouldPlay2 = rpmFraction >= turbine.soundOptimalRPMFraction and not turbine.tripped
+    local shouldPlay = rpm > (turbine.soundStopRPM or 0) and rpmFraction >= turbine.soundStartRPMFraction
+    local shouldPlay2 = rpmFraction >= turbine.soundOptimalRPMFraction
 
     if shouldPlay and not turbine.soundPlaying then
         turbine.soundPlaying = LUASQUARE_TURBINE.FireEnt(turbine.soundEntity, 'PlaySound')
@@ -610,7 +831,7 @@ end
 function LUASQUARE_TURBINE.UpdateShakeEffect(turbine)
     if not turbine.shakeEntity then return end
     local vibration = turbine.vibration or 0
-    local shouldShake = vibration >= turbine.shakeStartVibration and not turbine.tripped
+    local shouldShake = (turbine.rpm or 0) > 0 and vibration >= turbine.shakeStartVibration
     if not shouldShake then
         turbine.nextShakeTime = 0
         if turbine.shakeActive then
@@ -651,14 +872,14 @@ function LUASQUARE_TURBINE.UpdateTurbine(name, dt, skipPower)
     local turbine = LUASQUARE_TURBINE.GetTurbine(name)
     if not turbine then return end
 
-    LUASQUARE_TURBINE.DoBypassFlow(turbine, dt)
-    local steamRate = LUASQUARE_TURBINE.DoTurbineFlow(turbine, dt)
+    local steamRate = LUASQUARE_TURBINE.DoSharedSteamFlow(turbine, dt)
     LUASQUARE_TURBINE.UpdateRotor(turbine, steamRate, dt)
     if turbine.autoSync and not turbine.generator and not turbine.synced and LUASQUARE_TURBINE.CanSync(turbine) then LUASQUARE_TURBINE.Sync(name) end
     if skipPower then return end
 
     LUASQUARE_TURBINE.UpdatePower(turbine)
     LUASQUARE_TURBINE.UpdateTrips(name, turbine)
+    LUASQUARE_TURBINE.UpdateSevereTrip(name, turbine)
     LUASQUARE_TURBINE.UpdateEffects(turbine)
 end
 
@@ -671,6 +892,7 @@ function LUASQUARE_TURBINE.UpdateAll()
     for name, turbine in pairs(LUASQUARE_TURBINE.Turbines) do
         LUASQUARE_TURBINE.UpdatePower(turbine)
         LUASQUARE_TURBINE.UpdateTrips(name, turbine)
+        LUASQUARE_TURBINE.UpdateSevereTrip(name, turbine)
         LUASQUARE_TURBINE.UpdateEffects(turbine)
     end
 end

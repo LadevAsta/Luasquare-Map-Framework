@@ -218,6 +218,9 @@ LUASQUARE_TURBINE.RegisterTurbine('tg1', {
     shakeMaxFrequency = 255,
     tripVibration = 50,
     tripRelay = 'tg1_trip_relay',
+    severeTripRelay = 'tg1_severe_trip_relay',
+    severeTripStopRelay = 'tg1_severe_trip_stop_relay',
+    extremeTripRelay = 'tg1_extreme_trip_relay',
     monitorPos = 'tar_turbine_a'
 })
 

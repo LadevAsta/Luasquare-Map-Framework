@@ -194,6 +194,10 @@ function LUASQUARE_POWERGENERATOR.CanSync(name)
         generator.lastSyncBlockReason = 'NO_TURBINE'
         return false
     end
+    if turbine.catastrophicFailed then
+        generator.lastSyncBlockReason = 'TURBINE_DESTROYED'
+        return false
+    end
     if turbine.tripped or not turbine.enabled then
         generator.lastSyncBlockReason = turbine.tripped and 'TURBINE_TRIPPED' or 'TURBINE_OFFLINE'
         return false
