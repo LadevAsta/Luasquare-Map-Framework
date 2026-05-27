@@ -84,7 +84,7 @@ function LUASQUARE_TURBINE.RegisterTurbine(name, data)
         shakeMaxFrequency = tonumber(data.shakeMaxFrequency) or 255,
         shakeMinFrequency = tonumber(data.shakeMinFrequency) or 120,
         shakeStartVibration = shakeStartVibration or 1,
-        shakeRepeatInterval = tonumber(data.shakeRepeatInterval) or tonumber(data.shakePulseInterval) or 2,
+        shakeRepeatInterval = tonumber(data.shakeRepeatInterval) or tonumber(data.shakePulseInterval) or 0.5,
         nextShakeTime = 0,
         shakeActive = false,
         lastSteamUsed = 0,

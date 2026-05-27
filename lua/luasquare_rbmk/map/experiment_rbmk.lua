@@ -6,20 +6,22 @@
 -- Deploy THIS SCRIPT using a lua_run in the map :
 -- include('luasquare_rbmk/map/experiment_rbmk.lua')
 
+MAPNAME = 'experiment_rbmk'
+
 -- =========================================
 -- PRE-FLIGHT CHECKS
 -- =========================================
 
 -- Luasquare script's presence (This file)
--- As of now, Luasquare is designed to be impervious to 'Clean Up Everything'. Reload is the only option.
-if LUASQUARE_RBMK_INITIALIZED then
-    print('[LUASQUARE RBMK] BOOTSTRAP FAILED!\n[LUASQUARE RBMK] It already happened once in this session. Reload map.')
+-- As of now, Luasquare modules are impervious to 'Clean Up Everything'. Reload is the only option.
+if LUASQUARE_FRAMEWORK_INITIALIZED then
+    print('[LUASQUARE FRAMEWORK] BOOTSTRAP FAILED!\n[LUASQUARE FRAMEWORK] It already happened once in this session. Reload map.')
 return end
 
 -- Addon Dependencies
 -- NYI.
--- Detect if the player (or server) has Luasquare Modules installed. if not, fire a map relay if mapper made a relay for it.
--- That relay intended to auto-configure the map into 'static' idle state where no simulation takes place.
+-- Detect if the player (or server) has Luasquare Modules installed. if not, fire a map relay 'relay_NO_LUASQUARE' if mapper made a relay for it.
+-- That relay intended to auto-configure the map into 'static' idle state where no Luasquare functions and simulations take place.
 
 -- =========================================
 -- CORE MODULES
@@ -187,6 +189,68 @@ LUASQUARE_POWERGRID.RegisterTransformer('offsite_station_transformer', {
     monitorPos = 'tar_transformer_offsite_station'
 })
 
+-- Steam Turbine
+
+LUASQUARE_TURBINE.RegisterTurbine('tg1', {
+    input = 'main_steam',
+    boiler = 'rbmk',
+    cycleEfficiency = 0.32,
+    condenserOutput = 'hotwell',
+    bypassCondenserOutput = 'hotwell',
+    condenserOutputTemperature = 80,
+    bypassCondenserOutputTemperature = 95,
+    maxSteamRate = 500000,
+    ratedSteamRate = 300000,
+    bypassMaxSteamRate = 500000,
+    ratedInletPressure = 10,
+    valve = 0,
+    bypassValve = 0,
+    enabled = true,
+    autoSync = false,
+    soundEntity = 'tg1_turbine_sound',
+    soundEntity2 = 'tg1_turbine_sound2',
+    soundMinVolume = 4,
+    soundMaxVolume = 10,
+    soundMinPitch = 80,
+    soundMaxPitch = 140,
+    shakeEntity = 'tg1_turbine_shake',
+    shakeMaxAmplitude = 16,
+    shakeMaxFrequency = 255,
+    tripVibration = 50,
+    tripRelay = 'tg1_trip_relay',
+    monitorPos = 'tar_turbine_a'
+})
+
+LUASQUARE_POWERGENERATOR.RegisterTurbineGenerator('tg1_generator', {
+    turbine = 'tg1',
+    grid = 'station_grid',
+    breaker = 'tg1_generator_breaker',
+    ratedMW = 160,
+    maxMW = 480,
+    gridRPM = 1800,
+    syncRPMTolerance = 8,
+    syncPhaseTolerance = 8,
+    syncFailureTrips = true,
+    gridLossTrips = true,
+    enabled = true,
+    monitorPos = 'tar_turbine_generator_a'
+})
+
+-- Cooling Tower
+
+LUASQUARE_COOLINGTOWER.RegisterCoolingTower('main_cooling_tower', {
+    output = 'feedwater',
+    basinMaxAmount = RBMK.MaxWater,
+    basinMaxPressure = 20,
+    basinTemperature = 40,
+    maxRate = 1000,
+    enabled = true,
+    outputTemperature = 20,
+    startRelay = 'cooling_tower_on',
+    stopRelay = 'cooling_tower_off',
+    monitorPos = 'tar_coolingtower_a'
+})
+
 -- Fluid Network
 
 LUASQUARE_FLUID.RegisterNetwork('main_steam', {
@@ -243,14 +307,28 @@ LUASQUARE_FLUID.RegisterNetwork('drain_tank', {
 })
 RBMK.SetDrainNetwork('drain_tank')
 
+-- Fluid Valve
+
 LUASQUARE_VALVE.RegisterValve('rpv_drain_valve', {
     a = 'rbmk_water',
     b = 'drain_tank',
     maxFlow = 500,
+    minFlowFraction = 0.2,
     open = false,
     bidirectional = false,
     monitorPos = RBMK.WorldOrigin + Vector(0, 384, 96 + MAPDEF_monitorZoffset)
 })
+
+LUASQUARE_VALVE.RegisterValve('hotwell_drain_valve', {
+    a = 'hotwell',
+    b = 'void',
+    maxFlow = 500,
+    open = false,
+    bidirectional = false,
+    monitorPos = 'tar_hotwell_drain'
+})
+
+-- Pumps
 
 LUASQUARE_PUMP.RegisterPump('feedwater_pump_a', {
     source = 'feedwater',
@@ -306,73 +384,6 @@ LUASQUARE_PUMP.RegisterPump('condensate_pump_a1', {
     speedLevel = 4,
     enabled = true,
     monitorPos = 'tar_condpump_a1'
-})
-
-LUASQUARE_TURBINE.RegisterTurbine('tg1', {
-    input = 'main_steam',
-    boiler = 'rbmk',
-    cycleEfficiency = 0.32,
-    condenserOutput = 'hotwell',
-    bypassCondenserOutput = 'hotwell',
-    condenserOutputTemperature = 80,
-    bypassCondenserOutputTemperature = 95,
-    maxSteamRate = 500000,
-    ratedSteamRate = 300000,
-    bypassMaxSteamRate = 500000,
-    ratedInletPressure = 10,
-    valve = 0,
-    bypassValve = 0,
-    enabled = true,
-    autoSync = false,
-    soundEntity = 'tg1_turbine_sound',
-    soundEntity2 = 'tg1_turbine_sound2',
-    soundMinVolume = 4,
-    soundMaxVolume = 10,
-    soundMinPitch = 80,
-    soundMaxPitch = 140,
-    shakeEntity = 'tg1_turbine_shake',
-    shakeMaxAmplitude = 16,
-    shakeMaxFrequency = 255,
-    tripVibration = 50,
-    tripRelay = 'tg1_trip_relay',
-    monitorPos = 'tar_turbine_a'
-})
-
-LUASQUARE_POWERGENERATOR.RegisterTurbineGenerator('tg1_generator', {
-    turbine = 'tg1',
-    grid = 'station_grid',
-    breaker = 'tg1_generator_breaker',
-    ratedMW = 160,
-    maxMW = 480,
-    gridRPM = 1800,
-    syncRPMTolerance = 8,
-    syncPhaseTolerance = 8,
-    syncFailureTrips = true,
-    gridLossTrips = true,
-    enabled = true,
-    monitorPos = 'tar_turbine_generator_a'
-})
-
-LUASQUARE_COOLINGTOWER.RegisterCoolingTower('main_cooling_tower', {
-    output = 'feedwater',
-    basinMaxAmount = RBMK.MaxWater,
-    basinMaxPressure = 20,
-    basinTemperature = 40,
-    maxRate = 1000,
-    enabled = true,
-    outputTemperature = 20,
-    startRelay = 'cooling_tower_on',
-    stopRelay = 'cooling_tower_off',
-    monitorPos = 'tar_coolingtower_a'
-})
-
-LUASQUARE_VALVE.RegisterValve('hotwell_drain_valve', {
-    a = 'hotwell',
-    b = 'void',
-    maxFlow = 500,
-    open = false,
-    bidirectional = false,
-    monitorPos = 'tar_hotwell_drain'
 })
 
 -- =========================================
@@ -915,6 +926,6 @@ LUASQUARE_POWERGRID.Start()
 LUASQUARE_POWERGENERATOR.Start()
 LUASQUARE_POWERPLANT.Debug.Start()
 
-print('[LUASQUARE RBMK] RBMK Reactor Initialization Finished.')
-LUASQUARE_RBMK_INITIALIZED = true
-SetGlobal2Bool('LUASQUARE_RBMK_INITIALIZED_GLOBAL', LUASQUARE_RBMK_INITIALIZED)
+print('[LUASQUARE FRAMEWORK] Initialization completed for ' .. MAPNAME)
+LUASQUARE_FRAMEWORK_INITIALIZED = true
+SetGlobal2Bool('LUASQUARE_FRAMEWORK_INITIALIZED_GLOBAL', LUASQUARE_FRAMEWORK_INITIALIZED)

@@ -11,6 +11,7 @@ function LUASQUARE_VALVE.RegisterValve(name, data)
         a = data.a,
         b = data.b,
         maxFlow = tonumber(data.maxFlow) or 1,
+        minFlowFraction = math.Clamp(tonumber(data.minFlowFraction) or 0, 0, 1),
         open = data.open and true or false,
         bidirectional = data.bidirectional ~= false,
         lastFlow = 0,
@@ -163,9 +164,9 @@ function LUASQUARE_VALVE.UpdateValve(name, dt)
         pressureDelta = -pressureDelta
     end
 
-    if pressureDelta <= 0 then return end
-
+    if pressureDelta <= 0 and valve.minFlowFraction <= 0 then return end
     local pressureScale = math.Clamp(pressureDelta / math.max(sourcePressure, 0.0001), 0, 1)
+    if valve.minFlowFraction > 0 then pressureScale = math.max(pressureScale, valve.minFlowFraction) end
     local requested = valve.maxFlow * pressureScale * dt
     local moved = LUASQUARE_VALVE.Transfer(fromEndpoint, toEndpoint, requested, sourcePressure)
     valve.lastFlow = moved / math.max(dt, 0.0001)

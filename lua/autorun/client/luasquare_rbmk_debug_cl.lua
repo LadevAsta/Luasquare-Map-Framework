@@ -41,7 +41,7 @@ RBMK.Debug.CellFilterSettings = {
 
 -- Client Debug module
 timer.Simple(10, function()
-    if not GetGlobal2Bool('LUASQUARE_RBMK_INITIALIZED_GLOBAL', false) then
+    if not GetGlobal2Bool('LUASQUARE_FRAMEWORK_INITIALIZED_GLOBAL', false) then
         print('[Luasquare RBMK Debug Client] No RBMK detected after 10 seconds, terminating')
         return
     end
