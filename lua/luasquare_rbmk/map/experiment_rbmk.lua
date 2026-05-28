@@ -94,7 +94,7 @@ RBMK.BlowoutMaxColumnsPerPass = 4
 -- Example : 'rbmk_blowout' is set here, In Hammer it must strictly be 'rbmk_blowout_0', 'rbmk_blowout_1', ...
 RBMK.BlowoutValvePrefix = 'brush_rpv'
 -- The amount of blowout valves there is, make sure to set this equal to the amount of func_movelinears you want to use.
-RBMK.BlowoutFallbackValveCount = 77
+RBMK.BlowoutFallbackValveCount = 89
 -- How much steam is removed from the vessel for each jump. Set it weak to make it serve only dramatic purposes.
 RBMK.BlowoutSteamLoss = 0.5
 -- Register blowout func_movelinears
