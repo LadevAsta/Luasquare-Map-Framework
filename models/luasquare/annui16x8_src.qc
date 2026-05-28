@@ -1,7 +1,7 @@
 
-$definevariable NAME "turbine_trip"
+$definevariable NAME "reverse_power"
 
-$modelname "luasquare/ann/turbine_trip"
+$modelname "luasquare/ann/reverse_power"
 
 $include "annui16x8_src_shared.qci"
 

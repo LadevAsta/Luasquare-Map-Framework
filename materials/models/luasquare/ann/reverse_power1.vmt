@@ -1,0 +1,15 @@
+UnlitGeneric
+{
+    "$basetexture" "models/luasquare/ann/reverse_power"
+    "$frame" "0"
+
+    "Proxies"
+    {
+        "AnimatedTexture"
+        {
+            "animatedtexturevar" "$basetexture"
+            "animatedtextureframenumvar" "$frame"
+            "animatedtextureframerate" "4"
+        }
+    }
+}

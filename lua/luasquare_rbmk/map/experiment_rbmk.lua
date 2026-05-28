@@ -6,7 +6,7 @@
 -- Deploy THIS SCRIPT using a lua_run in the map :
 -- include('luasquare_rbmk/map/experiment_rbmk.lua')
 
-MAPNAME = 'experiment_rbmk'
+local MAPNAME = 'experiment_rbmk'
 
 -- =========================================
 -- PRE-FLIGHT CHECKS
@@ -176,17 +176,29 @@ LUASQUARE_POWERGRID.RegisterGrid('station_grid', {
     enabled = true,
     inertia = 6,
     droopHz = 1.5,
+    tripRelay = 'grid_station_trip_relay',
     monitorPos = 'tar_grid_station'
 })
 
 LUASQUARE_POWERGRID.RegisterTransformer('offsite_station_transformer', {
     from = 'offsite_grid',
     to = 'station_grid',
-    maxMW = 250,
+    maxMW = 40,
     closed = true,
     enabled = true,
-    bidirectional = true,
+    bidirectional = false,
     monitorPos = 'tar_transformer_offsite_station'
+})
+
+LUASQUARE_POWERGRID.RegisterTransformer('offsite_export_transformer', {
+    from = 'station_grid',
+    to = 'offsite_grid',
+    maxMW = 160,
+    closed = false,
+    enabled = true,
+    bidirectional = false,
+    monitorPos = 'tar_transformer_offsite_station',
+    monitorOffset = Vector(0,0,64)
 })
 
 -- Steam Turbine
@@ -236,7 +248,8 @@ LUASQUARE_POWERGENERATOR.RegisterTurbineGenerator('tg1_generator', {
     syncFailureTrips = true,
     gridLossTrips = true,
     enabled = true,
-    monitorPos = 'tar_turbine_generator_a'
+    monitorPos = 'tar_turbine_generator_a',
+    breakerMonitorPos = 'tar_turbine_generator_a_breaker'
 })
 
 -- Cooling Tower

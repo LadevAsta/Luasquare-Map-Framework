@@ -1,0 +1,5 @@
+UnlitGeneric
+{
+    "$basetexture" "models/luasquare/ann/reverse_power"
+    "$frame" "1"
+}
