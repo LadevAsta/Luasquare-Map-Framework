@@ -14,6 +14,8 @@ function LUASQUARE_PUMP.RegisterPump(name, data)
     if speedLevel == nil then
         if data.enabled then speedLevel = #speedLevels else speedLevel = 1 end
     end
+    local peakMW = tonumber(data.peakMW)
+    local breaker = data.breaker or data.powerBreaker or (peakMW and (name .. '_breaker') or nil)
     LUASQUARE_PUMP.Pumps[name] = {
         name = name,
         source = data.source,
@@ -34,11 +36,29 @@ function LUASQUARE_PUMP.RegisterPump(name, data)
         regulationMinOutput = math.Clamp(tonumber(data.regulationMinOutput) or 0, 0, 1),
         regulationFactor = 1,
         regulationLevel = 0,
+        grid = data.grid or data.powerGrid,
+        breaker = breaker,
+        peakMW = peakMW,
+        lastPowerMW = 0,
+        lastPowerAcceptedMW = 0,
         lastFlow = 0,
         monitorPos = data.monitorPos,
         monitorTarget = data.monitorTarget or data.monitorEntity or data.monitorName,
         monitorOffset = data.monitorOffset or Vector(0, 0, 0)
     }
+
+    if peakMW and LUASQUARE_POWERGRID and not LUASQUARE_POWERGRID.GetBreaker(breaker) then
+        LUASQUARE_POWERGRID.RegisterBreaker(breaker, {
+            grid = data.grid or data.powerGrid,
+            owner = name,
+            kind = 'pump',
+            closed = data.breakerClosed ~= false,
+            maxMW = tonumber(data.breakerMaxMW) or peakMW,
+            monitorPos = data.breakerMonitorPos,
+            monitorTarget = data.breakerMonitorTarget,
+            monitorOffset = data.breakerMonitorOffset
+        })
+    end
 end
 
 function LUASQUARE_PUMP.GetPump(name)
@@ -73,6 +93,23 @@ end
 
 function LUASQUARE_PUMP.GetPumpSpeedMultiplier(pump)
     return pump.speedLevels[pump.speedLevel] or 0
+end
+
+function LUASQUARE_PUMP.ApplyPowerLoad(pump, speedMultiplier)
+    pump.lastPowerMW = 0
+    pump.lastPowerAcceptedMW = 0
+    if not pump.peakMW then return speedMultiplier end
+    if speedMultiplier <= 0 then return 0 end
+    if not LUASQUARE_POWERGRID then return 0 end
+
+    local requestedMW = math.max(pump.peakMW * speedMultiplier, 0)
+    if requestedMW <= 0 then return 0 end
+
+    local acceptedMW = LUASQUARE_POWERGRID.SubmitLoad(pump.grid, pump.name, requestedMW, pump.breaker)
+    pump.lastPowerMW = requestedMW
+    pump.lastPowerAcceptedMW = acceptedMW
+    if acceptedMW <= 0 then return 0 end
+    return speedMultiplier * math.Clamp(acceptedMW / math.max(requestedMW, 0.0001), 0, 1)
 end
 
 function LUASQUARE_PUMP.SetRegulationTarget(name, percent)
@@ -188,11 +225,14 @@ function LUASQUARE_PUMP.UpdatePump(name, dt)
     if not pump then return end
     if not pump.enabled then
         pump.lastFlow = 0
+        pump.lastPowerMW = 0
+        pump.lastPowerAcceptedMW = 0
         return
     end
     if not LUASQUARE_FLUID then return end
     pump.lastFlow = 0
     local speedMultiplier = LUASQUARE_PUMP.GetPumpSpeedMultiplier(pump) * LUASQUARE_PUMP.GetRegulationFactor(pump)
+    speedMultiplier = LUASQUARE_PUMP.ApplyPowerLoad(pump, speedMultiplier)
     if speedMultiplier <= 0 then return end
 
     local source = LUASQUARE_FLUID.GetNetwork(pump.source)

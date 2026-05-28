@@ -57,6 +57,7 @@ LUASQUARE_TURBINE.TickInterval = 0.1
 LUASQUARE_COOLINGTOWER.TickInterval = 0.1
 LUASQUARE_POWERGRID.TickInterval = 0.1
 LUASQUARE_POWERGENERATOR.TickInterval = 0.1
+LUASQUARE_DIESELGENERATOR.TickInterval = 0.1
 
 -- =========================================
 -- REACTOR SETTINGS
@@ -177,6 +178,7 @@ LUASQUARE_POWERGRID.RegisterGrid('station_grid', {
     inertia = 6,
     droopHz = 1.5,
     tripRelay = 'grid_station_trip_relay',
+    resetRelay = 'grid_station_reset_relay',
     monitorPos = 'tar_grid_station'
 })
 
@@ -218,7 +220,6 @@ LUASQUARE_TURBINE.RegisterTurbine('tg1', {
     valve = 0,
     bypassValve = 0,
     enabled = true,
-    autoSync = false,
     soundEntity = 'tg1_turbine_sound',
     soundEntity2 = 'tg1_turbine_sound2',
     soundMinVolume = 4,
@@ -233,6 +234,7 @@ LUASQUARE_TURBINE.RegisterTurbine('tg1', {
     severeTripRelay = 'tg1_severe_trip_relay',
     severeTripStopRelay = 'tg1_severe_trip_stop_relay',
     extremeTripRelay = 'tg1_extreme_trip_relay',
+    repairRelay = 'tg1_repair_relay',
     monitorPos = 'tar_turbine_a'
 })
 
@@ -243,13 +245,38 @@ LUASQUARE_POWERGENERATOR.RegisterTurbineGenerator('tg1_generator', {
     ratedMW = 160,
     maxMW = 480,
     gridRPM = 1800,
+    autoSync = false,
     syncRPMTolerance = 8,
     syncPhaseTolerance = 8,
     syncFailureTrips = true,
     gridLossTrips = true,
     enabled = true,
+    syncRelay = 'tg1_sync_relay',
+    unsyncRelay = 'tg1_unsync_relay',
     monitorPos = 'tar_turbine_generator_a',
     breakerMonitorPos = 'tar_turbine_generator_a_breaker'
+})
+
+LUASQUARE_DIESELGENERATOR.RegisterDieselGenerator('edg1', {
+    generator = 'edg1_generator',
+    fuelNetwork = 'diesel_fuel',
+    grid = 'station_grid',
+    breaker = 'edg1_generator_breaker',
+    ratedMW = 12,
+    maxMW = 16,
+    targetMW = 12,
+    rampRateMW = 4,
+    fuelTankCapacity = 200,
+    fuelTankAmount = 25,
+    refuelRate = 4,
+    fuelConsumptionPerMWSecond = 0.02,
+    idleFuelRate = 0.02,
+    enabled = true,
+    autoStart = true,
+    breakerClosed = true,
+    monitorPos = 'tar_diesel_generator_a',
+    generatorMonitorOffset = Vector(0,0,-32),
+    breakerMonitorOffset = Vector(0,0,-64)
 })
 
 -- Cooling Tower
@@ -323,6 +350,15 @@ LUASQUARE_FLUID.RegisterNetwork('drain_tank', {
 })
 RBMK.SetDrainNetwork('drain_tank')
 
+LUASQUARE_FLUID.RegisterNetwork('diesel_fuel', {
+    type = LUASQUARE_FLUID.TYPE_SIMPLE,
+    fluidType = 'diesel',
+    amount = 500,
+    maxAmount = 1000,
+    serviceRate = 0,
+    monitorPos = 'tar_diesel_fuel'
+})
+
 -- Fluid Valve
 
 LUASQUARE_VALVE.RegisterValve('rpv_drain_valve', {
@@ -362,7 +398,12 @@ LUASQUARE_PUMP.RegisterPump('feedwater_pump_a', {
     speedLevels = {0, 0.25, 0.5, 1},
     speedLevel = 3,
     enabled = true,
-    monitorPos = RBMK.WorldOrigin + Vector(0, 192, 96 + MAPDEF_monitorZoffset)
+    grid = 'station_grid',
+    peakMW = 30,
+    breaker = 'feedwater_pump_a_breaker',
+    breakerClosed = true,
+    monitorPos = RBMK.WorldOrigin + Vector(0, 192, 96 + MAPDEF_monitorZoffset),
+    breakerMonitorPos = RBMK.WorldOrigin + Vector(0, 256, 96 + MAPDEF_monitorZoffset)
 })
 
 LUASQUARE_PUMP.RegisterPump('feedwater_pump_b', {
@@ -381,7 +422,12 @@ LUASQUARE_PUMP.RegisterPump('feedwater_pump_b', {
     speedLevels = {0, 0.25, 0.5, 1},
     speedLevel = 1,
     enabled = false,
-    monitorPos = RBMK.WorldOrigin + Vector(0, 192, 128 + MAPDEF_monitorZoffset)
+    grid = 'station_grid',
+    peakMW = 30,
+    breaker = 'feedwater_pump_b_breaker',
+    breakerClosed = true,
+    monitorPos = RBMK.WorldOrigin + Vector(0, 192, 128 + MAPDEF_monitorZoffset),
+    breakerMonitorPos = RBMK.WorldOrigin + Vector(0, 256, 128 + MAPDEF_monitorZoffset)
 })
 
 LUASQUARE_PUMP.RegisterPump('condensate_pump_a1', {
@@ -399,7 +445,12 @@ LUASQUARE_PUMP.RegisterPump('condensate_pump_a1', {
     speedLevels = {0, 0.25, 0.5, 1},
     speedLevel = 4,
     enabled = true,
-    monitorPos = 'tar_condpump_a1'
+    grid = 'station_grid',
+    peakMW = 30,
+    breaker = 'condensate_pump_a1_breaker',
+    breakerClosed = true,
+    monitorPos = 'tar_condpump_a1',
+    breakerMonitorPos = 'tar_condpump_a1_breaker'
 })
 
 -- =========================================
@@ -672,6 +723,76 @@ local function MAPDEF_levelTargetColumn(label, current, target)
     }
 end
 
+local function MAPDEF_gridColumn(label, gridName)
+    local grid = LUASQUARE_POWERGRID.GetGrid(gridName) or {}
+    local online = grid.enabled and not grid.tripped and grid.energized
+    local value = online and string.format('%.2fHz', grid.frequency or 0) or 'DEAD'
+    local sub = string.format('G%.1f L%.1f I%.1f', grid.lastGenerationMW or 0, grid.lastLoadMW or 0, grid.lastImportMW or 0)
+    if grid.tripped then sub = 'TRIP ' .. tostring(grid.tripReason or '') end
+
+    return {
+        label = label,
+        value = value,
+        sub = sub,
+        color = Color(205, 235, 240),
+        valueColor = online and Color(110, 255, 150) or Color(255, 95, 95)
+    }
+end
+
+local function MAPDEF_transformerColumn(label, transformerName)
+    local transformer = LUASQUARE_POWERGRID.GetTransformer(transformerName) or {}
+    local online = transformer.enabled and transformer.closed and not transformer.tripped and transformer.available
+    local value = online and 'CLOSED' or 'OPEN'
+    if transformer.tripped then value = 'TRIP' end
+
+    return {
+        label = label,
+        value = value,
+        sub = string.format('%.1f/%.1fMW', transformer.lastMW or 0, transformer.maxMW or 0),
+        color = Color(205, 235, 240),
+        valueColor = online and Color(110, 255, 150) or Color(255, 210, 80)
+    }
+end
+
+local function MAPDEF_generatorColumn(label, generatorName)
+    local generator = LUASQUARE_POWERGENERATOR.GetGenerator(generatorName) or {}
+    local breaker = generator.breaker and LUASQUARE_POWERGRID.GetBreaker(generator.breaker) or {}
+    local online = generator.enabled and not generator.tripped and breaker and breaker.closed
+    local value = generator.tripped and 'TRIP' or (online and 'ON' or 'OFF')
+
+    return {
+        label = label,
+        value = value,
+        sub = string.format('%.1f/%.1fMW', generator.lastAcceptedMW or 0, generator.maxMW or 0),
+        color = Color(205, 235, 240),
+        valueColor = online and Color(110, 255, 150) or Color(255, 210, 80)
+    }
+end
+
+local function MAPDEF_dieselColumn(label, dieselName)
+    local diesel = LUASQUARE_DIESELGENERATOR.GetDieselGenerator(dieselName) or {}
+    local fuelPercent = 0
+    if diesel.fuelTankCapacity and diesel.fuelTankCapacity > 0 then fuelPercent = math.Clamp((diesel.fuelTankAmount or 0) / diesel.fuelTankCapacity, 0, 1) * 100 end
+    local state, color = MAPDEF_powerState(diesel.enabled)
+
+    return {
+        label = label,
+        value = state,
+        sub = string.format('%.1fMW %.0f%%F', diesel.lastAvailableMW or 0, fuelPercent),
+        color = Color(205, 235, 240),
+        valueColor = color
+    }
+end
+
+local function MAPDEF_pumpLoadMW(...)
+    local total = 0
+    for _, pumpName in ipairs({...}) do
+        local pump = LUASQUARE_PUMP.GetPump(pumpName)
+        if pump then total = total + (pump.lastPowerAcceptedMW or 0) end
+    end
+    return total
+end
+
 -- =========================================
 -- 3D2D PANEL DISPLAYS REGISTER
 -- =========================================
@@ -759,6 +880,53 @@ LUASQUARE_3D2D.BindDisplay('tg1_status_panel', function()
         { type = 'value', label = 'Vibration', value = (data.vibration / data.tripVibration) * 100 or 0, decimals = 2, unit = '%'},
         { type = 'bar', fraction = data.vibration / data.tripVibration, height = 5 },
         { type = 'value', label = 'Generator Output', value = generator.lastAcceptedMW or data.lastMW or 0, decimals = 2, unit = 'MW' },
+    }
+end)
+
+LUASQUARE_3D2D.RegisterDisplay('electrical_status_panel', MAPDEF_panelBase({
+    title = 'ELECTRICALS',
+    target = 'tar_display_electricals',
+    width = 58,
+    height = 38,
+    lineHeight = 16
+}))
+LUASQUARE_3D2D.BindDisplay('electrical_status_panel', function()
+    local stationGrid = LUASQUARE_POWERGRID.GetGrid('station_grid') or {}
+    local load = stationGrid.lastLoadMW or 0
+    local available = stationGrid.lastAvailableMW or 0
+    local loadFraction = 0
+    if available > 0 then loadFraction = math.Clamp(load / available, 0, 1.5) end
+    local overload = load > math.max(available, 0.0001) * (stationGrid.overloadTripFraction or 1.15)
+
+    return {
+        {
+            type = 'columns',
+            height = 120,
+            columns = {
+                MAPDEF_gridColumn('STATION', 'station_grid'),
+                MAPDEF_gridColumn('OFFSITE', 'offsite_grid'),
+                MAPDEF_transformerColumn('IMPORT XFMR', 'offsite_station_transformer'),
+                MAPDEF_transformerColumn('EXPORT XFMR', 'offsite_export_transformer')
+            }
+        },
+        { type = 'value', label = 'Station Load', value = load, decimals = 1, unit = 'MW', warn = overload },
+        { type = 'bar', label = 'Load / Capacity', fraction = loadFraction, height = 5, warn = overload },
+        {
+            type = 'columns',
+            height = 112,
+            columns = {
+                MAPDEF_generatorColumn('TG1 GEN', 'tg1_generator'),
+                MAPDEF_generatorColumn('EDG1 GEN', 'edg1_generator'),
+                MAPDEF_dieselColumn('EDG1', 'edg1'),
+                {
+                    label = 'PUMP LOAD',
+                    value = string.format('%.1fMW', MAPDEF_pumpLoadMW('feedwater_pump_a', 'feedwater_pump_b', 'condensate_pump_a1')),
+                    sub = 'FW A/B + COND',
+                    color = Color(205, 235, 240),
+                    valueColor = Color(110, 255, 150)
+                }
+            }
+        }
     }
 end)
 
@@ -859,7 +1027,7 @@ LUASQUARE_KEYPAD.RegisterKeypad('aprctrl',
 local MAPDEF_annunciatorCorePos = Vector(35, -433, 627)
 
 LUASQUARE_ANNUNCIATOR.SetCorePosition(MAPDEF_annunciatorCorePos)
-LUASQUARE_ANNUNCIATOR.SetUnmuteCue('buttons/button17.wav', 90, 1, 100)
+LUASQUARE_ANNUNCIATOR.SetUnmuteCue('buttons/button17.wav', 200, 10, 100)
 
 -- =========================================
 -- ANNUNCIATOR
@@ -916,9 +1084,34 @@ LUASQUARE_ANNUNCIATOR.RegisterAlarm('tg1_trip', {
         return LUASQUARE_TURBINE.GetTurbine('tg1').tripped
     end
 })
+
 LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('turbine_a_panel', {
     indicators = {
         tg1_trip = 'ann_turbine_a_trip'
+    }
+})
+
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('station_grid_overload', {
+    label = 'STATION GRID OVERLOAD',
+    soundWav = 'bms_objects/alarms/alarm6.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 115,
+    getter = function()
+        local grid = LUASQUARE_POWERGRID.GetGrid('station_grid')
+        if not grid then return false end
+
+        local available = math.max(grid.lastAvailableMW or 0, 0.0001)
+        local load = grid.lastLoadMW or 0
+        local overload = load > available * (grid.overloadTripFraction or 1.15)
+        if overload then return true, string.format('%.1f / %.1f MW', load, available) end
+        return false
+    end
+})
+
+LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('station_grid_panel', {
+    indicators = {
+        station_grid_overload = 'ann_station_grid_overload'
     }
 })
 
@@ -939,6 +1132,7 @@ LUASQUARE_CONDENSER.Start()
 LUASQUARE_TURBINE.Start()
 LUASQUARE_COOLINGTOWER.Start()
 LUASQUARE_POWERGRID.Start()
+LUASQUARE_DIESELGENERATOR.Start()
 LUASQUARE_POWERGENERATOR.Start()
 LUASQUARE_POWERPLANT.Debug.Start()
 

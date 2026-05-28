@@ -11,7 +11,8 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     Grids = {},
     Breakers = {},
     Transformers = {},
-    Generators = {}
+    Generators = {},
+    DieselGenerators = {}
 }
 
 timer.Simple(10, function()
@@ -31,7 +32,8 @@ timer.Simple(10, function()
             Grids = {},
             Breakers = {},
             Transformers = {},
-            Generators = {}
+            Generators = {},
+            DieselGenerators = {}
         }
     end)
 
@@ -86,6 +88,7 @@ function LUASQUARE_POWERPLANT.Debug.RenderPump(pump)
         string.format('HEAD %.1f bar', pump.headPressure or 0)
     }
     if pump.regulate then table.insert(lines, string.format('REG %s %.1f/%.1f %.2fx', tostring(pump.regulationMode or ''), pump.regulationLevel or 0, pump.regulationTarget or 0, pump.regulationFactor or 0)) end
+    if (pump.peakMW or 0) > 0 then table.insert(lines, string.format('PWR %.2f/%.2f MW %s', pump.lastPowerAcceptedMW or 0, pump.lastPowerMW or 0, tostring(pump.breaker or ''))) end
     LUASQUARE_POWERPLANT.Debug.DrawWorldText(pump.pos, table.concat(lines, '\n'), Color(255, 220, 0))
 end
 
@@ -201,6 +204,20 @@ function LUASQUARE_POWERPLANT.Debug.RenderGenerator(generator)
     LUASQUARE_POWERPLANT.Debug.DrawWorldText(generator.pos, table.concat(lines, '\n'), Color(220, 220, 255))
 end
 
+function LUASQUARE_POWERPLANT.Debug.RenderDieselGenerator(diesel)
+    local fuelPercent = 0
+    if (diesel.fuelTankCapacity or 0) > 0 then fuelPercent = (diesel.fuelTankAmount or 0) / diesel.fuelTankCapacity * 100 end
+    local lines = {
+        'DIESEL ' .. tostring(diesel.name),
+        'GEN ' .. tostring(diesel.generator),
+        'EN ' .. tostring(diesel.enabled),
+        string.format('MW %.1f / %.1f', diesel.lastAvailableMW or 0, diesel.lastTargetMW or diesel.targetMW or 0),
+        string.format('FUEL %.1f / %.1f %.0f%%', diesel.fuelTankAmount or 0, diesel.fuelTankCapacity or 0, fuelPercent),
+        string.format('DRAW %.2f/s USE %.2f/s', diesel.lastFuelDraw or 0, diesel.lastFuelUsed or 0)
+    }
+    LUASQUARE_POWERPLANT.Debug.DrawWorldText(diesel.pos, table.concat(lines, '\n'), Color(255, 230, 160))
+end
+
 function LUASQUARE_POWERPLANT.Debug.Render()
     if not LUASQUARE_POWERPLANT.Debug.GetSetting('debug_enabled', false) then return end
     local state = LUASQUARE_POWERPLANT.Debug.ClientState
@@ -250,6 +267,9 @@ function LUASQUARE_POWERPLANT.Debug.Render()
     if LUASQUARE_POWERPLANT.Debug.GetSetting('show_generators', true) then
         for _, generator in ipairs(state.Generators or {}) do
             LUASQUARE_POWERPLANT.Debug.RenderGenerator(generator)
+        end
+        for _, diesel in ipairs(state.DieselGenerators or {}) do
+            LUASQUARE_POWERPLANT.Debug.RenderDieselGenerator(diesel)
         end
     end
 end

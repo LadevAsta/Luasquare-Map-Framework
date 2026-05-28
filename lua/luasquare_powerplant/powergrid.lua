@@ -37,6 +37,7 @@ function LUASQUARE_POWERGRID.RegisterGrid(name, data)
         underFrequencyTrip = tonumber(data.underFrequencyTrip) or 54,
         overFrequencyTrip = tonumber(data.overFrequencyTrip) or 66,
         overloadTripFraction = tonumber(data.overloadTripFraction) or 1.15,
+        overloadTripHardFraction = tonumber(data.overloadTripHardFraction) or 1.50,
         tripDelay = tonumber(data.tripDelay) or 30,
         overloadTimer = 0,
         underFrequencyTimer = 0,
@@ -339,12 +340,13 @@ function LUASQUARE_POWERGRID.UpdateGrid(name, dt)
 
     if grid.enabled and not grid.tripped then
         local overload = load > math.max(availableCapacity, 0.0001) * (grid.overloadTripFraction or 1.15)
+        local hardOverload = load > math.max(availableCapacity, 0.0001) * (grid.overloadTripHardFraction or 1.50)
         if overload then grid.overloadTimer = (grid.overloadTimer or 0) + dt else grid.overloadTimer = math.max((grid.overloadTimer or 0) - dt, 0) end
 
         local badFrequency = grid.energized and ((grid.frequency or 0) < (grid.underFrequencyTrip or 54) or (grid.frequency or 0) > (grid.overFrequencyTrip or 66))
         if badFrequency then grid.underFrequencyTimer = (grid.underFrequencyTimer or 0) + dt else grid.underFrequencyTimer = math.max((grid.underFrequencyTimer or 0) - dt, 0) end
 
-        if grid.overloadTimer >= (grid.tripDelay or 30) then
+        if grid.overloadTimer >= (grid.tripDelay or 30) or hardOverload then
             LUASQUARE_POWERGRID.TripGrid(name, 'OVERLOAD')
         elseif grid.underFrequencyTimer >= (grid.tripDelay or 30) then
             LUASQUARE_POWERGRID.TripGrid(name, 'FREQUENCY')

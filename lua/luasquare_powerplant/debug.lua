@@ -10,7 +10,8 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     Grids = {},
     Breakers = {},
     Transformers = {},
-    Generators = {}
+    Generators = {},
+    DieselGenerators = {}
 }
 
 local function copyMonitorPos(data)
@@ -63,6 +64,11 @@ function LUASQUARE_POWERPLANT.Debug.BuildPumps()
                 regulationTarget = pump.regulationTarget or 0,
                 regulationLevel = pump.regulationLevel or 0,
                 regulationFactor = pump.regulationFactor or 0,
+                grid = pump.grid,
+                breaker = pump.breaker,
+                peakMW = pump.peakMW or 0,
+                lastPowerMW = pump.lastPowerMW or 0,
+                lastPowerAcceptedMW = pump.lastPowerAcceptedMW or 0,
                 lastFlow = pump.lastFlow or 0,
                 pos = pos
             })
@@ -301,6 +307,30 @@ function LUASQUARE_POWERPLANT.Debug.BuildGenerators()
     end
 end
 
+function LUASQUARE_POWERPLANT.Debug.BuildDieselGenerators()
+    LUASQUARE_POWERPLANT.Debug.ClientState.DieselGenerators = {}
+    if not LUASQUARE_DIESELGENERATOR then return end
+    for name, diesel in pairs(LUASQUARE_DIESELGENERATOR.Generators) do
+        local pos = copyMonitorPos(diesel)
+        if pos then
+            table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.DieselGenerators, {
+                name = name,
+                generator = diesel.generator,
+                fuelNetwork = diesel.fuelNetwork,
+                enabled = diesel.enabled and true or false,
+                targetMW = diesel.targetMW or 0,
+                lastTargetMW = diesel.lastTargetMW or 0,
+                lastAvailableMW = diesel.lastAvailableMW or 0,
+                fuelTankAmount = diesel.fuelTankAmount or 0,
+                fuelTankCapacity = diesel.fuelTankCapacity or 0,
+                lastFuelDraw = diesel.lastFuelDraw or 0,
+                lastFuelUsed = diesel.lastFuelUsed or 0,
+                pos = pos
+            })
+        end
+    end
+end
+
 function LUASQUARE_POWERPLANT.Debug.Tick()
     LUASQUARE_POWERPLANT.Debug.BuildNetworks()
     LUASQUARE_POWERPLANT.Debug.BuildPumps()
@@ -312,6 +342,7 @@ function LUASQUARE_POWERPLANT.Debug.Tick()
     LUASQUARE_POWERPLANT.Debug.BuildBreakers()
     LUASQUARE_POWERPLANT.Debug.BuildTransformers()
     LUASQUARE_POWERPLANT.Debug.BuildGenerators()
+    LUASQUARE_POWERPLANT.Debug.BuildDieselGenerators()
     LUASQUARE_POWERPLANT.Debug.Broadcast()
 end
 

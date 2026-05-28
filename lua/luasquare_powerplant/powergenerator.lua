@@ -43,6 +43,7 @@ function LUASQUARE_POWERGENERATOR.RegisterGenerator(name, data)
         startRelay = data.startRelay,
         stopRelay = data.stopRelay,
         syncRelay = data.syncRelay,
+        unsyncRelay = data.unsyncRelay,
         tripRelay = data.tripRelay,
         resetRelay = data.resetRelay,
         monitorPos = data.monitorPos,
@@ -224,6 +225,8 @@ function LUASQUARE_POWERGENERATOR.Sync(name)
         return false
     end
 
+    if generator.synced then LUASQUARE_POWERGENERATOR.Unsync(name) end
+
     if generator.type ~= 'turbine' then
         generator.synced = true
         if LUASQUARE_POWERGRID then LUASQUARE_POWERGRID.SetBreaker(generator.breaker, true) end
@@ -268,6 +271,18 @@ function LUASQUARE_POWERGENERATOR.Unsync(name)
         turbine.synced = false
         turbine.lastMW = 0
     end
+    LUASQUARE_POWERGENERATOR.FireRelay(generator.unsyncRelay)
+    return true
+end
+
+function LUASQUARE_POWERGENERATOR.SetAutoSync(name, enabled)
+    local generator = LUASQUARE_POWERGENERATOR.GetGenerator(name)
+    if not generator then
+        print('[LUASQUARE_POWERGENERATOR] Unknown generator: ' .. tostring(name))
+        return false
+    end
+
+    generator.autoSync = enabled and true or false
     return true
 end
 
