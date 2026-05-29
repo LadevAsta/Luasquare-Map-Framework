@@ -14,6 +14,116 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     DieselGenerators = {}
 }
 
+local DEBUG_WIRE_VERSION = 1
+local DEBUG_PACKET_START = 1
+local DEBUG_PACKET_CATEGORY = 2
+local DEBUG_PACKET_END = 3
+
+local DEBUG_CATEGORIES = {
+    {name = 'Networks', chunkSize = 32, schema = {
+        {'name', 'string'}, {'type', 'string'}, {'fluidType', 'string'},
+        {'amount', 'number'}, {'maxAmount', 'number'}, {'hardMaxAmount', 'number'},
+        {'volume', 'number'}, {'pressure', 'number'}, {'maxPressure', 'number'}, {'temperature', 'number'},
+        {'ruptured', 'bool'}, {'serviceEnabled', 'bool'}, {'pos', 'vector'}
+    }},
+    {name = 'Pumps', chunkSize = 32, schema = {
+        {'name', 'string'}, {'source', 'string'}, {'target', 'string'},
+        {'rate', 'number'}, {'headPressure', 'number'}, {'enabled', 'bool'},
+        {'speedLevel', 'number'}, {'speedMultiplier', 'number'}, {'regulate', 'bool'},
+        {'regulationMode', 'string'}, {'regulationTarget', 'number'}, {'regulationLevel', 'number'},
+        {'regulationFactor', 'number'}, {'grid', 'string'}, {'breaker', 'string'},
+        {'peakMW', 'number'}, {'lastPowerMW', 'number'}, {'lastPowerAcceptedMW', 'number'},
+        {'lastFlow', 'number'}, {'pos', 'vector'}
+    }},
+    {name = 'Valves', chunkSize = 48, schema = {
+        {'name', 'string'}, {'a', 'string'}, {'b', 'string'},
+        {'open', 'bool'}, {'bidirectional', 'bool'}, {'maxFlow', 'number'}, {'lastFlow', 'number'}, {'pos', 'vector'}
+    }},
+    {name = 'Condensers', chunkSize = 32, schema = {
+        {'name', 'string'}, {'input', 'string'}, {'output', 'string'}, {'ratio', 'number'},
+        {'enabled', 'bool'}, {'godMode', 'bool'}, {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'}, {'pos', 'vector'}
+    }},
+    {name = 'Turbines', chunkSize = 16, schema = {
+        {'name', 'string'}, {'input', 'string'}, {'boiler', 'string'}, {'output', 'string'},
+        {'condenserOutput', 'string'}, {'bypassCondenserOutput', 'string'},
+        {'enabled', 'bool'}, {'tripped', 'bool'}, {'tripLevel', 'string'}, {'tripRelayFired', 'bool'},
+        {'severeTripFired', 'bool'}, {'severeTripStopFired', 'bool'}, {'severeTripRPM', 'number'},
+        {'severeTripBrakeRPM', 'number'}, {'extremeTripFired', 'bool'}, {'extremeTripRPM', 'number'},
+        {'catastrophicFailed', 'bool'}, {'synced', 'bool'}, {'autoSync', 'bool'},
+        {'valve', 'number'}, {'bypassValve', 'number'}, {'maxSteamRate', 'number'}, {'ratedSteamRate', 'number'},
+        {'rpm', 'number'}, {'phase', 'number'}, {'vibration', 'number'}, {'cycleEfficiency', 'number'},
+        {'lastBoilerMW', 'number'}, {'lastSteamShare', 'number'}, {'lastTurbineSteamFraction', 'number'},
+        {'lastInletSteam', 'number'}, {'lastInletPressureScale', 'number'}, {'lastSteamUsed', 'number'},
+        {'lastBypassSteam', 'number'}, {'lastExhaustMade', 'number'}, {'lastCondensateMade', 'number'},
+        {'lastBypassCondensateMade', 'number'}, {'lastCondensateTemperature', 'number'},
+        {'lastBypassCondensateTemperature', 'number'}, {'lastMW', 'number'}, {'tripReason', 'string'}, {'pos', 'vector'}
+    }},
+    {name = 'CoolingTowers', chunkSize = 24, schema = {
+        {'name', 'string'}, {'input', 'string'}, {'basin', 'string'}, {'output', 'string'},
+        {'maxRate', 'number'}, {'enabled', 'bool'}, {'working', 'bool'}, {'outputTemperature', 'number'},
+        {'basinAmount', 'number'}, {'basinMaxAmount', 'number'}, {'basinTemperature', 'number'},
+        {'basinPressure', 'number'}, {'basinMaxPressure', 'number'}, {'lastWaterReceived', 'number'},
+        {'lastWaterCooled', 'number'}, {'lastHeatRemoved', 'number'}, {'pos', 'vector'}
+    }},
+    {name = 'Grids', chunkSize = 24, schema = {
+        {'name', 'string'}, {'type', 'string'}, {'enabled', 'bool'}, {'tripped', 'bool'},
+        {'energized', 'bool'}, {'stiff', 'bool'}, {'frequency', 'number'}, {'nominalFrequency', 'number'},
+        {'voltage', 'number'}, {'phase', 'number'}, {'sourceCapacityMW', 'number'},
+        {'availableImportMW', 'number'}, {'lastGenerationMW', 'number'}, {'lastLoadMW', 'number'},
+        {'lastImportMW', 'number'}, {'lastAvailableMW', 'number'}, {'lastBalanceMW', 'number'},
+        {'tripReason', 'string'}, {'pos', 'vector'}
+    }},
+    {name = 'Breakers', chunkSize = 32, schema = {
+        {'name', 'string'}, {'grid', 'string'}, {'owner', 'string'}, {'kind', 'string'},
+        {'closed', 'bool'}, {'tripped', 'bool'}, {'maxMW', 'number'}, {'lastMW', 'number'},
+        {'tripReason', 'string'}, {'pos', 'vector'}
+    }},
+    {name = 'Transformers', chunkSize = 32, schema = {
+        {'name', 'string'}, {'from', 'string'}, {'to', 'string'}, {'enabled', 'bool'}, {'closed', 'bool'},
+        {'bidirectional', 'bool'}, {'tripped', 'bool'}, {'available', 'bool'}, {'maxMW', 'number'},
+        {'lastMW', 'number'}, {'pos', 'vector'}
+    }},
+    {name = 'Generators', chunkSize = 24, schema = {
+        {'name', 'string'}, {'type', 'string'}, {'grid', 'string'}, {'breaker', 'string'},
+        {'enabled', 'bool'}, {'tripped', 'bool'}, {'synced', 'bool'}, {'turbine', 'string'},
+        {'ratedMW', 'number'}, {'maxMW', 'number'}, {'outputMW', 'number'}, {'targetMW', 'number'},
+        {'lastMW', 'number'}, {'lastAcceptedMW', 'number'}, {'lastRPMError', 'number'},
+        {'lastPhaseError', 'number'}, {'lastSyncBlockReason', 'string'}, {'tripReason', 'string'}, {'pos', 'vector'}
+    }},
+    {name = 'DieselGenerators', chunkSize = 32, schema = {
+        {'name', 'string'}, {'generator', 'string'}, {'fuelNetwork', 'string'}, {'enabled', 'bool'},
+        {'targetMW', 'number'}, {'lastTargetMW', 'number'}, {'lastAvailableMW', 'number'},
+        {'fuelTankAmount', 'number'}, {'fuelTankCapacity', 'number'}, {'lastFuelDraw', 'number'},
+        {'lastFuelUsed', 'number'}, {'pos', 'vector'}
+    }}
+}
+
+local function startDebugPacket(packetType, sequence)
+    net.Start('LUASQUARE_PowerplantDebugState')
+    net.WriteUInt(DEBUG_WIRE_VERSION, 8)
+    net.WriteUInt(packetType, 4)
+    net.WriteUInt(sequence, 16)
+end
+
+local function writeValue(valueType, value)
+    if valueType == 'number' then
+        net.WriteFloat(value or 0)
+    elseif valueType == 'bool' then
+        net.WriteBool(value and true or false)
+    elseif valueType == 'vector' then
+        net.WriteVector(value or Vector(0, 0, 0))
+    elseif valueType == 'string' then
+        net.WriteBool(value ~= nil)
+        if value ~= nil then net.WriteString(tostring(value)) end
+    end
+end
+
+local function writeItem(schema, item)
+    for _, field in ipairs(schema) do
+        writeValue(field[2], item[field[1]])
+    end
+end
+
 local function copyMonitorPos(data)
     if not LUASQUARE_POWERPLANT.ResolveMonitorPos then return nil end
     return LUASQUARE_POWERPLANT.ResolveMonitorPos(data)
@@ -347,9 +457,32 @@ function LUASQUARE_POWERPLANT.Debug.Tick()
 end
 
 function LUASQUARE_POWERPLANT.Debug.Broadcast()
-    net.Start('LUASQUARE_PowerplantDebugState')
-    net.WriteTable(LUASQUARE_POWERPLANT.Debug.ClientState)
+    LUASQUARE_POWERPLANT.Debug.NetSequence = ((LUASQUARE_POWERPLANT.Debug.NetSequence or 0) % 65535) + 1
+    local sequence = LUASQUARE_POWERPLANT.Debug.NetSequence
+    local state = LUASQUARE_POWERPLANT.Debug.ClientState or {}
+
+    startDebugPacket(DEBUG_PACKET_START, sequence)
     net.Broadcast()
+
+    for categoryIndex, category in ipairs(DEBUG_CATEGORIES) do
+        LUASQUARE_POWERPLANT.Debug.BroadcastCategoryChunks(sequence, categoryIndex, category, state[category.name] or {})
+    end
+
+    startDebugPacket(DEBUG_PACKET_END, sequence)
+    net.Broadcast()
+end
+
+function LUASQUARE_POWERPLANT.Debug.BroadcastCategoryChunks(sequence, categoryIndex, category, items)
+    for startIndex = 1, #items, category.chunkSize do
+        local endIndex = math.min(startIndex + category.chunkSize - 1, #items)
+        startDebugPacket(DEBUG_PACKET_CATEGORY, sequence)
+        net.WriteUInt(categoryIndex, 4)
+        net.WriteUInt(endIndex - startIndex + 1, 16)
+        for i = startIndex, endIndex do
+            writeItem(category.schema, items[i])
+        end
+        net.Broadcast()
+    end
 end
 
 function LUASQUARE_POWERPLANT.Debug.Start()

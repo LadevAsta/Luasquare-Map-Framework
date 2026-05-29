@@ -1,0 +1,5 @@
+UnlitGeneric
+{
+    "$basetexture" "models/luasquare/ann/load_rejection"
+    "$frame" "0"
+}

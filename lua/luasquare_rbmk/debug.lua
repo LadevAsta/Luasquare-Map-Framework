@@ -6,6 +6,41 @@ RBMK.Debug.ClientState = {
     VesselInfo = {}
 }
 
+local DEBUG_WIRE_VERSION = 1
+local DEBUG_PACKET_VESSEL = 1
+local DEBUG_PACKET_CELLS = 2
+local DEBUG_PACKET_FLUX = 3
+local DEBUG_PACKET_END = 4
+local DEBUG_CELL_CHUNK_SIZE = 64
+local DEBUG_FLUX_CHUNK_SIZE = 96
+
+local function writeString(value)
+    net.WriteString(value ~= nil and tostring(value) or '')
+end
+
+local function writeOptionalString(value)
+    net.WriteBool(value ~= nil)
+    if value ~= nil then net.WriteString(tostring(value)) end
+end
+
+local function writeVector(value)
+    net.WriteVector(value or Vector(0, 0, 0))
+end
+
+local function writePoint(value)
+    net.WriteBool(value ~= nil)
+    if not value then return end
+    net.WriteUInt(value.x or 0, 16)
+    net.WriteUInt(value.y or 0, 16)
+end
+
+local function startDebugPacket(packetType, sequence)
+    net.Start('RBMK_DebugState')
+    net.WriteUInt(DEBUG_WIRE_VERSION, 8)
+    net.WriteUInt(packetType, 4)
+    net.WriteUInt(sequence, 16)
+end
+
 function RBMK.Debug.BuildCells()
     RBMK.Debug.ClientState.Cells = {}
     for x = 1, RBMK.Width do
@@ -148,7 +183,143 @@ function RBMK.Debug.Tick()
 end
 
 function RBMK.Debug.Broadcast()
-    net.Start('RBMK_DebugState')
-    net.WriteTable(RBMK.Debug.ClientState)
+    RBMK.Debug.NetSequence = ((RBMK.Debug.NetSequence or 0) % 65535) + 1
+    local sequence = RBMK.Debug.NetSequence
+    local state = RBMK.Debug.ClientState or {}
+    local cells = state.Cells or {}
+    local fluxLines = state.FluxLines or {}
+
+    RBMK.Debug.BroadcastVesselInfo(sequence, state.VesselInfo or {})
+    RBMK.Debug.BroadcastCellChunks(sequence, cells)
+    RBMK.Debug.BroadcastFluxChunks(sequence, fluxLines)
+
+    startDebugPacket(DEBUG_PACKET_END, sequence)
     net.Broadcast()
+end
+
+function RBMK.Debug.BroadcastVesselInfo(sequence, info)
+    startDebugPacket(DEBUG_PACKET_VESSEL, sequence)
+    writeVector(info.worldOrigin)
+    net.WriteFloat(info.cellSpacing or 64)
+    writeString(info.model or 'UNKNOWN')
+    net.WriteFloat(info.averageHeat or 0)
+    net.WriteFloat(info.maxHeat or 0)
+    net.WriteFloat(info.totalFlux or 0)
+    net.WriteFloat(info.averageXenon or 0)
+    net.WriteFloat(info.lastThermalMW or 0)
+    net.WriteFloat(info.lastFlashBoilMW or 0)
+    net.WriteFloat(info.lastSteamGenerated or 0)
+    net.WriteFloat(info.lastFlashSteamGenerated or 0)
+    net.WriteBool(info.autoRegulatorEnabled and true or false)
+    net.WriteBool(info.autoRegulatorUsePID and true or false)
+    net.WriteFloat(info.autoRegulatorTargetMW or 0)
+    net.WriteFloat(info.autoRegulatorTargetInsertion or 0)
+    net.WriteFloat(info.autoRegulatorLastError or 0)
+    net.WriteFloat(info.waterTemperature or 0)
+    net.WriteFloat(info.steamTemperature or 0)
+    net.WriteFloat(info.boilingTemperature or 0)
+    net.WriteFloat(info.coolingEfficiency or 0)
+    net.WriteFloat(info.water or 0)
+    net.WriteFloat(info.maxWater or 0)
+    net.WriteFloat(info.steam or 0)
+    net.WriteFloat(info.maxSteam or 0)
+    net.WriteFloat(info.hardMaxSteam or 0)
+    net.WriteFloat(info.totalVolume or 0)
+    net.WriteFloat(info.steamSpace or 0)
+    net.WriteFloat(info.minSteamSpace or 0)
+    net.WriteFloat(info.rpvPressure or 0)
+    writeString(info.pressureUnit or 'bar')
+    net.WriteBool(info.steamOutletOpen and true or false)
+    net.WriteBool(info.feedwaterInletOpen and true or false)
+    net.WriteBool(info.drainValveOpen and true or false)
+    net.WriteFloat(info.lastSteamExportFlow or 0)
+    net.WriteFloat(info.lastDrainFlow or 0)
+    net.WriteFloat(info.blowoutPressure or 0)
+    net.WriteFloat(info.catastrophicPressure or 0)
+    net.WriteBool(info.eventFailed and true or false)
+    writeOptionalString(info.failureReason)
+    net.WriteFloat(info.lastBlowoutSteamLoss or 0)
+    net.WriteFloat(info.lastBlowoutPressure or 0)
+    writeOptionalString(info.lastBlowoutValve)
+    net.WriteUInt(info.lastBlowoutCount or 0, 16)
+    net.WriteFloat(info.lastBlowoutDuration or 0)
+    net.WriteBool(info.blowoutEnabled and true or false)
+    net.WriteUInt(info.blowoutValveCount or 0, 16)
+    writePoint(info.lastFuelLeak)
+    writePoint(info.lastMeltdown)
+    net.Broadcast()
+end
+
+function RBMK.Debug.WriteCell(cell)
+    net.WriteUInt(cell.x or 0, 16)
+    net.WriteUInt(cell.y or 0, 16)
+    net.WriteUInt(cell.type or RBMK.CELL_VOID, 4)
+    net.WriteFloat(cell.heat or 0)
+
+    if cell.type == RBMK.CELL_FUEL then
+        writeString(cell.fuelType or 'UNKNOWN')
+        net.WriteFloat(cell.skinHeat or 0)
+        net.WriteFloat(cell.coreHeat or 0)
+        net.WriteFloat(cell.flux or 0)
+        net.WriteFloat(cell.lastFlux or 0)
+        net.WriteFloat(cell.xenon or 0)
+        net.WriteBool(cell.leaking and true or false)
+        net.WriteBool(cell.meltingDown and true or false)
+    elseif cell.type == RBMK.CELL_CONTROL then
+        writeString(cell.name or 'unnamed')
+        writeString(cell.group or 'nocolor')
+        net.WriteFloat(cell.insertion or 0)
+        net.WriteFloat(cell.targetInsertion or 0)
+        net.WriteFloat(cell.lastInsertion or 0)
+        net.WriteBool(cell.inserting and true or false)
+        net.WriteFloat(cell.stationaryTime or 0)
+        net.WriteFloat(cell.movingTime or 0)
+        net.WriteFloat(cell.moveSpeed or 0)
+        net.WriteBool(cell.autoRegulator and true or false)
+        net.WriteFloat(cell.autoInsertion or 0)
+        net.WriteFloat(cell.autoTargetInsertion or 0)
+        net.WriteFloat(cell.autoMaxInsertion or 0)
+        net.WriteBool(cell.graphiteTip and true or false)
+        net.WriteBool(cell.reflector and true or false)
+        net.WriteEntity(IsValid(cell.visualEnt) and cell.visualEnt or NULL)
+    elseif cell.type == RBMK.CELL_REFLECTOR then
+        net.WriteBool(cell.reflectorIn and true or false)
+    elseif cell.type == RBMK.CELL_SOURCE then
+        net.WriteFloat(cell.flux or 0)
+        net.WriteFloat(cell.lastFlux or 0)
+        net.WriteFloat(cell.sourceStrength or 0)
+        net.WriteBool(cell.closedSource and true or false)
+    end
+end
+
+function RBMK.Debug.BroadcastCellChunks(sequence, cells)
+    for startIndex = 1, #cells, DEBUG_CELL_CHUNK_SIZE do
+        local endIndex = math.min(startIndex + DEBUG_CELL_CHUNK_SIZE - 1, #cells)
+        startDebugPacket(DEBUG_PACKET_CELLS, sequence)
+        net.WriteUInt(endIndex - startIndex + 1, 16)
+        for i = startIndex, endIndex do
+            RBMK.Debug.WriteCell(cells[i])
+        end
+        net.Broadcast()
+    end
+end
+
+function RBMK.Debug.WriteFluxLine(line)
+    writeVector(line.start)
+    writeVector(line.finish)
+    net.WriteFloat(line.flux or 0)
+    net.WriteInt(line.dx or 0, 4)
+    net.WriteInt(line.dy or 0, 4)
+end
+
+function RBMK.Debug.BroadcastFluxChunks(sequence, fluxLines)
+    for startIndex = 1, #fluxLines, DEBUG_FLUX_CHUNK_SIZE do
+        local endIndex = math.min(startIndex + DEBUG_FLUX_CHUNK_SIZE - 1, #fluxLines)
+        startDebugPacket(DEBUG_PACKET_FLUX, sequence)
+        net.WriteUInt(endIndex - startIndex + 1, 16)
+        for i = startIndex, endIndex do
+            RBMK.Debug.WriteFluxLine(fluxLines[i])
+        end
+        net.Broadcast()
+    end
 end

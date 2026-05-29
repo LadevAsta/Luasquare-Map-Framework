@@ -41,7 +41,7 @@ function RBMK.CreateControlRod(name, group, indicatorSpriteEnt, visualEnt, graph
         insertion = insertion,
         targetInsertion = insertion,
         lastInsertion = insertion,
-        inserting = 0,
+        inserting = false,
         stationaryTime = 0,
         movingTime = 0,
         moveSpeed = 0.005,

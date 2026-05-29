@@ -6,6 +6,177 @@ RBMK.Debug.ClientState = {
     VesselInfo = {}
 }
 
+local DEBUG_WIRE_VERSION = 1
+local DEBUG_PACKET_VESSEL = 1
+local DEBUG_PACKET_CELLS = 2
+local DEBUG_PACKET_FLUX = 3
+local DEBUG_PACKET_END = 4
+
+local function emptyClientState()
+    return {
+        Cells = {},
+        FluxLines = {},
+        VesselInfo = {}
+    }
+end
+
+local function readOptionalString()
+    if not net.ReadBool() then return nil end
+    return net.ReadString()
+end
+
+local function readPoint()
+    if not net.ReadBool() then return nil end
+    return {
+        x = net.ReadUInt(16),
+        y = net.ReadUInt(16)
+    }
+end
+
+local function readVesselInfo()
+    return {
+        worldOrigin = net.ReadVector(),
+        cellSpacing = net.ReadFloat(),
+        cellSymbols = RBMK.CellSymbols,
+        model = net.ReadString(),
+        averageHeat = net.ReadFloat(),
+        maxHeat = net.ReadFloat(),
+        totalFlux = net.ReadFloat(),
+        averageXenon = net.ReadFloat(),
+        lastThermalMW = net.ReadFloat(),
+        lastFlashBoilMW = net.ReadFloat(),
+        lastSteamGenerated = net.ReadFloat(),
+        lastFlashSteamGenerated = net.ReadFloat(),
+        autoRegulatorEnabled = net.ReadBool(),
+        autoRegulatorUsePID = net.ReadBool(),
+        autoRegulatorTargetMW = net.ReadFloat(),
+        autoRegulatorTargetInsertion = net.ReadFloat(),
+        autoRegulatorLastError = net.ReadFloat(),
+        waterTemperature = net.ReadFloat(),
+        steamTemperature = net.ReadFloat(),
+        boilingTemperature = net.ReadFloat(),
+        coolingEfficiency = net.ReadFloat(),
+        water = net.ReadFloat(),
+        maxWater = net.ReadFloat(),
+        steam = net.ReadFloat(),
+        maxSteam = net.ReadFloat(),
+        hardMaxSteam = net.ReadFloat(),
+        totalVolume = net.ReadFloat(),
+        steamSpace = net.ReadFloat(),
+        minSteamSpace = net.ReadFloat(),
+        rpvPressure = net.ReadFloat(),
+        pressureUnit = net.ReadString(),
+        steamOutletOpen = net.ReadBool(),
+        feedwaterInletOpen = net.ReadBool(),
+        drainValveOpen = net.ReadBool(),
+        lastSteamExportFlow = net.ReadFloat(),
+        lastDrainFlow = net.ReadFloat(),
+        blowoutPressure = net.ReadFloat(),
+        catastrophicPressure = net.ReadFloat(),
+        eventFailed = net.ReadBool(),
+        failureReason = readOptionalString(),
+        lastBlowoutSteamLoss = net.ReadFloat(),
+        lastBlowoutPressure = net.ReadFloat(),
+        lastBlowoutValve = readOptionalString(),
+        lastBlowoutCount = net.ReadUInt(16),
+        lastBlowoutDuration = net.ReadFloat(),
+        blowoutEnabled = net.ReadBool(),
+        blowoutValveCount = net.ReadUInt(16),
+        lastFuelLeak = readPoint(),
+        lastMeltdown = readPoint()
+    }
+end
+
+local function readCell()
+    local cell = {
+        x = net.ReadUInt(16),
+        y = net.ReadUInt(16),
+        type = net.ReadUInt(4),
+        heat = net.ReadFloat()
+    }
+    cell.symbol = RBMK.CellSymbols[cell.type] or '?'
+
+    if cell.type == RBMK.CELL_FUEL then
+        cell.fuelType = net.ReadString()
+        cell.skinHeat = net.ReadFloat()
+        cell.coreHeat = net.ReadFloat()
+        cell.flux = net.ReadFloat()
+        cell.lastFlux = net.ReadFloat()
+        cell.xenon = net.ReadFloat()
+        cell.leaking = net.ReadBool()
+        cell.meltingDown = net.ReadBool()
+    elseif cell.type == RBMK.CELL_CONTROL then
+        cell.name = net.ReadString()
+        cell.group = net.ReadString()
+        cell.insertion = net.ReadFloat()
+        cell.targetInsertion = net.ReadFloat()
+        cell.lastInsertion = net.ReadFloat()
+        cell.inserting = net.ReadBool()
+        cell.stationaryTime = net.ReadFloat()
+        cell.movingTime = net.ReadFloat()
+        cell.moveSpeed = net.ReadFloat()
+        cell.autoRegulator = net.ReadBool()
+        cell.autoInsertion = net.ReadFloat()
+        cell.autoTargetInsertion = net.ReadFloat()
+        cell.autoMaxInsertion = net.ReadFloat()
+        cell.graphiteTip = net.ReadBool()
+        cell.reflector = net.ReadBool()
+        cell.visualEnt = net.ReadEntity()
+    elseif cell.type == RBMK.CELL_REFLECTOR then
+        cell.reflectorIn = net.ReadBool()
+    elseif cell.type == RBMK.CELL_SOURCE then
+        cell.flux = net.ReadFloat()
+        cell.lastFlux = net.ReadFloat()
+        cell.sourceStrength = net.ReadFloat()
+        cell.closedSource = net.ReadBool()
+    end
+
+    return cell
+end
+
+local function readFluxLine()
+    return {
+        start = net.ReadVector(),
+        finish = net.ReadVector(),
+        flux = net.ReadFloat(),
+        dx = net.ReadInt(4),
+        dy = net.ReadInt(4)
+    }
+end
+
+function RBMK.Debug.ReceiveStatePacket()
+    local version = net.ReadUInt(8)
+    if version ~= DEBUG_WIRE_VERSION then return end
+
+    local packetType = net.ReadUInt(4)
+    local sequence = net.ReadUInt(16)
+
+    if packetType == DEBUG_PACKET_VESSEL then
+        RBMK.Debug.PendingState = emptyClientState()
+        RBMK.Debug.PendingState.Sequence = sequence
+        RBMK.Debug.PendingState.VesselInfo = readVesselInfo()
+        return
+    end
+
+    local pending = RBMK.Debug.PendingState
+    if not pending or pending.Sequence ~= sequence then return end
+
+    if packetType == DEBUG_PACKET_CELLS then
+        local count = net.ReadUInt(16)
+        for _ = 1, count do
+            table.insert(pending.Cells, readCell())
+        end
+    elseif packetType == DEBUG_PACKET_FLUX then
+        local count = net.ReadUInt(16)
+        for _ = 1, count do
+            table.insert(pending.FluxLines, readFluxLine())
+        end
+    elseif packetType == DEBUG_PACKET_END then
+        RBMK.Debug.ClientState = pending
+        RBMK.Debug.PendingState = nil
+    end
+end
+
 RBMK.CELL_FUEL = RBMK.CELL_FUEL or 1
 RBMK.CELL_STEAM = RBMK.CELL_STEAM or 2
 RBMK.CELL_CONTROL = RBMK.CELL_CONTROL or 3
@@ -49,11 +220,7 @@ timer.Simple(10, function()
     net.Receive('RBMK_DebugState', function()
         RBMK = RBMK or {}
         RBMK.Debug = RBMK.Debug or {}
-        RBMK.Debug.ClientState = net.ReadTable() or {
-            Cells = {},
-            FluxLines = {},
-            VesselInfo = {}
-        }
+        RBMK.Debug.ReceiveStatePacket()
     end)
 
     hook.Add('PostDrawTranslucentRenderables', 'luasquareRBMK_DebugRender', function()
@@ -155,53 +322,54 @@ function RBMK.Debug.RenderFluxLines()
     if not state.FluxLines then return end
     render.SetColorMaterial()
     for _, line in ipairs(state.FluxLines) do
-        if line.flux < 0.05 then continue end
-        local offset = Vector(0, 0, 0)
-        local color = Color(0, 255, 0)
-        -- HORIZONTAL
-        if line.dx ~= 0 then
-            -- East
-            if line.dx > 0 then
-                offset = Vector(0, 6, 0)
-                color = Color(0, 255, 0)
+        if line.flux >= 0.05 then
+            local offset = Vector(0, 0, 0)
+            local color = Color(0, 255, 0)
+            -- HORIZONTAL
+            if line.dx ~= 0 then
+                -- East
+                if line.dx > 0 then
+                    offset = Vector(0, 6, 0)
+                    color = Color(0, 255, 0)
+                end
+
+                -- West
+                if line.dx < 0 then
+                    offset = Vector(0, -6, 0)
+                    color = Color(0, 167, 0)
+                end
             end
 
-            -- West
-            if line.dx < 0 then
-                offset = Vector(0, -6, 0)
-                color = Color(0, 167, 0)
+            -- VERTICAL
+            if line.dy ~= 0 then
+                -- North
+                if line.dy > 0 then
+                    offset = Vector(-6, 0, 0)
+                    color = Color(0, 255, 0)
+                end
+
+                -- South
+                if line.dy < 0 then
+                    offset = Vector(6, 0, 0)
+                    color = Color(0, 167, 0)
+                end
             end
+
+            local startPos = line.start + offset
+            local endPos = line.finish + offset
+            -- MAIN LINE
+            render.DrawLine(startPos, endPos, color, true)
+            -- ARROW
+            local arrowDir = endPos - startPos
+            arrowDir:Normalize()
+            local back = arrowDir * -6
+            local right = Vector(-arrowDir.y, arrowDir.x, 0)
+            local arrowA = endPos + back + right * 3
+            render.DrawLine(endPos, arrowA, color, true)
+            -- FLUX TEXT
+            local textPos = arrowA + offset * 0.5 + Vector(0, 0, -4)
+            RBMK.Debug.DrawWorldText(textPos, string.format('%.1f', line.flux), color, RBMK.Debug.GetSettingNumber('debug_textscale_flux', 0.3))
         end
-
-        -- VERTICAL
-        if line.dy ~= 0 then
-            -- North
-            if line.dy > 0 then
-                offset = Vector(-6, 0, 0)
-                color = Color(0, 255, 0)
-            end
-
-            -- South
-            if line.dy < 0 then
-                offset = Vector(6, 0, 0)
-                color = Color(0, 167, 0)
-            end
-        end
-
-        local startPos = line.start + offset
-        local endPos = line.finish + offset
-        -- MAIN LINE
-        render.DrawLine(startPos, endPos, color, true)
-        -- ARROW
-        local arrowDir = endPos - startPos
-        arrowDir:Normalize()
-        local back = arrowDir * -6
-        local right = Vector(-arrowDir.y, arrowDir.x, 0)
-        local arrowA = endPos + back + right * 3
-        render.DrawLine(endPos, arrowA, color, true)
-        -- FLUX TEXT
-        local textPos = arrowA + offset * 0.5 + Vector(0, 0, -4)
-        RBMK.Debug.DrawWorldText(textPos, string.format('%.1f', line.flux), color, RBMK.Debug.GetSettingNumber('debug_textscale_flux', 0.3))
     end
 end
 

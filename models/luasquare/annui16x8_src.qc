@@ -1,7 +1,7 @@
 
-$definevariable NAME "reverse_power"
+$definevariable NAME "load_rejection"
 
-$modelname "luasquare/ann/reverse_power"
+$modelname "luasquare/ann/load_rejection"
 
 $include "annui16x8_src_shared.qci"
 

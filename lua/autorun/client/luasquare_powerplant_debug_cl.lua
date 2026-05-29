@@ -15,6 +15,146 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     DieselGenerators = {}
 }
 
+local DEBUG_WIRE_VERSION = 1
+local DEBUG_PACKET_START = 1
+local DEBUG_PACKET_CATEGORY = 2
+local DEBUG_PACKET_END = 3
+
+local DEBUG_CATEGORIES = {
+    {name = 'Networks', schema = {
+        {'name', 'string'}, {'type', 'string'}, {'fluidType', 'string'},
+        {'amount', 'number'}, {'maxAmount', 'number'}, {'hardMaxAmount', 'number'},
+        {'volume', 'number'}, {'pressure', 'number'}, {'maxPressure', 'number'}, {'temperature', 'number'},
+        {'ruptured', 'bool'}, {'serviceEnabled', 'bool'}, {'pos', 'vector'}
+    }},
+    {name = 'Pumps', schema = {
+        {'name', 'string'}, {'source', 'string'}, {'target', 'string'},
+        {'rate', 'number'}, {'headPressure', 'number'}, {'enabled', 'bool'},
+        {'speedLevel', 'number'}, {'speedMultiplier', 'number'}, {'regulate', 'bool'},
+        {'regulationMode', 'string'}, {'regulationTarget', 'number'}, {'regulationLevel', 'number'},
+        {'regulationFactor', 'number'}, {'grid', 'string'}, {'breaker', 'string'},
+        {'peakMW', 'number'}, {'lastPowerMW', 'number'}, {'lastPowerAcceptedMW', 'number'},
+        {'lastFlow', 'number'}, {'pos', 'vector'}
+    }},
+    {name = 'Valves', schema = {
+        {'name', 'string'}, {'a', 'string'}, {'b', 'string'},
+        {'open', 'bool'}, {'bidirectional', 'bool'}, {'maxFlow', 'number'}, {'lastFlow', 'number'}, {'pos', 'vector'}
+    }},
+    {name = 'Condensers', schema = {
+        {'name', 'string'}, {'input', 'string'}, {'output', 'string'}, {'ratio', 'number'},
+        {'enabled', 'bool'}, {'godMode', 'bool'}, {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'}, {'pos', 'vector'}
+    }},
+    {name = 'Turbines', schema = {
+        {'name', 'string'}, {'input', 'string'}, {'boiler', 'string'}, {'output', 'string'},
+        {'condenserOutput', 'string'}, {'bypassCondenserOutput', 'string'},
+        {'enabled', 'bool'}, {'tripped', 'bool'}, {'tripLevel', 'string'}, {'tripRelayFired', 'bool'},
+        {'severeTripFired', 'bool'}, {'severeTripStopFired', 'bool'}, {'severeTripRPM', 'number'},
+        {'severeTripBrakeRPM', 'number'}, {'extremeTripFired', 'bool'}, {'extremeTripRPM', 'number'},
+        {'catastrophicFailed', 'bool'}, {'synced', 'bool'}, {'autoSync', 'bool'},
+        {'valve', 'number'}, {'bypassValve', 'number'}, {'maxSteamRate', 'number'}, {'ratedSteamRate', 'number'},
+        {'rpm', 'number'}, {'phase', 'number'}, {'vibration', 'number'}, {'cycleEfficiency', 'number'},
+        {'lastBoilerMW', 'number'}, {'lastSteamShare', 'number'}, {'lastTurbineSteamFraction', 'number'},
+        {'lastInletSteam', 'number'}, {'lastInletPressureScale', 'number'}, {'lastSteamUsed', 'number'},
+        {'lastBypassSteam', 'number'}, {'lastExhaustMade', 'number'}, {'lastCondensateMade', 'number'},
+        {'lastBypassCondensateMade', 'number'}, {'lastCondensateTemperature', 'number'},
+        {'lastBypassCondensateTemperature', 'number'}, {'lastMW', 'number'}, {'tripReason', 'string'}, {'pos', 'vector'}
+    }},
+    {name = 'CoolingTowers', schema = {
+        {'name', 'string'}, {'input', 'string'}, {'basin', 'string'}, {'output', 'string'},
+        {'maxRate', 'number'}, {'enabled', 'bool'}, {'working', 'bool'}, {'outputTemperature', 'number'},
+        {'basinAmount', 'number'}, {'basinMaxAmount', 'number'}, {'basinTemperature', 'number'},
+        {'basinPressure', 'number'}, {'basinMaxPressure', 'number'}, {'lastWaterReceived', 'number'},
+        {'lastWaterCooled', 'number'}, {'lastHeatRemoved', 'number'}, {'pos', 'vector'}
+    }},
+    {name = 'Grids', schema = {
+        {'name', 'string'}, {'type', 'string'}, {'enabled', 'bool'}, {'tripped', 'bool'},
+        {'energized', 'bool'}, {'stiff', 'bool'}, {'frequency', 'number'}, {'nominalFrequency', 'number'},
+        {'voltage', 'number'}, {'phase', 'number'}, {'sourceCapacityMW', 'number'},
+        {'availableImportMW', 'number'}, {'lastGenerationMW', 'number'}, {'lastLoadMW', 'number'},
+        {'lastImportMW', 'number'}, {'lastAvailableMW', 'number'}, {'lastBalanceMW', 'number'},
+        {'tripReason', 'string'}, {'pos', 'vector'}
+    }},
+    {name = 'Breakers', schema = {
+        {'name', 'string'}, {'grid', 'string'}, {'owner', 'string'}, {'kind', 'string'},
+        {'closed', 'bool'}, {'tripped', 'bool'}, {'maxMW', 'number'}, {'lastMW', 'number'},
+        {'tripReason', 'string'}, {'pos', 'vector'}
+    }},
+    {name = 'Transformers', schema = {
+        {'name', 'string'}, {'from', 'string'}, {'to', 'string'}, {'enabled', 'bool'}, {'closed', 'bool'},
+        {'bidirectional', 'bool'}, {'tripped', 'bool'}, {'available', 'bool'}, {'maxMW', 'number'},
+        {'lastMW', 'number'}, {'pos', 'vector'}
+    }},
+    {name = 'Generators', schema = {
+        {'name', 'string'}, {'type', 'string'}, {'grid', 'string'}, {'breaker', 'string'},
+        {'enabled', 'bool'}, {'tripped', 'bool'}, {'synced', 'bool'}, {'turbine', 'string'},
+        {'ratedMW', 'number'}, {'maxMW', 'number'}, {'outputMW', 'number'}, {'targetMW', 'number'},
+        {'lastMW', 'number'}, {'lastAcceptedMW', 'number'}, {'lastRPMError', 'number'},
+        {'lastPhaseError', 'number'}, {'lastSyncBlockReason', 'string'}, {'tripReason', 'string'}, {'pos', 'vector'}
+    }},
+    {name = 'DieselGenerators', schema = {
+        {'name', 'string'}, {'generator', 'string'}, {'fuelNetwork', 'string'}, {'enabled', 'bool'},
+        {'targetMW', 'number'}, {'lastTargetMW', 'number'}, {'lastAvailableMW', 'number'},
+        {'fuelTankAmount', 'number'}, {'fuelTankCapacity', 'number'}, {'lastFuelDraw', 'number'},
+        {'lastFuelUsed', 'number'}, {'pos', 'vector'}
+    }}
+}
+
+local function emptyClientState()
+    local state = {}
+    for _, category in ipairs(DEBUG_CATEGORIES) do
+        state[category.name] = {}
+    end
+    return state
+end
+
+local function readValue(valueType)
+    if valueType == 'number' then return net.ReadFloat() end
+    if valueType == 'bool' then return net.ReadBool() end
+    if valueType == 'vector' then return net.ReadVector() end
+    if valueType == 'string' then
+        if not net.ReadBool() then return nil end
+        return net.ReadString()
+    end
+    return nil
+end
+
+local function readItem(schema)
+    local item = {}
+    for _, field in ipairs(schema) do
+        item[field[1]] = readValue(field[2])
+    end
+    return item
+end
+
+function LUASQUARE_POWERPLANT.Debug.ReceiveStatePacket()
+    local version = net.ReadUInt(8)
+    if version ~= DEBUG_WIRE_VERSION then return end
+
+    local packetType = net.ReadUInt(4)
+    local sequence = net.ReadUInt(16)
+
+    if packetType == DEBUG_PACKET_START then
+        LUASQUARE_POWERPLANT.Debug.PendingState = emptyClientState()
+        LUASQUARE_POWERPLANT.Debug.PendingState.Sequence = sequence
+        return
+    end
+
+    local pending = LUASQUARE_POWERPLANT.Debug.PendingState
+    if not pending or pending.Sequence ~= sequence then return end
+
+    if packetType == DEBUG_PACKET_CATEGORY then
+        local category = DEBUG_CATEGORIES[net.ReadUInt(4)]
+        local count = net.ReadUInt(16)
+        if not category then return end
+        for _ = 1, count do
+            table.insert(pending[category.name], readItem(category.schema))
+        end
+    elseif packetType == DEBUG_PACKET_END then
+        LUASQUARE_POWERPLANT.Debug.ClientState = pending
+        LUASQUARE_POWERPLANT.Debug.PendingState = nil
+    end
+end
+
 timer.Simple(10, function()
     if not GetGlobal2Bool('LUASQUARE_FRAMEWORK_INITIALIZED_GLOBAL', false) then
         print('[Luasquare Powerplant Debug Client] No powerplant detected after 10 seconds, terminating')
@@ -22,19 +162,7 @@ timer.Simple(10, function()
     end
 
     net.Receive('LUASQUARE_PowerplantDebugState', function()
-        LUASQUARE_POWERPLANT.Debug.ClientState = net.ReadTable() or {
-            Networks = {},
-            Pumps = {},
-            Valves = {},
-            Condensers = {},
-            Turbines = {},
-            CoolingTowers = {},
-            Grids = {},
-            Breakers = {},
-            Transformers = {},
-            Generators = {},
-            DieselGenerators = {}
-        }
+        LUASQUARE_POWERPLANT.Debug.ReceiveStatePacket()
     end)
 
     hook.Add('PostDrawTranslucentRenderables', 'LuasquarePowerplant_DebugRender', function()

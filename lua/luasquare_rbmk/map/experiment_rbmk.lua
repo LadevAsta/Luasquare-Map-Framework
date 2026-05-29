@@ -195,7 +195,7 @@ LUASQUARE_POWERGRID.RegisterTransformer('offsite_station_transformer', {
 LUASQUARE_POWERGRID.RegisterTransformer('offsite_export_transformer', {
     from = 'station_grid',
     to = 'offsite_grid',
-    maxMW = 160,
+    maxMW = 5000,
     closed = false,
     enabled = true,
     bidirectional = false,
