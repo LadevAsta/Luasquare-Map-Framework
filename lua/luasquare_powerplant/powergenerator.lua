@@ -12,6 +12,8 @@ function LUASQUARE_POWERGENERATOR.RegisterGenerator(name, data)
     local maxMW = tonumber(data.maxMW) or tonumber(data.ratedMW) or 1
     local generatorType = data.type or (data.turbine and 'turbine' or 'static')
     local breaker = data.breaker or (name .. '_breaker')
+    local ratedMW = tonumber(data.ratedMW) or maxMW
+    local motoringMW = tonumber(data.motoringMW) or (generatorType == 'turbine' and ratedMW * 0.01 or 0)
 
     LUASQUARE_POWERGENERATOR.Generators[name] = {
         name = name,
@@ -22,11 +24,17 @@ function LUASQUARE_POWERGENERATOR.RegisterGenerator(name, data)
         tripped = data.tripped and true or false,
         synced = data.synced and true or false,
         turbine = data.turbine,
-        ratedMW = tonumber(data.ratedMW) or maxMW,
+        ratedMW = ratedMW,
         maxMW = maxMW,
         outputMW = tonumber(data.outputMW) or 0,
         targetMW = tonumber(data.targetMW) or tonumber(data.outputMW) or 0,
         rampRateMW = tonumber(data.rampRateMW) or maxMW,
+        motoringMW = motoringMW,
+        reversePowerTripMW = tonumber(data.reversePowerTripMW) or motoringMW * 0.5,
+        reversePowerTripDelay = tonumber(data.reversePowerTripDelay) or 10,
+        reversePowerTrips = data.reversePowerTrips ~= false,
+        reversePowerTimer = 0,
+        lastReverseMW = 0,
         autoStart = data.autoStart and true or false,
         autoSync = data.autoSync and true or false,
         gridRPM = tonumber(data.gridRPM) or 1800,
@@ -138,6 +146,8 @@ function LUASQUARE_POWERGENERATOR.Trip(name, reason)
     generator.tripped = true
     generator.enabled = false
     generator.synced = false
+    generator.lastReverseMW = 0
+    generator.reversePowerTimer = 0
     generator.tripReason = reason or 'TRIP'
     if LUASQUARE_POWERGRID then LUASQUARE_POWERGRID.TripBreaker(generator.breaker, generator.tripReason) end
 
@@ -153,6 +163,35 @@ function LUASQUARE_POWERGENERATOR.Trip(name, reason)
     return true
 end
 
+function LUASQUARE_POWERGENERATOR.TripGeneratorOnly(name, reason)
+    local generator = LUASQUARE_POWERGENERATOR.GetGenerator(name)
+    if not generator then
+        print('[LUASQUARE_POWERGENERATOR] Unknown generator: ' .. tostring(name))
+        return false
+    end
+
+    if generator.tripped then return true end
+    generator.tripped = true
+    generator.enabled = false
+    generator.synced = false
+    generator.lastMW = 0
+    generator.lastAcceptedMW = 0
+    generator.lastReverseMW = 0
+    generator.reversePowerTimer = 0
+    generator.tripReason = reason or 'TRIP'
+    if LUASQUARE_POWERGRID then LUASQUARE_POWERGRID.TripBreaker(generator.breaker, generator.tripReason) end
+
+    local turbine = generator.turbine and LUASQUARE_TURBINE and LUASQUARE_TURBINE.GetTurbine(generator.turbine)
+    if turbine then
+        turbine.synced = false
+        turbine.lastMW = 0
+    end
+
+    LUASQUARE_POWERGENERATOR.FireRelay(generator.tripRelay)
+    print('[LUASQUARE_POWERGENERATOR] Generator-only trip ' .. tostring(name) .. ': ' .. tostring(generator.tripReason))
+    return true
+end
+
 function LUASQUARE_POWERGENERATOR.ResetTrip(name)
     local generator = LUASQUARE_POWERGENERATOR.GetGenerator(name)
     if not generator then
@@ -163,6 +202,8 @@ function LUASQUARE_POWERGENERATOR.ResetTrip(name)
     generator.tripped = false
     generator.tripReason = nil
     generator.enabled = true
+    generator.lastReverseMW = 0
+    generator.reversePowerTimer = 0
     if LUASQUARE_POWERGRID then LUASQUARE_POWERGRID.ResetBreaker(generator.breaker, false) end
 
     local turbine = generator.turbine and LUASQUARE_TURBINE and LUASQUARE_TURBINE.GetTurbine(generator.turbine)
@@ -264,6 +305,8 @@ function LUASQUARE_POWERGENERATOR.Unsync(name)
     generator.synced = false
     generator.lastMW = 0
     generator.lastAcceptedMW = 0
+    generator.lastReverseMW = 0
+    generator.reversePowerTimer = 0
     if LUASQUARE_POWERGRID then LUASQUARE_POWERGRID.SetBreaker(generator.breaker, false) end
 
     local turbine = generator.turbine and LUASQUARE_TURBINE and LUASQUARE_TURBINE.GetTurbine(generator.turbine)
@@ -295,6 +338,7 @@ function LUASQUARE_POWERGENERATOR.UpdateTurbineGenerator(name, generator, dt)
     local grid = LUASQUARE_POWERGENERATOR.GetGrid(generator)
     generator.lastMW = 0
     generator.lastAcceptedMW = 0
+    generator.lastReverseMW = 0
 
     if not turbine or not grid then return end
 
@@ -316,11 +360,13 @@ function LUASQUARE_POWERGENERATOR.UpdateTurbineGenerator(name, generator, dt)
         elseif generator.synced then
             LUASQUARE_POWERGENERATOR.Unsync(name)
         end
+        generator.reversePowerTimer = 0
         return
     end
 
     if not closed then
         if generator.synced then LUASQUARE_POWERGENERATOR.Unsync(name) end
+        generator.reversePowerTimer = 0
         return
     end
 
@@ -330,9 +376,28 @@ function LUASQUARE_POWERGENERATOR.UpdateTurbineGenerator(name, generator, dt)
     generator.synced = true
 
     local produced = math.Clamp(turbine.lastMW or 0, 0, generator.maxMW)
-    local accepted = LUASQUARE_POWERGRID.SubmitGeneration(generator.grid, name, produced, generator.breaker)
-    generator.lastMW = produced
-    generator.lastAcceptedMW = accepted
+    local netMW = produced - math.max(generator.motoringMW or 0, 0)
+    generator.lastMW = math.Clamp(netMW, -math.max(generator.motoringMW or 0, 0), generator.maxMW)
+
+    if netMW >= 0 then
+        local accepted = LUASQUARE_POWERGRID.SubmitGeneration(generator.grid, name, netMW, generator.breaker)
+        generator.lastAcceptedMW = accepted
+        generator.reversePowerTimer = 0
+    else
+        local reverseRequested = math.abs(netMW)
+        local acceptedLoad = LUASQUARE_POWERGRID.SubmitLoad(generator.grid, name, reverseRequested, generator.breaker)
+        generator.lastAcceptedMW = -acceptedLoad
+        generator.lastReverseMW = acceptedLoad
+
+        if generator.reversePowerTrips and acceptedLoad >= math.max(generator.reversePowerTripMW or 0, 0) then
+            generator.reversePowerTimer = (generator.reversePowerTimer or 0) + dt
+            if generator.reversePowerTimer >= (generator.reversePowerTripDelay or 10) then
+                LUASQUARE_POWERGENERATOR.TripGeneratorOnly(name, 'REVERSE_POWER')
+            end
+        else
+            generator.reversePowerTimer = 0
+        end
+    end
 end
 
 function LUASQUARE_POWERGENERATOR.UpdateStaticGenerator(name, generator, dt)

@@ -32,12 +32,26 @@ function LUASQUARE_POWERGRID.RegisterGrid(name, data)
         sourceCapacityMW = sourceCapacityMW,
         baseGenerationMW = tonumber(data.baseGenerationMW) or 0,
         baseLoadMW = tonumber(data.baseLoadMW) or 0,
+        demandMW = tonumber(data.demandMW) or tonumber(data.targetDemandMW) or 0,
+        currentDemandMW = tonumber(data.currentDemandMW) or tonumber(data.demandMW) or tonumber(data.targetDemandMW) or 0,
+        minDemandMW = tonumber(data.minDemandMW) or 0,
+        maxDemandMW = tonumber(data.maxDemandMW) or DEFAULT_MAX_MW,
+        demandRampMWPerSecond = tonumber(data.demandRampMWPerSecond) or DEFAULT_MAX_MW,
+        batteryCapacityMWh = tonumber(data.batteryCapacityMWh) or 0,
+        batteryMWh = math.Clamp(tonumber(data.batteryMWh) or tonumber(data.batteryCapacityMWh) or 0, 0, tonumber(data.batteryCapacityMWh) or 0),
+        batteryMaxDischargeMW = tonumber(data.batteryMaxDischargeMW) or 0,
+        batteryMaxChargeMW = tonumber(data.batteryMaxChargeMW) or 0,
+        batteryChargeEfficiency = math.Clamp(tonumber(data.batteryChargeEfficiency) or 0.92, 0.0001, 1),
+        batteryDischargeEfficiency = math.Clamp(tonumber(data.batteryDischargeEfficiency) or 0.92, 0.0001, 1),
+        batteryTripOnEmpty = data.batteryTripOnEmpty and true or false,
+        batteryLastMW = 0,
+        batteryChargeFraction = 0,
         inertia = tonumber(data.inertia) or 4,
         droopHz = tonumber(data.droopHz) or 1.5,
         underFrequencyTrip = tonumber(data.underFrequencyTrip) or 54,
         overFrequencyTrip = tonumber(data.overFrequencyTrip) or 66,
-        overloadTripFraction = tonumber(data.overloadTripFraction) or 1.15,
-        overloadTripHardFraction = tonumber(data.overloadTripHardFraction) or 1.50,
+        overloadTripFraction = tonumber(data.overloadTripFraction) or 1.0,
+        overloadTripHardFraction = tonumber(data.overloadTripHardFraction) or 1.5,
         tripDelay = tonumber(data.tripDelay) or 30,
         overloadTimer = 0,
         underFrequencyTimer = 0,
@@ -130,6 +144,17 @@ function LUASQUARE_POWERGRID.SetGridEnabled(name, enabled)
 
     grid.enabled = enabled and true or false
     if not grid.enabled then grid.energized = false end
+    return true
+end
+
+function LUASQUARE_POWERGRID.SetGridDemand(name, mw)
+    local grid = LUASQUARE_POWERGRID.GetGrid(name)
+    if not grid then
+        print('[LUASQUARE_POWERGRID] Unknown grid: ' .. tostring(name))
+        return false
+    end
+
+    grid.demandMW = math.Clamp(tonumber(mw) or 0, grid.minDemandMW or 0, grid.maxDemandMW or DEFAULT_MAX_MW)
     return true
 end
 
@@ -311,16 +336,50 @@ function LUASQUARE_POWERGRID.UpdateGrid(name, dt)
     local grid = LUASQUARE_POWERGRID.GetGrid(name)
     if not grid then return end
 
+    local demandTarget = math.Clamp(grid.demandMW or 0, grid.minDemandMW or 0, grid.maxDemandMW or DEFAULT_MAX_MW)
+    local demandStep = math.max(grid.demandRampMWPerSecond or DEFAULT_MAX_MW, 0) * dt
+    grid.currentDemandMW = math.Approach(grid.currentDemandMW or 0, demandTarget, demandStep)
+    grid.batteryLastMW = 0
+
     local generation = (grid.pendingGenerationMW or 0) + (grid.baseGenerationMW or 0)
-    local load = (grid.pendingLoadMW or 0) + (grid.baseLoadMW or 0)
+    local demandLoad = (grid.pendingLoadMW or 0) + (grid.baseLoadMW or 0) + (grid.currentDemandMW or 0)
     local sourceCapacity = grid.sourceCapacityMW or 0
     local localCapacity = generation + sourceCapacity
-    local deficitBeforeImport = math.max(load - localCapacity, 0)
     local importCapacity = grid.availableImportMW or 0
+    local batteryCapacityMWh = grid.batteryCapacityMWh or 0
+    local batteryDischargeMW = 0
+    local batteryChargeMW = 0
+
+    if batteryCapacityMWh > 0 then
+        local hours = math.max(dt / 3600, 0.000001)
+        local batteryMWh = math.Clamp(grid.batteryMWh or 0, 0, batteryCapacityMWh)
+        local unmetAfterImport = math.max(demandLoad - localCapacity - importCapacity, 0)
+        local storedDischargeMW = batteryMWh * (grid.batteryDischargeEfficiency or 1) / hours
+        batteryDischargeMW = math.min(unmetAfterImport, grid.batteryMaxDischargeMW or 0, storedDischargeMW)
+
+        if batteryDischargeMW > 0 then
+            batteryMWh = math.max(batteryMWh - (batteryDischargeMW * hours / math.max(grid.batteryDischargeEfficiency or 1, 0.0001)), 0)
+        else
+            local freeMWh = math.max(batteryCapacityMWh - batteryMWh, 0)
+            local chargeSupplyMW = math.max(localCapacity + importCapacity - demandLoad, 0)
+            local storedChargeMW = freeMWh / math.max(grid.batteryChargeEfficiency or 1, 0.0001) / hours
+            batteryChargeMW = math.min(chargeSupplyMW, grid.batteryMaxChargeMW or 0, storedChargeMW)
+            if batteryChargeMW > 0 then
+                batteryMWh = math.min(batteryMWh + batteryChargeMW * hours * (grid.batteryChargeEfficiency or 1), batteryCapacityMWh)
+            end
+        end
+
+        grid.batteryMWh = batteryMWh
+        grid.batteryLastMW = batteryDischargeMW > 0 and batteryDischargeMW or -batteryChargeMW
+        grid.batteryChargeFraction = batteryCapacityMWh > 0 and math.Clamp(batteryMWh / batteryCapacityMWh, 0, 1) or 0
+    end
+
+    local load = demandLoad + batteryChargeMW
+    local deficitBeforeImport = math.max(load - localCapacity - batteryDischargeMW, 0)
     local importMW = math.min(deficitBeforeImport, importCapacity)
-    local exportMW = math.min(math.max(localCapacity - load, 0), importCapacity)
-    local available = localCapacity + importMW
-    local availableCapacity = localCapacity + importCapacity
+    local exportMW = math.min(math.max(localCapacity + batteryDischargeMW - load, 0), importCapacity)
+    local available = localCapacity + importMW + batteryDischargeMW
+    local availableCapacity = localCapacity + importCapacity + batteryDischargeMW
     local balance = available - load - exportMW
     local energized = grid.enabled and not grid.tripped and (grid.stiff or availableCapacity > 0)
 
@@ -338,7 +397,7 @@ function LUASQUARE_POWERGRID.UpdateGrid(name, dt)
         grid.frequency = Lerp(math.Clamp(dt / math.max(grid.inertia or 1, 0.0001), 0, 1), grid.frequency or targetFrequency, targetFrequency)
     end
 
-    if grid.enabled and not grid.tripped then
+    if grid.enabled and not grid.tripped and not grid.stiff then
         local overload = load > math.max(availableCapacity, 0.0001) * (grid.overloadTripFraction or 1.15)
         local hardOverload = load > math.max(availableCapacity, 0.0001) * (grid.overloadTripHardFraction or 1.50)
         if overload then grid.overloadTimer = (grid.overloadTimer or 0) + dt else grid.overloadTimer = math.max((grid.overloadTimer or 0) - dt, 0) end
@@ -350,6 +409,8 @@ function LUASQUARE_POWERGRID.UpdateGrid(name, dt)
             LUASQUARE_POWERGRID.TripGrid(name, 'OVERLOAD')
         elseif grid.underFrequencyTimer >= (grid.tripDelay or 30) then
             LUASQUARE_POWERGRID.TripGrid(name, 'FREQUENCY')
+        elseif grid.batteryTripOnEmpty and batteryCapacityMWh > 0 and (grid.batteryMWh or 0) <= 0 and balance < 0 then
+            LUASQUARE_POWERGRID.TripGrid(name, 'BATTERY_EMPTY')
         end
     end
 

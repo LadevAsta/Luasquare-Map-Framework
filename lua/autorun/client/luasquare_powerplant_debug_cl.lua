@@ -15,7 +15,7 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     DieselGenerators = {}
 }
 
-local DEBUG_WIRE_VERSION = 1
+local DEBUG_WIRE_VERSION = 2
 local DEBUG_PACKET_START = 1
 local DEBUG_PACKET_CATEGORY = 2
 local DEBUG_PACKET_END = 3
@@ -70,6 +70,8 @@ local DEBUG_CATEGORIES = {
         {'name', 'string'}, {'type', 'string'}, {'enabled', 'bool'}, {'tripped', 'bool'},
         {'energized', 'bool'}, {'stiff', 'bool'}, {'frequency', 'number'}, {'nominalFrequency', 'number'},
         {'voltage', 'number'}, {'phase', 'number'}, {'sourceCapacityMW', 'number'},
+        {'demandMW', 'number'}, {'currentDemandMW', 'number'}, {'batteryMWh', 'number'},
+        {'batteryCapacityMWh', 'number'}, {'batteryChargeFraction', 'number'}, {'batteryLastMW', 'number'},
         {'availableImportMW', 'number'}, {'lastGenerationMW', 'number'}, {'lastLoadMW', 'number'},
         {'lastImportMW', 'number'}, {'lastAvailableMW', 'number'}, {'lastBalanceMW', 'number'},
         {'tripReason', 'string'}, {'pos', 'vector'}
@@ -88,7 +90,9 @@ local DEBUG_CATEGORIES = {
         {'name', 'string'}, {'type', 'string'}, {'grid', 'string'}, {'breaker', 'string'},
         {'enabled', 'bool'}, {'tripped', 'bool'}, {'synced', 'bool'}, {'turbine', 'string'},
         {'ratedMW', 'number'}, {'maxMW', 'number'}, {'outputMW', 'number'}, {'targetMW', 'number'},
-        {'lastMW', 'number'}, {'lastAcceptedMW', 'number'}, {'lastRPMError', 'number'},
+        {'motoringMW', 'number'}, {'reversePowerTripMW', 'number'}, {'reversePowerTripDelay', 'number'},
+        {'reversePowerTimer', 'number'}, {'lastReverseMW', 'number'}, {'lastMW', 'number'},
+        {'lastAcceptedMW', 'number'}, {'lastRPMError', 'number'},
         {'lastPhaseError', 'number'}, {'lastSyncBlockReason', 'string'}, {'tripReason', 'string'}, {'pos', 'vector'}
     }},
     {name = 'DieselGenerators', schema = {
@@ -288,9 +292,13 @@ function LUASQUARE_POWERPLANT.Debug.RenderGrid(grid)
         string.format('F %.2f / %.2f Hz', grid.frequency or 0, grid.nominalFrequency or 0),
         string.format('V %.0f PH %.1f', grid.voltage or 0, grid.phase or 0),
         string.format('GEN %.1f LOAD %.1f MW', grid.lastGenerationMW or 0, grid.lastLoadMW or 0),
+        string.format('DEMAND %.1f / %.1f MW', grid.currentDemandMW or 0, grid.demandMW or 0),
         string.format('IMP %.1f AV %.1f MW', grid.lastImportMW or 0, grid.lastAvailableMW or 0),
         string.format('BAL %.1f MW', grid.lastBalanceMW or 0)
     }
+    if (grid.batteryCapacityMWh or 0) > 0 then
+        table.insert(lines, string.format('BATT %.1f/%.1f MWh %.1f MW', grid.batteryMWh or 0, grid.batteryCapacityMWh or 0, grid.batteryLastMW or 0))
+    end
     if grid.tripped then table.insert(lines, 'TRIP ' .. tostring(grid.tripReason or '')) end
     LUASQUARE_POWERPLANT.Debug.DrawWorldText(grid.pos, table.concat(lines, '\n'), Color(180, 255, 180))
 end
@@ -327,6 +335,9 @@ function LUASQUARE_POWERPLANT.Debug.RenderGenerator(generator)
         string.format('MW %.1f / %.1f', generator.lastAcceptedMW or 0, generator.maxMW or 0),
         string.format('ERR %.1f RPM %.1f DEG', generator.lastRPMError or 0, generator.lastPhaseError or 0)
     }
+    if (generator.motoringMW or 0) > 0 then
+        table.insert(lines, string.format('REV %.1f / %.1f MW %.1fs', generator.lastReverseMW or 0, generator.reversePowerTripMW or 0, generator.reversePowerTimer or 0))
+    end
     if generator.lastSyncBlockReason then table.insert(lines, 'SYNC ' .. tostring(generator.lastSyncBlockReason)) end
     if generator.tripped then table.insert(lines, 'TRIP ' .. tostring(generator.tripReason or '')) end
     LUASQUARE_POWERPLANT.Debug.DrawWorldText(generator.pos, table.concat(lines, '\n'), Color(220, 220, 255))

@@ -159,14 +159,43 @@ local MAPDEF_hotwellTargetPercent = 35
 
 -- Power Grid
 
-LUASQUARE_POWERGRID.RegisterGrid('offsite_grid', {
+LUASQUARE_POWERGRID.RegisterGrid('startup_grid', {
     type = 'offsite',
     nominalFrequency = 60,
-    voltage = 230000,
-    sourceCapacityMW = 1000,
+    voltage = 13800,
+    sourceCapacityMW = 80,
     stiff = true,
     enabled = true,
     monitorPos = 'tar_grid_offsite'
+})
+
+LUASQUARE_POWERGRID.RegisterGrid('export_grid', {
+    type = 'offsite',
+    nominalFrequency = 60,
+    voltage = 230000,
+    sourceCapacityMW = 0,
+    demandMW = 120,
+    minDemandMW = 40,
+    maxDemandMW = 480,
+    demandRampMWPerSecond = 80,
+    stiff = true,
+    enabled = true,
+    monitorPos = 'tar_grid_offsite',
+    monitorOffset = Vector(0,0,96)
+})
+
+LUASQUARE_POWERGRID.RegisterGrid('generator_grid', {
+    type = 'onsite',
+    nominalFrequency = 60,
+    voltage = 13800,
+    sourceCapacityMW = 0,
+    enabled = true,
+    inertia = 8,
+    droopHz = 1.25,
+    tripRelay = 'grid_generator_trip_relay',
+    resetRelay = 'grid_generator_reset_relay',
+    monitorPos = 'tar_grid_station',
+    monitorOffset = Vector(0,0,96)
 })
 
 LUASQUARE_POWERGRID.RegisterGrid('station_grid', {
@@ -182,8 +211,42 @@ LUASQUARE_POWERGRID.RegisterGrid('station_grid', {
     monitorPos = 'tar_grid_station'
 })
 
-LUASQUARE_POWERGRID.RegisterTransformer('offsite_station_transformer', {
-    from = 'offsite_grid',
+LUASQUARE_POWERGRID.RegisterGrid('control_room_grid', {
+    type = 'auxiliary',
+    nominalFrequency = 60,
+    voltage = 480,
+    baseLoadMW = 0.08,
+    enabled = true,
+    inertia = 2,
+    droopHz = 2,
+    batteryCapacityMWh = 0.20,
+    batteryMWh = 0.20,
+    batteryMaxDischargeMW = 0.20,
+    batteryMaxChargeMW = 0.05,
+    batteryTripOnEmpty = false,
+    monitorPos = 'tar_grid_station',
+    monitorOffset = Vector(0,0,160)
+})
+
+LUASQUARE_POWERGRID.RegisterGrid('emergency_lighting_grid', {
+    type = 'auxiliary',
+    nominalFrequency = 60,
+    voltage = 120,
+    baseLoadMW = 0.03,
+    enabled = true,
+    inertia = 1,
+    droopHz = 2.5,
+    batteryCapacityMWh = 0.08,
+    batteryMWh = 0.08,
+    batteryMaxDischargeMW = 0.08,
+    batteryMaxChargeMW = 0.02,
+    batteryTripOnEmpty = false,
+    monitorPos = 'tar_grid_station',
+    monitorOffset = Vector(0,0,224)
+})
+
+LUASQUARE_POWERGRID.RegisterTransformer('startup_station_transformer', {
+    from = 'startup_grid',
     to = 'station_grid',
     maxMW = 40,
     closed = true,
@@ -192,15 +255,48 @@ LUASQUARE_POWERGRID.RegisterTransformer('offsite_station_transformer', {
     monitorPos = 'tar_transformer_offsite_station'
 })
 
-LUASQUARE_POWERGRID.RegisterTransformer('offsite_export_transformer', {
+LUASQUARE_POWERGRID.RegisterTransformer('station_generator_transformer', {
     from = 'station_grid',
-    to = 'offsite_grid',
-    maxMW = 5000,
+    to = 'generator_grid',
+    maxMW = 120,
+    closed = true,
+    enabled = true,
+    bidirectional = true,
+    monitorPos = 'tar_transformer_offsite_station',
+    monitorOffset = Vector(0,0,64)
+})
+
+LUASQUARE_POWERGRID.RegisterTransformer('generator_export_transformer', {
+    from = 'generator_grid',
+    to = 'export_grid',
+    maxMW = 500,
     closed = false,
     enabled = true,
     bidirectional = false,
     monitorPos = 'tar_transformer_offsite_station',
-    monitorOffset = Vector(0,0,64)
+    monitorOffset = Vector(0,0,128)
+})
+
+LUASQUARE_POWERGRID.RegisterTransformer('station_control_room_transformer', {
+    from = 'station_grid',
+    to = 'control_room_grid',
+    maxMW = 0.5,
+    closed = true,
+    enabled = true,
+    bidirectional = false,
+    monitorPos = 'tar_transformer_offsite_station',
+    monitorOffset = Vector(0,0,192)
+})
+
+LUASQUARE_POWERGRID.RegisterTransformer('station_emergency_lighting_transformer', {
+    from = 'station_grid',
+    to = 'emergency_lighting_grid',
+    maxMW = 0.2,
+    closed = true,
+    enabled = true,
+    bidirectional = false,
+    monitorPos = 'tar_transformer_offsite_station',
+    monitorOffset = Vector(0,0,256)
 })
 
 -- Steam Turbine
@@ -240,10 +336,14 @@ LUASQUARE_TURBINE.RegisterTurbine('tg1', {
 
 LUASQUARE_POWERGENERATOR.RegisterTurbineGenerator('tg1_generator', {
     turbine = 'tg1',
-    grid = 'station_grid',
+    grid = 'generator_grid',
     breaker = 'tg1_generator_breaker',
     ratedMW = 160,
     maxMW = 480,
+    motoringMW = 1.6,
+    reversePowerTripMW = 0.8,
+    reversePowerTripDelay = 10,
+    reversePowerTrips = true,
     gridRPM = 1800,
     autoSync = false,
     syncRPMTolerance = 8,
@@ -728,6 +828,7 @@ local function MAPDEF_gridColumn(label, gridName)
     local online = grid.enabled and not grid.tripped and grid.energized
     local value = online and string.format('%.2fHz', grid.frequency or 0) or 'DEAD'
     local sub = string.format('G%.1f L%.1f I%.1f', grid.lastGenerationMW or 0, grid.lastLoadMW or 0, grid.lastImportMW or 0)
+    if (grid.batteryCapacityMWh or 0) > 0 then sub = string.format('B%.0f%% %.2fMW', (grid.batteryChargeFraction or 0) * 100, grid.batteryLastMW or 0) end
     if grid.tripped then sub = 'TRIP ' .. tostring(grid.tripReason or '') end
 
     return {
@@ -759,13 +860,14 @@ local function MAPDEF_generatorColumn(label, generatorName)
     local breaker = generator.breaker and LUASQUARE_POWERGRID.GetBreaker(generator.breaker) or {}
     local online = generator.enabled and not generator.tripped and breaker and breaker.closed
     local value = generator.tripped and 'TRIP' or (online and 'ON' or 'OFF')
+    local accepted = generator.lastAcceptedMW or 0
 
     return {
         label = label,
         value = value,
-        sub = string.format('%.1f/%.1fMW', generator.lastAcceptedMW or 0, generator.maxMW or 0),
+        sub = string.format('%+.1f/%.1fMW', accepted, generator.maxMW or 0),
         color = Color(205, 235, 240),
-        valueColor = online and Color(110, 255, 150) or Color(255, 210, 80)
+        valueColor = generator.tripped and Color(255, 95, 95) or (accepted < 0 and Color(255, 170, 80) or (online and Color(110, 255, 150) or Color(255, 210, 80)))
     }
 end
 
@@ -868,7 +970,7 @@ LUASQUARE_3D2D.RegisterDisplay('tg1_status_panel', MAPDEF_panelBase({
 LUASQUARE_3D2D.BindDisplay('tg1_status_panel', function()
     local data = LUASQUARE_TURBINE.GetTurbine('tg1')
     local generator = LUASQUARE_POWERGENERATOR.GetGenerator('tg1_generator') or {}
-    local grid = LUASQUARE_POWERGRID.GetGrid('station_grid') or {}
+    local grid = LUASQUARE_POWERGRID.GetGrid('generator_grid') or {}
     return {
         { type = 'value', label = 'RPM', value = data.rpm or 0, decimals = 2 , unit = 'RPM'},
         { type = 'value', label = 'Grid Frequency', value = grid.frequency or 0, decimals = 2, unit = 'Hz' },
@@ -879,7 +981,8 @@ LUASQUARE_3D2D.BindDisplay('tg1_status_panel', function()
         { type = 'bar', fraction = data.bypassValve, height = 5 },
         { type = 'value', label = 'Vibration', value = (data.vibration / data.tripVibration) * 100 or 0, decimals = 2, unit = '%'},
         { type = 'bar', fraction = data.vibration / data.tripVibration, height = 5 },
-        { type = 'value', label = 'Generator Output', value = generator.lastAcceptedMW or data.lastMW or 0, decimals = 2, unit = 'MW' },
+        { type = 'value', label = 'Generator Output', value = generator.lastAcceptedMW or data.lastMW or 0, decimals = 2, unit = 'MW', warn = (generator.lastAcceptedMW or 0) < 0 },
+        { type = 'value', label = 'Reverse Power', value = generator.lastReverseMW or 0, decimals = 2, unit = 'MW', warn = (generator.lastReverseMW or 0) > (generator.reversePowerTripMW or 0) },
     }
 end)
 
@@ -899,21 +1002,33 @@ LUASQUARE_3D2D.BindDisplay('electrical_status_panel', function()
     local overload = load > math.max(available, 0.0001) * (stationGrid.overloadTripFraction or 1.15)
 
     return {
-        {
-            type = 'columns',
-            height = 120,
-            columns = {
-                MAPDEF_gridColumn('STATION', 'station_grid'),
-                MAPDEF_gridColumn('OFFSITE', 'offsite_grid'),
-                MAPDEF_transformerColumn('IMPORT XFMR', 'offsite_station_transformer'),
-                MAPDEF_transformerColumn('EXPORT XFMR', 'offsite_export_transformer')
-            }
-        },
         { type = 'value', label = 'Station Load', value = load, decimals = 1, unit = 'MW', warn = overload },
+        { type = 'value', label = 'Export Demand', value = (LUASQUARE_POWERGRID.GetGrid('export_grid') or {}).currentDemandMW or 0, decimals = 1, unit = 'MW' },
         { type = 'bar', label = 'Load / Capacity', fraction = loadFraction, height = 5, warn = overload },
         {
             type = 'columns',
-            height = 112,
+            height = 64,
+            columns = {
+                MAPDEF_gridColumn('GEN BUS', 'generator_grid'),
+                MAPDEF_gridColumn('STATION', 'station_grid'),
+                MAPDEF_gridColumn('STARTUP', 'startup_grid'),
+                MAPDEF_gridColumn('EXPORT', 'export_grid')
+            }
+        },
+        {
+            type = 'columns',
+            height = 64,
+            columns = {
+                MAPDEF_transformerColumn('START XFMR', 'startup_station_transformer'),
+                MAPDEF_transformerColumn('GEN XFMR', 'station_generator_transformer'),
+                MAPDEF_transformerColumn('EXPORT XFMR', 'generator_export_transformer'),
+                MAPDEF_gridColumn('CTRL UPS', 'control_room_grid'),
+                MAPDEF_gridColumn('EMERG UPS', 'emergency_lighting_grid')
+            }
+        },
+        {
+            type = 'columns',
+            height = 64,
             columns = {
                 MAPDEF_generatorColumn('TG1 GEN', 'tg1_generator'),
                 MAPDEF_generatorColumn('EDG1 GEN', 'edg1_generator'),
@@ -1084,10 +1199,20 @@ LUASQUARE_ANNUNCIATOR.RegisterAlarm('tg1_trip', {
         return LUASQUARE_TURBINE.GetTurbine('tg1').tripped
     end
 })
-
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('tg1_reversepower', {
+    label = 'TURBINE A REVERSE POWER',
+    soundWav = 'bms_objects/alarms/alarm1.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 120,
+    getter = function()
+        return LUASQUARE_POWERGENERATOR.GetGenerator('tg1_generator').reversePowerTimer > 0
+    end
+})
 LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('turbine_a_panel', {
     indicators = {
-        tg1_trip = 'ann_turbine_a_trip'
+        tg1_trip = 'ann_turbine_a_trip',
+        tg1_reversepower = 'ann_turbine_a_reversepower'
     }
 })
 

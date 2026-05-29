@@ -14,7 +14,7 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     DieselGenerators = {}
 }
 
-local DEBUG_WIRE_VERSION = 1
+local DEBUG_WIRE_VERSION = 2
 local DEBUG_PACKET_START = 1
 local DEBUG_PACKET_CATEGORY = 2
 local DEBUG_PACKET_END = 3
@@ -69,6 +69,8 @@ local DEBUG_CATEGORIES = {
         {'name', 'string'}, {'type', 'string'}, {'enabled', 'bool'}, {'tripped', 'bool'},
         {'energized', 'bool'}, {'stiff', 'bool'}, {'frequency', 'number'}, {'nominalFrequency', 'number'},
         {'voltage', 'number'}, {'phase', 'number'}, {'sourceCapacityMW', 'number'},
+        {'demandMW', 'number'}, {'currentDemandMW', 'number'}, {'batteryMWh', 'number'},
+        {'batteryCapacityMWh', 'number'}, {'batteryChargeFraction', 'number'}, {'batteryLastMW', 'number'},
         {'availableImportMW', 'number'}, {'lastGenerationMW', 'number'}, {'lastLoadMW', 'number'},
         {'lastImportMW', 'number'}, {'lastAvailableMW', 'number'}, {'lastBalanceMW', 'number'},
         {'tripReason', 'string'}, {'pos', 'vector'}
@@ -87,7 +89,9 @@ local DEBUG_CATEGORIES = {
         {'name', 'string'}, {'type', 'string'}, {'grid', 'string'}, {'breaker', 'string'},
         {'enabled', 'bool'}, {'tripped', 'bool'}, {'synced', 'bool'}, {'turbine', 'string'},
         {'ratedMW', 'number'}, {'maxMW', 'number'}, {'outputMW', 'number'}, {'targetMW', 'number'},
-        {'lastMW', 'number'}, {'lastAcceptedMW', 'number'}, {'lastRPMError', 'number'},
+        {'motoringMW', 'number'}, {'reversePowerTripMW', 'number'}, {'reversePowerTripDelay', 'number'},
+        {'reversePowerTimer', 'number'}, {'lastReverseMW', 'number'}, {'lastMW', 'number'},
+        {'lastAcceptedMW', 'number'}, {'lastRPMError', 'number'},
         {'lastPhaseError', 'number'}, {'lastSyncBlockReason', 'string'}, {'tripReason', 'string'}, {'pos', 'vector'}
     }},
     {name = 'DieselGenerators', chunkSize = 32, schema = {
@@ -328,6 +332,12 @@ function LUASQUARE_POWERPLANT.Debug.BuildGrids()
                 voltage = grid.voltage or 0,
                 phase = grid.phase or 0,
                 sourceCapacityMW = grid.sourceCapacityMW or 0,
+                demandMW = grid.demandMW or 0,
+                currentDemandMW = grid.currentDemandMW or 0,
+                batteryMWh = grid.batteryMWh or 0,
+                batteryCapacityMWh = grid.batteryCapacityMWh or 0,
+                batteryChargeFraction = grid.batteryChargeFraction or 0,
+                batteryLastMW = grid.batteryLastMW or 0,
                 availableImportMW = grid.availableImportMW or 0,
                 lastGenerationMW = grid.lastGenerationMW or 0,
                 lastLoadMW = grid.lastLoadMW or 0,
@@ -405,6 +415,11 @@ function LUASQUARE_POWERPLANT.Debug.BuildGenerators()
                 maxMW = generator.maxMW or 0,
                 outputMW = generator.outputMW or 0,
                 targetMW = generator.targetMW or 0,
+                motoringMW = generator.motoringMW or 0,
+                reversePowerTripMW = generator.reversePowerTripMW or 0,
+                reversePowerTripDelay = generator.reversePowerTripDelay or 0,
+                reversePowerTimer = generator.reversePowerTimer or 0,
+                lastReverseMW = generator.lastReverseMW or 0,
                 lastMW = generator.lastMW or 0,
                 lastAcceptedMW = generator.lastAcceptedMW or 0,
                 lastRPMError = generator.lastRPMError or 0,
