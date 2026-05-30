@@ -5,6 +5,8 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     Pumps = {},
     Valves = {},
     Condensers = {},
+    HeatExchangers = {},
+    Deaerators = {},
     Turbines = {},
     CoolingTowers = {},
     Grids = {},
@@ -14,7 +16,7 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     DieselGenerators = {}
 }
 
-local DEBUG_WIRE_VERSION = 2
+local DEBUG_WIRE_VERSION = 3
 local DEBUG_PACKET_START = 1
 local DEBUG_PACKET_CATEGORY = 2
 local DEBUG_PACKET_END = 3
@@ -41,7 +43,22 @@ local DEBUG_CATEGORIES = {
     }},
     {name = 'Condensers', chunkSize = 32, schema = {
         {'name', 'string'}, {'input', 'string'}, {'output', 'string'}, {'ratio', 'number'},
-        {'enabled', 'bool'}, {'godMode', 'bool'}, {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'}, {'pos', 'vector'}
+        {'coolantNetwork', 'string'}, {'coolantPump', 'string'}, {'enabled', 'bool'}, {'godMode', 'bool'},
+        {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'}, {'lastHeatRejectedMW', 'number'},
+        {'lastCoolantFlow', 'number'}, {'lastCoolantTemperature', 'number'}, {'pos', 'vector'}
+    }},
+    {name = 'HeatExchangers', chunkSize = 32, schema = {
+        {'name', 'string'}, {'hotNetwork', 'string'}, {'coldNetwork', 'string'},
+        {'hotPump', 'string'}, {'coldPump', 'string'}, {'enabled', 'bool'},
+        {'effectiveness', 'number'}, {'approachTemperature', 'number'}, {'maxThermalMW', 'number'},
+        {'lastHeatMW', 'number'}, {'lastHotFlow', 'number'}, {'lastColdFlow', 'number'},
+        {'lastHotTemperature', 'number'}, {'lastColdTemperature', 'number'}, {'pos', 'vector'}
+    }},
+    {name = 'Deaerators', chunkSize = 32, schema = {
+        {'name', 'string'}, {'tankNetwork', 'string'}, {'steamInput', 'string'},
+        {'enabled', 'bool'}, {'targetTemperature', 'number'}, {'maxSteamRate', 'number'},
+        {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'}, {'lastHeatMW', 'number'},
+        {'tankTemperature', 'number'}, {'tankAmount', 'number'}, {'pos', 'vector'}
     }},
     {name = 'Turbines', chunkSize = 16, schema = {
         {'name', 'string'}, {'input', 'string'}, {'boiler', 'string'}, {'output', 'string'},
@@ -221,10 +238,66 @@ function LUASQUARE_POWERPLANT.Debug.BuildCondensers()
                 input = condenser.input,
                 output = condenser.output,
                 ratio = condenser.ratio or 0,
+                coolantNetwork = condenser.coolantNetwork,
+                coolantPump = condenser.coolantPump,
                 enabled = condenser.enabled and true or false,
                 godMode = condenser.godMode and true or false,
                 lastSteamUsed = condenser.lastSteamUsed or 0,
                 lastWaterMade = condenser.lastWaterMade or 0,
+                lastHeatRejectedMW = condenser.lastHeatRejectedMW or 0,
+                lastCoolantFlow = condenser.lastCoolantFlow or 0,
+                lastCoolantTemperature = condenser.lastCoolantTemperature or 0,
+                pos = pos
+            })
+        end
+    end
+end
+
+function LUASQUARE_POWERPLANT.Debug.BuildHeatExchangers()
+    LUASQUARE_POWERPLANT.Debug.ClientState.HeatExchangers = {}
+    if not LUASQUARE_HEATEXCHANGER then return end
+    for name, exchanger in pairs(LUASQUARE_HEATEXCHANGER.HeatExchangers) do
+        local pos = copyMonitorPos(exchanger)
+        if pos then
+            table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.HeatExchangers, {
+                name = name,
+                hotNetwork = exchanger.hotNetwork,
+                coldNetwork = exchanger.coldNetwork,
+                hotPump = exchanger.hotPump,
+                coldPump = exchanger.coldPump,
+                enabled = exchanger.enabled and true or false,
+                effectiveness = exchanger.effectiveness or 0,
+                approachTemperature = exchanger.approachTemperature or 0,
+                maxThermalMW = exchanger.maxThermalMW or 0,
+                lastHeatMW = exchanger.lastHeatMW or 0,
+                lastHotFlow = exchanger.lastHotFlow or 0,
+                lastColdFlow = exchanger.lastColdFlow or 0,
+                lastHotTemperature = exchanger.lastHotTemperature or 0,
+                lastColdTemperature = exchanger.lastColdTemperature or 0,
+                pos = pos
+            })
+        end
+    end
+end
+
+function LUASQUARE_POWERPLANT.Debug.BuildDeaerators()
+    LUASQUARE_POWERPLANT.Debug.ClientState.Deaerators = {}
+    if not LUASQUARE_DEAERATOR then return end
+    for name, deaerator in pairs(LUASQUARE_DEAERATOR.Deaerators) do
+        local pos = copyMonitorPos(deaerator)
+        if pos then
+            table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.Deaerators, {
+                name = name,
+                tankNetwork = deaerator.tankNetwork,
+                steamInput = deaerator.steamInput,
+                enabled = deaerator.enabled and true or false,
+                targetTemperature = deaerator.targetTemperature or 0,
+                maxSteamRate = deaerator.maxSteamRate or 0,
+                lastSteamUsed = deaerator.lastSteamUsed or 0,
+                lastWaterMade = deaerator.lastWaterMade or 0,
+                lastHeatMW = deaerator.lastHeatMW or 0,
+                tankTemperature = deaerator.tankTemperature or 0,
+                tankAmount = deaerator.tankAmount or 0,
                 pos = pos
             })
         end
@@ -461,6 +534,8 @@ function LUASQUARE_POWERPLANT.Debug.Tick()
     LUASQUARE_POWERPLANT.Debug.BuildPumps()
     LUASQUARE_POWERPLANT.Debug.BuildValves()
     LUASQUARE_POWERPLANT.Debug.BuildCondensers()
+    LUASQUARE_POWERPLANT.Debug.BuildHeatExchangers()
+    LUASQUARE_POWERPLANT.Debug.BuildDeaerators()
     LUASQUARE_POWERPLANT.Debug.BuildTurbines()
     LUASQUARE_POWERPLANT.Debug.BuildCoolingTowers()
     LUASQUARE_POWERPLANT.Debug.BuildGrids()

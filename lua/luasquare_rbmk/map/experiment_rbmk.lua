@@ -53,6 +53,8 @@ LUASQUARE_ANNUNCIATOR.TickInterval = 0.5
 LUASQUARE_FLUID.TickInterval = 0.1
 LUASQUARE_VALVE.TickInterval = 0.1
 LUASQUARE_PUMP.TickInterval = 0.1
+LUASQUARE_HEATEXCHANGER.TickInterval = 0.1
+LUASQUARE_DEAERATOR.TickInterval = 0.1
 LUASQUARE_TURBINE.TickInterval = 0.1
 LUASQUARE_COOLINGTOWER.TickInterval = 0.1
 LUASQUARE_POWERGRID.TickInterval = 0.1
@@ -303,10 +305,10 @@ LUASQUARE_POWERGRID.RegisterTransformer('station_emergency_lighting_transformer'
 
 LUASQUARE_TURBINE.RegisterTurbine('tg1', {
     input = 'main_steam',
+    output = 'turbine_exhaust',
+    bypassOutput = 'turbine_exhaust',
     boiler = 'rbmk',
     cycleEfficiency = 0.32,
-    condenserOutput = 'hotwell',
-    bypassCondenserOutput = 'hotwell',
     condenserOutputTemperature = 80,
     bypassCondenserOutputTemperature = 95,
     maxSteamRate = 500000,
@@ -382,16 +384,43 @@ LUASQUARE_DIESELGENERATOR.RegisterDieselGenerator('edg1', {
 -- Cooling Tower
 
 LUASQUARE_COOLINGTOWER.RegisterCoolingTower('main_cooling_tower', {
-    output = 'feedwater',
+    output = 'cooling_water_cold',
     basinMaxAmount = RBMK.MaxWater,
     basinMaxPressure = 20,
+    basinAmount = 30000,
     basinTemperature = 40,
-    maxRate = 1000,
+    maxRate = 8000,
     enabled = true,
     outputTemperature = 20,
     startRelay = 'cooling_tower_on',
     stopRelay = 'cooling_tower_off',
     monitorPos = 'tar_coolingtower_a'
+})
+
+LUASQUARE_CONDENSER.RegisterCondenser('main_condenser', {
+    input = 'turbine_exhaust',
+    output = 'hotwell',
+    ratio = 400,
+    maxRate = 200000,
+    enabled = true,
+    outputTemperature = 55,
+    coolantNetwork = 'cooling_water_warm',
+    coolantPump = 'circulating_water_pump',
+    effectiveness = 0.85,
+    approachTemperature = 8,
+    steamLatentHeatKJPerL = 2257,
+    monitorPos = 'tar_hotwell',
+    monitorOffset = Vector(0, 0, 64)
+})
+
+LUASQUARE_DEAERATOR.RegisterDeaerator('main_deaerator', {
+    tankNetwork = 'deaerator',
+    steamInput = 'main_steam',
+    enabled = true,
+    targetTemperature = 105,
+    maxSteamRate = 2000,
+    steamToWaterRatio = 1600,
+    monitorPos = RBMK.WorldOrigin + Vector(0, 96, 96 + MAPDEF_monitorZoffset)
 })
 
 -- Fluid Network
@@ -410,14 +439,28 @@ LUASQUARE_FLUID.RegisterNetwork('main_steam', {
 })
 RBMK.SetSteamNetwork('main_steam')
 
-LUASQUARE_FLUID.RegisterNetwork('feedwater', {
+LUASQUARE_FLUID.RegisterNetwork('turbine_exhaust', {
+    type = LUASQUARE_FLUID.TYPE_STEAMLINE,
+    fluidType = 'steam',
+    amount = 0,
+    volume = RBMK.SteamSpace,
+    maxAmount = RBMK.MaxSteam,
+    hardMaxAmount = RBMK.HardMaxSteam,
+    maxPressure = 20,
+    temperature = 100,
+    thermalLossRate = 0.005,
+    monitorPos = 'tar_turbine_a',
+    monitorOffset = Vector(0, 0, 96)
+})
+
+LUASQUARE_FLUID.RegisterNetwork('deaerator', {
     type = LUASQUARE_FLUID.TYPE_STEAMLINE,
     fluidType = 'water',
     amount = 100000,
     maxAmount = RBMK.MaxWater,
     hardMaxAmount = RBMK.MaxWater,
     maxPressure = 150,
-    temperature = 40,
+    temperature = 85,
     thermalLossRate = 0.005,
     serviceRate = 0,
     monitorPos = RBMK.WorldOrigin + Vector(0, 96, 96 + MAPDEF_monitorZoffset)
@@ -434,6 +477,34 @@ LUASQUARE_FLUID.RegisterNetwork('hotwell', {
     thermalLossRate = 0.001,
     serviceRate = 0,
     monitorPos = 'tar_hotwell'
+})
+
+LUASQUARE_FLUID.RegisterNetwork('cooling_water_cold', {
+    type = LUASQUARE_FLUID.TYPE_STEAMLINE,
+    fluidType = 'water',
+    amount = 60000,
+    maxAmount = RBMK.MaxWater,
+    hardMaxAmount = RBMK.MaxWater,
+    maxPressure = 20,
+    temperature = 20,
+    thermalLossRate = 0.001,
+    serviceRate = 0,
+    monitorPos = 'tar_coolingtower_a',
+    monitorOffset = Vector(0, 0, 64)
+})
+
+LUASQUARE_FLUID.RegisterNetwork('cooling_water_warm', {
+    type = LUASQUARE_FLUID.TYPE_STEAMLINE,
+    fluidType = 'water',
+    amount = 20000,
+    maxAmount = RBMK.MaxWater,
+    hardMaxAmount = RBMK.MaxWater,
+    maxPressure = 20,
+    temperature = 35,
+    thermalLossRate = 0.001,
+    serviceRate = 0,
+    monitorPos = 'tar_coolingtower_a',
+    monitorOffset = Vector(0, 0, 128)
 })
 
 LUASQUARE_FLUID.RegisterNetwork('drain_tank', {
@@ -483,7 +554,7 @@ LUASQUARE_VALVE.RegisterValve('hotwell_drain_valve', {
 -- Pumps
 
 LUASQUARE_PUMP.RegisterPump('feedwater_pump_a', {
-    source = 'feedwater',
+    source = 'deaerator',
     target = 'rbmk',
     rate = 500,
     headPressure = 120,
@@ -507,7 +578,7 @@ LUASQUARE_PUMP.RegisterPump('feedwater_pump_a', {
 })
 
 LUASQUARE_PUMP.RegisterPump('feedwater_pump_b', {
-    source = 'feedwater',
+    source = 'deaerator',
     target = 'rbmk',
     rate = 500,
     headPressure = 120,
@@ -532,9 +603,9 @@ LUASQUARE_PUMP.RegisterPump('feedwater_pump_b', {
 
 LUASQUARE_PUMP.RegisterPump('condensate_pump_a1', {
     source = 'hotwell',
-    target = 'main_cooling_tower',
+    target = 'deaerator',
     rate = 1000,
-    headPressure = 150,
+    headPressure = 60,
     regulate = true,
     regulationMode = 'drain',
     regulationSensor = 'hotwell',
@@ -551,6 +622,44 @@ LUASQUARE_PUMP.RegisterPump('condensate_pump_a1', {
     breakerClosed = true,
     monitorPos = 'tar_condpump_a1',
     breakerMonitorPos = 'tar_condpump_a1_breaker'
+})
+
+LUASQUARE_PUMP.RegisterPump('circulating_water_pump', {
+    source = 'cooling_water_cold',
+    target = 'cooling_water_warm',
+    rate = 8000,
+    headPressure = 25,
+    minFlowFraction = 0.25,
+    speedLevels = {0, 0.25, 0.5, 1},
+    speedLevel = 4,
+    enabled = true,
+    grid = 'station_grid',
+    peakMW = 8,
+    breaker = 'circulating_water_pump_breaker',
+    breakerClosed = true,
+    monitorPos = 'tar_coolingtower_a',
+    monitorOffset = Vector(0, 0, -64),
+    breakerMonitorPos = 'tar_coolingtower_a',
+    breakerMonitorOffset = Vector(0, 0, -96)
+})
+
+LUASQUARE_PUMP.RegisterPump('cooling_tower_return_pump', {
+    source = 'cooling_water_warm',
+    target = 'main_cooling_tower',
+    rate = 8000,
+    headPressure = 25,
+    minFlowFraction = 0.25,
+    speedLevels = {0, 0.25, 0.5, 1},
+    speedLevel = 4,
+    enabled = true,
+    grid = 'station_grid',
+    peakMW = 8,
+    breaker = 'cooling_tower_return_pump_breaker',
+    breakerClosed = true,
+    monitorPos = 'tar_coolingtower_a',
+    monitorOffset = Vector(0, 0, -128),
+    breakerMonitorPos = 'tar_coolingtower_a',
+    breakerMonitorOffset = Vector(0, 0, -160)
 })
 
 -- =========================================
@@ -813,6 +922,43 @@ local function MAPDEF_coolingTowerColumn(label, towerName)
     }
 end
 
+local function MAPDEF_networkColumn(label, networkName)
+    local network = LUASQUARE_FLUID.GetNetwork(networkName) or {}
+    local percent = 0
+    if network.maxAmount and network.maxAmount > 0 then percent = math.Clamp((network.amount or 0) / network.maxAmount, 0, 1) * 100 end
+    return {
+        label = label,
+        value = string.format('%.0f%%', percent),
+        sub = string.format('%.0fC %.1fbar', network.temperature or 0, network.pressure or 0),
+        color = Color(205, 235, 240),
+        valueColor = Color(110, 255, 150)
+    }
+end
+
+local function MAPDEF_condenserColumn(label, condenserName)
+    local condenser = LUASQUARE_CONDENSER.GetCondenser(condenserName) or {}
+    local state, color = MAPDEF_powerState(condenser.enabled)
+    return {
+        label = label,
+        value = state,
+        sub = string.format('S%.0f W%.1f %.0fMW', condenser.lastSteamUsed or 0, condenser.lastWaterMade or 0, condenser.lastHeatRejectedMW or 0),
+        color = Color(205, 235, 240),
+        valueColor = color
+    }
+end
+
+local function MAPDEF_deaeratorColumn(label, deaeratorName)
+    local deaerator = LUASQUARE_DEAERATOR.GetDeaerator(deaeratorName) or {}
+    local state, color = MAPDEF_powerState(deaerator.enabled)
+    return {
+        label = label,
+        value = state,
+        sub = string.format('%.0fC B%.0f/s', deaerator.tankTemperature or 0, deaerator.lastSteamUsed or 0),
+        color = Color(205, 235, 240),
+        valueColor = color
+    }
+end
+
 local function MAPDEF_levelTargetColumn(label, current, target)
     return {
         label = label,
@@ -922,17 +1068,38 @@ end)
 LUASQUARE_3D2D.RegisterDisplay('condensate_pump_status_panel', MAPDEF_panelBase({
     title = 'COOLING LOOP',
     target = 'tar_display_coolingloop',
-    width = 44,
-    height = 22
+    width = 58,
+    height = 34
 }))
 LUASQUARE_3D2D.BindDisplay('condensate_pump_status_panel', function()
     return {
         {
             type = 'columns',
-            height = 120,
+            height = 64,
             columns = {
                 MAPDEF_pumpColumn('COND PUMP A1', 'condensate_pump_a1'),
-                MAPDEF_coolingTowerColumn('COOLING TWR A', 'main_cooling_tower'),
+                MAPDEF_deaeratorColumn('DEAERATOR', 'main_deaerator'),
+                MAPDEF_networkColumn('HOTWELL', 'hotwell'),
+                MAPDEF_networkColumn('FEED TANK', 'deaerator')
+            }
+        },
+        {
+            type = 'columns',
+            height = 64,
+            columns = {
+                MAPDEF_condenserColumn('CONDENSER', 'main_condenser'),
+                MAPDEF_pumpColumn('CW PUMP', 'circulating_water_pump'),
+                MAPDEF_pumpColumn('CT RETURN', 'cooling_tower_return_pump'),
+                MAPDEF_coolingTowerColumn('COOLING TWR A', 'main_cooling_tower')
+            }
+        },
+        {
+            type = 'columns',
+            height = 64,
+            columns = {
+                MAPDEF_networkColumn('CW COLD', 'cooling_water_cold'),
+                MAPDEF_networkColumn('CW WARM', 'cooling_water_warm'),
+                MAPDEF_networkColumn('EXHAUST', 'turbine_exhaust'),
                 MAPDEF_valveColumn('HOTWELL DRN', 'hotwell_drain_valve')
             }
         }
@@ -1035,8 +1202,8 @@ LUASQUARE_3D2D.BindDisplay('electrical_status_panel', function()
                 MAPDEF_dieselColumn('EDG1', 'edg1'),
                 {
                     label = 'PUMP LOAD',
-                    value = string.format('%.1fMW', MAPDEF_pumpLoadMW('feedwater_pump_a', 'feedwater_pump_b', 'condensate_pump_a1')),
-                    sub = 'FW A/B + COND',
+                    value = string.format('%.1fMW', MAPDEF_pumpLoadMW('feedwater_pump_a', 'feedwater_pump_b', 'condensate_pump_a1', 'circulating_water_pump', 'cooling_tower_return_pump')),
+                    sub = 'FW + COND + CW',
                     color = Color(205, 235, 240),
                     valueColor = Color(110, 255, 150)
                 }
@@ -1253,8 +1420,10 @@ LUASQUARE_ANNUNCIATOR.Start()
 LUASQUARE_FLUID.Start()
 LUASQUARE_VALVE.Start()
 LUASQUARE_PUMP.Start()
-LUASQUARE_CONDENSER.Start()
 LUASQUARE_TURBINE.Start()
+LUASQUARE_CONDENSER.Start()
+LUASQUARE_HEATEXCHANGER.Start()
+LUASQUARE_DEAERATOR.Start()
 LUASQUARE_COOLINGTOWER.Start()
 LUASQUARE_POWERGRID.Start()
 LUASQUARE_DIESELGENERATOR.Start()

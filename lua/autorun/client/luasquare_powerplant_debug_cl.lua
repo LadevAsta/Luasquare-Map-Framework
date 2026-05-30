@@ -6,6 +6,8 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     Pumps = {},
     Valves = {},
     Condensers = {},
+    HeatExchangers = {},
+    Deaerators = {},
     Turbines = {},
     CoolingTowers = {},
     Grids = {},
@@ -15,7 +17,7 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     DieselGenerators = {}
 }
 
-local DEBUG_WIRE_VERSION = 2
+local DEBUG_WIRE_VERSION = 3
 local DEBUG_PACKET_START = 1
 local DEBUG_PACKET_CATEGORY = 2
 local DEBUG_PACKET_END = 3
@@ -42,7 +44,22 @@ local DEBUG_CATEGORIES = {
     }},
     {name = 'Condensers', schema = {
         {'name', 'string'}, {'input', 'string'}, {'output', 'string'}, {'ratio', 'number'},
-        {'enabled', 'bool'}, {'godMode', 'bool'}, {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'}, {'pos', 'vector'}
+        {'coolantNetwork', 'string'}, {'coolantPump', 'string'}, {'enabled', 'bool'}, {'godMode', 'bool'},
+        {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'}, {'lastHeatRejectedMW', 'number'},
+        {'lastCoolantFlow', 'number'}, {'lastCoolantTemperature', 'number'}, {'pos', 'vector'}
+    }},
+    {name = 'HeatExchangers', schema = {
+        {'name', 'string'}, {'hotNetwork', 'string'}, {'coldNetwork', 'string'},
+        {'hotPump', 'string'}, {'coldPump', 'string'}, {'enabled', 'bool'},
+        {'effectiveness', 'number'}, {'approachTemperature', 'number'}, {'maxThermalMW', 'number'},
+        {'lastHeatMW', 'number'}, {'lastHotFlow', 'number'}, {'lastColdFlow', 'number'},
+        {'lastHotTemperature', 'number'}, {'lastColdTemperature', 'number'}, {'pos', 'vector'}
+    }},
+    {name = 'Deaerators', schema = {
+        {'name', 'string'}, {'tankNetwork', 'string'}, {'steamInput', 'string'},
+        {'enabled', 'bool'}, {'targetTemperature', 'number'}, {'maxSteamRate', 'number'},
+        {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'}, {'lastHeatMW', 'number'},
+        {'tankTemperature', 'number'}, {'tankAmount', 'number'}, {'pos', 'vector'}
     }},
     {name = 'Turbines', schema = {
         {'name', 'string'}, {'input', 'string'}, {'boiler', 'string'}, {'output', 'string'},
@@ -241,10 +258,40 @@ function LUASQUARE_POWERPLANT.Debug.RenderCondenser(condenser)
         tostring(condenser.input) .. ' > ' .. tostring(condenser.output),
         'EN ' .. tostring(condenser.enabled),
         string.format('S %.1f/s', condenser.lastSteamUsed or 0),
-        string.format('W %.3f/s', condenser.lastWaterMade or 0)
+        string.format('W %.3f/s', condenser.lastWaterMade or 0),
+        string.format('HEAT %.1f MW', condenser.lastHeatRejectedMW or 0)
     }
+    if condenser.coolantNetwork then
+        table.insert(lines, tostring(condenser.coolantPump or 'coolant') .. ' > ' .. tostring(condenser.coolantNetwork))
+        table.insert(lines, string.format('CW %.1f/s %.1f C', condenser.lastCoolantFlow or 0, condenser.lastCoolantTemperature or 0))
+    end
     if condenser.godMode then table.insert(lines, 'GOD') end
     LUASQUARE_POWERPLANT.Debug.DrawWorldText(condenser.pos, table.concat(lines, '\n'), Color(100, 255, 100))
+end
+
+function LUASQUARE_POWERPLANT.Debug.RenderHeatExchanger(exchanger)
+    local lines = {
+        'HX ' .. tostring(exchanger.name),
+        tostring(exchanger.hotNetwork) .. ' > ' .. tostring(exchanger.coldNetwork),
+        'EN ' .. tostring(exchanger.enabled),
+        string.format('HEAT %.1f MW', exchanger.lastHeatMW or 0),
+        string.format('HOT %.1f/s %.1f C', exchanger.lastHotFlow or 0, exchanger.lastHotTemperature or 0),
+        string.format('COLD %.1f/s %.1f C', exchanger.lastColdFlow or 0, exchanger.lastColdTemperature or 0)
+    }
+    LUASQUARE_POWERPLANT.Debug.DrawWorldText(exchanger.pos, table.concat(lines, '\n'), Color(120, 255, 180))
+end
+
+function LUASQUARE_POWERPLANT.Debug.RenderDeaerator(deaerator)
+    local lines = {
+        'DEAER ' .. tostring(deaerator.name),
+        tostring(deaerator.steamInput) .. ' > ' .. tostring(deaerator.tankNetwork),
+        'EN ' .. tostring(deaerator.enabled),
+        string.format('TANK %.1f C / %.1f C', deaerator.tankTemperature or 0, deaerator.targetTemperature or 0),
+        string.format('AMT %.1f', deaerator.tankAmount or 0),
+        string.format('BLEED %.1f/s MAKE %.3f/s', deaerator.lastSteamUsed or 0, deaerator.lastWaterMade or 0),
+        string.format('HEAT %.1f MW', deaerator.lastHeatMW or 0)
+    }
+    LUASQUARE_POWERPLANT.Debug.DrawWorldText(deaerator.pos, table.concat(lines, '\n'), Color(180, 255, 210))
 end
 
 function LUASQUARE_POWERPLANT.Debug.RenderTurbine(turbine)
@@ -378,6 +425,12 @@ function LUASQUARE_POWERPLANT.Debug.Render()
     if LUASQUARE_POWERPLANT.Debug.GetSetting('show_condensers', true) then
         for _, condenser in ipairs(state.Condensers or {}) do
             LUASQUARE_POWERPLANT.Debug.RenderCondenser(condenser)
+        end
+        for _, exchanger in ipairs(state.HeatExchangers or {}) do
+            LUASQUARE_POWERPLANT.Debug.RenderHeatExchanger(exchanger)
+        end
+        for _, deaerator in ipairs(state.Deaerators or {}) do
+            LUASQUARE_POWERPLANT.Debug.RenderDeaerator(deaerator)
         end
     end
     if LUASQUARE_POWERPLANT.Debug.GetSetting('show_turbines', true) then
