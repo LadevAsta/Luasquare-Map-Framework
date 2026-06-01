@@ -148,6 +148,9 @@ function LUASQUARE_PUMP.GetEndpointLevelPercent(endpoint)
     local tower = LUASQUARE_COOLINGTOWER and LUASQUARE_COOLINGTOWER.GetCoolingTower(endpoint)
     if tower then return math.Clamp((tower.basinAmount or 0) / math.max(tower.basinMaxAmount or 1, 0.0001) * 100, 0, 100) end
 
+    local deaerator = LUASQUARE_DEAERATOR and LUASQUARE_DEAERATOR.GetDeaerator(endpoint)
+    if deaerator then return LUASQUARE_DEAERATOR.GetLevelPercent(endpoint) end
+
     return 0
 end
 
@@ -198,6 +201,11 @@ function LUASQUARE_PUMP.GetTargetPressure(target)
         if LUASQUARE_COOLINGTOWER and LUASQUARE_COOLINGTOWER.GetCoolingTower(target) then
             return LUASQUARE_COOLINGTOWER.GetBasinPressure(target)
         end
+        if LUASQUARE_DEAERATOR and LUASQUARE_DEAERATOR.GetDeaerator(target) then
+            local deaerator = LUASQUARE_DEAERATOR.GetDeaerator(target)
+            LUASQUARE_DEAERATOR.UpdatePressure(deaerator)
+            return deaerator.pressure or 0
+        end
         return 0
     end
     return network.pressure or 0
@@ -213,8 +221,50 @@ function LUASQUARE_PUMP.AddToTarget(target, amount, dischargePressure, temperatu
         return LUASQUARE_COOLINGTOWER.AddToBasin(target, amount, temperature)
     end
 
+    if LUASQUARE_DEAERATOR and LUASQUARE_DEAERATOR.GetDeaerator(target) then
+        return LUASQUARE_DEAERATOR.AddWater(target, amount, temperature)
+    end
+
     if not LUASQUARE_FLUID then return 0 end
     return LUASQUARE_FLUID.AddFluid(target, amount, temperature)
+end
+
+function LUASQUARE_PUMP.GetSourceEndpoint(sourceName)
+    if sourceName == 'service' or sourceName == 'makeup' or sourceName == 'void' then
+        return {
+            amount = math.huge,
+            pressure = 0,
+            temperature = 20,
+            remove = function(amount) return math.max(tonumber(amount) or 0, 0) end,
+            addBack = function() return 0 end
+        }
+    end
+
+    if LUASQUARE_FLUID then
+        local network = LUASQUARE_FLUID.GetNetwork(sourceName)
+        if network then
+            return {
+                amount = network.amount or 0,
+                pressure = network.pressure or 0,
+                temperature = network.temperature or 20,
+                remove = function(amount) return LUASQUARE_FLUID.RemoveFluid(sourceName, amount) end,
+                addBack = function(amount, temperature) return LUASQUARE_FLUID.AddFluid(sourceName, amount, temperature) end
+            }
+        end
+    end
+
+    if LUASQUARE_DEAERATOR and LUASQUARE_DEAERATOR.GetDeaerator(sourceName) then
+        local deaerator = LUASQUARE_DEAERATOR.GetDeaerator(sourceName)
+        return {
+            amount = deaerator.amount or 0,
+            pressure = deaerator.pressure or 0,
+            temperature = deaerator.temperature or 20,
+            remove = function(amount) return LUASQUARE_DEAERATOR.RemoveWater(sourceName, amount) end,
+            addBack = function(amount, temperature) return LUASQUARE_DEAERATOR.AddWater(sourceName, amount, temperature) end
+        }
+    end
+
+    return nil
 end
 
 -- =========================================
@@ -235,9 +285,9 @@ function LUASQUARE_PUMP.UpdatePump(name, dt)
     speedMultiplier = LUASQUARE_PUMP.ApplyPowerLoad(pump, speedMultiplier)
     if speedMultiplier <= 0 then return end
 
-    local source = LUASQUARE_FLUID.GetNetwork(pump.source)
+    local source = LUASQUARE_PUMP.GetSourceEndpoint(pump.source)
     if not source then
-        print('[LUASQUARE_PUMP] Unknown source network: ' .. tostring(pump.source))
+        print('[LUASQUARE_PUMP] Unknown source endpoint: ' .. tostring(pump.source))
         return
     end
 
@@ -248,9 +298,9 @@ function LUASQUARE_PUMP.UpdatePump(name, dt)
     local pressureScale = math.Clamp((dischargePressure - targetPressure) / math.max(dischargePressure, 0.0001), 0, 1)
     if pressureScale > 0 and pump.minFlowFraction > 0 then pressureScale = math.max(pressureScale, pump.minFlowFraction) end
     local requested = pump.rate * dt * pressureScale * pump.flowMultiplier * speedMultiplier
-    local removed = LUASQUARE_FLUID.RemoveFluid(pump.source, requested)
+    local removed = source.remove(requested)
     local added = LUASQUARE_PUMP.AddToTarget(pump.target, removed, dischargePressure, source.temperature)
-    if added < removed then LUASQUARE_FLUID.AddFluid(pump.source, removed - added, source.temperature) end
+    if added < removed then source.addBack(removed - added, source.temperature) end
     pump.lastFlow = added / math.max(dt, 0.0001)
 end
 

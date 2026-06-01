@@ -1,0 +1,5 @@
+UnlitGeneric
+{
+    "$basetexture" "models/luasquare/ann/demand_unmet"
+    "$frame" "0"
+}

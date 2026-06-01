@@ -1,0 +1,5 @@
+UnlitGeneric
+{
+    "$basetexture" "models/luasquare/ann/deaerator_flood"
+    "$frame" "1"
+}

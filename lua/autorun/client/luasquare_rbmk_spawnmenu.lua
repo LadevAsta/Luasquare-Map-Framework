@@ -12,6 +12,8 @@ hook.Add('PopulateToolMenu', 'LUASQUARE_RBMK_Menu', function()
         panel:NumSlider('Infos', 'luasquare_rbmk_debug_textscale', 0.1, 2.0, 2)
         panel:NumSlider('Channels', 'luasquare_rbmk_debug_textscale_cell', 0.1, 2.0, 2)
         panel:NumSlider('Flux', 'luasquare_rbmk_debug_textscale_flux', 0.1, 2.0, 2)
+        panel:NumSlider('Render Distance', 'luasquare_rbmk_debug_maxdistance', 0, 8000, 0)
+        panel:CheckBox('FOV Culling', 'luasquare_rbmk_debug_fovcheck')
         -- =========================================
         -- CELL VISUALS
         -- =========================================
@@ -37,6 +39,8 @@ CreateClientConVar('luasquare_rbmk_debug_enabled', '0', true, false)
 CreateClientConVar('luasquare_rbmk_debug_textscale', '0.2', true, false)
 CreateClientConVar('luasquare_rbmk_debug_textscale_cell', '0.2', true, false)
 CreateClientConVar('luasquare_rbmk_debug_textscale_flux', '0.1', true, false)
+CreateClientConVar('luasquare_rbmk_debug_maxdistance', '2500', true, false)
+CreateClientConVar('luasquare_rbmk_debug_fovcheck', '1', true, false)
 CreateClientConVar('luasquare_rbmk_draw_flux_rays', '1', true, false)
 
 CreateClientConVar('luasquare_rbmk_show_fuel', '1', true, false)

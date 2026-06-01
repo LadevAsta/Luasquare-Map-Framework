@@ -245,6 +245,28 @@ function RBMK.Debug.GetSettingNumber(name, default)
     return cvar:GetFloat()
 end
 
+function RBMK.Debug.ShouldRenderPos(pos)
+    if not pos then return false end
+    local ply = LocalPlayer()
+    if not IsValid(ply) then return true end
+
+    local eye = ply:EyePos()
+    local maxDistance = RBMK.Debug.GetSettingNumber('debug_maxdistance', 2500)
+    if maxDistance > 0 and eye:DistToSqr(pos) > maxDistance * maxDistance then return false end
+
+    if RBMK.Debug.GetSetting('debug_fovcheck', true) then
+        local toTarget = pos - eye
+        if toTarget:LengthSqr() > 1 then
+            toTarget:Normalize()
+            local fov = ply.GetFOV and ply:GetFOV() or 90
+            local threshold = math.cos(math.rad(math.Clamp(fov * 0.5 + 20, 1, 120)))
+            if ply:EyeAngles():Forward():Dot(toTarget) < threshold then return false end
+        end
+    end
+
+    return true
+end
+
 function RBMK.Debug.GetCellWorldPos(x, y)
     if RBMK.CellToWorld then
         return RBMK.CellToWorld(x, y)
@@ -257,6 +279,7 @@ function RBMK.Debug.GetCellWorldPos(x, y)
 end
 
 function RBMK.Debug.DrawWorldText(pos, text, color, sizeOverride)
+    if not RBMK.Debug.ShouldRenderPos(pos) then return end
     sizeOverride = sizeOverride or RBMK.Debug.GetSettingNumber('debug_textscale', 1.0)
     cam.Start3D2D(pos, Angle(0, LocalPlayer():EyeAngles().y - 90, 90), sizeOverride)
     draw.SimpleTextOutlined(text, 'DermaDefault', -10, 0, color or color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER, 1.2, color_black)
@@ -273,6 +296,7 @@ end
 function RBMK.Debug.RenderCell(x, y, cell)
     if not RBMK.Debug.ShouldRenderCell(cell) then return end
     local pos = RBMK.Debug.GetCellWorldPos(x, y)
+    if not RBMK.Debug.ShouldRenderPos(pos) then return end
     local lines = {}
     local symbol = RBMK.CellSymbols[cell.type] or '?'
     table.insert(lines, symbol)
@@ -357,18 +381,20 @@ function RBMK.Debug.RenderFluxLines()
 
             local startPos = line.start + offset
             local endPos = line.finish + offset
-            -- MAIN LINE
-            render.DrawLine(startPos, endPos, color, true)
-            -- ARROW
-            local arrowDir = endPos - startPos
-            arrowDir:Normalize()
-            local back = arrowDir * -6
-            local right = Vector(-arrowDir.y, arrowDir.x, 0)
-            local arrowA = endPos + back + right * 3
-            render.DrawLine(endPos, arrowA, color, true)
-            -- FLUX TEXT
-            local textPos = arrowA + offset * 0.5 + Vector(0, 0, -4)
-            RBMK.Debug.DrawWorldText(textPos, string.format('%.1f', line.flux), color, RBMK.Debug.GetSettingNumber('debug_textscale_flux', 0.3))
+            if RBMK.Debug.ShouldRenderPos((startPos + endPos) * 0.5) then
+                -- MAIN LINE
+                render.DrawLine(startPos, endPos, color, true)
+                -- ARROW
+                local arrowDir = endPos - startPos
+                arrowDir:Normalize()
+                local back = arrowDir * -6
+                local right = Vector(-arrowDir.y, arrowDir.x, 0)
+                local arrowA = endPos + back + right * 3
+                render.DrawLine(endPos, arrowA, color, true)
+                -- FLUX TEXT
+                local textPos = arrowA + offset * 0.5 + Vector(0, 0, -4)
+                RBMK.Debug.DrawWorldText(textPos, string.format('%.1f', line.flux), color, RBMK.Debug.GetSettingNumber('debug_textscale_flux', 0.3))
+            end
         end
     end
 end
@@ -379,6 +405,7 @@ function RBMK.Debug.RenderVesselInfo()
     if not info then return end
     local origin = info.worldOrigin or Vector(0, 0, 0)
     local basePos = origin + Vector(0, 0, 128)
+    if not RBMK.Debug.ShouldRenderPos(basePos) then return end
     local lines = {'MODEL: ' .. tostring(info.model),
     string.format('AVG H: %.1f', info.averageHeat or 0),
     string.format('MAX H: %.1f', info.maxHeat or 0),

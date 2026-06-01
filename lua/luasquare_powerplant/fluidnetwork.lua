@@ -10,6 +10,9 @@ LUASQUARE_FLUID.WaterThermalPressureFactor = 0.02
 
 LUASQUARE_FLUID.TYPE_SIMPLE = 'simple'
 LUASQUARE_FLUID.TYPE_STEAMLINE = 'steamline'
+LUASQUARE_FLUID.TYPE_COOLANT = 'coolant'
+
+local DEFAULT_WATER_HEAT_CAPACITY = 4.186
 
 -- =========================================
 -- ENTITY CACHE
@@ -41,7 +44,7 @@ function LUASQUARE_FLUID.RegisterNetwork(name, data)
     local networkType = data.type or LUASQUARE_FLUID.TYPE_SIMPLE
     local maxAmount = math.max(tonumber(data.maxAmount) or 100, 0.0001)
     local hardMaxAmount = maxAmount
-    if networkType == LUASQUARE_FLUID.TYPE_STEAMLINE then hardMaxAmount = tonumber(data.hardMaxAmount) or maxAmount * 2 end
+    if networkType == LUASQUARE_FLUID.TYPE_STEAMLINE or networkType == LUASQUARE_FLUID.TYPE_COOLANT then hardMaxAmount = tonumber(data.hardMaxAmount) or maxAmount * 2 end
     hardMaxAmount = math.max(hardMaxAmount, maxAmount)
     local maxPressure = tonumber(data.maxPressure) or 100
     local volume = tonumber(data.volume)
@@ -56,7 +59,7 @@ function LUASQUARE_FLUID.RegisterNetwork(name, data)
     LUASQUARE_FLUID.Networks[name] = {
         name = name,
         type = networkType,
-        fluidType = data.fluidType or 'water',
+        fluidType = data.fluidType or (networkType == LUASQUARE_FLUID.TYPE_COOLANT and 'coolant' or 'water'),
         amount = math.Clamp(tonumber(data.amount) or 0, 0, hardMaxAmount),
         maxAmount = maxAmount,
         hardMaxAmount = hardMaxAmount,
@@ -74,6 +77,14 @@ function LUASQUARE_FLUID.RegisterNetwork(name, data)
         ruptureLeakRate = tonumber(data.ruptureLeakRate) or 0,
         ruptureFlowMultiplier = tonumber(data.ruptureFlowMultiplier) or 0.25,
         flowMultiplier = 1,
+        coolingTower = data.coolingTower,
+        coolantHeatCapacityKJPerL = tonumber(data.coolantHeatCapacityKJPerL) or DEFAULT_WATER_HEAT_CAPACITY,
+        coolantCoolingDelta = tonumber(data.coolantCoolingDelta) or 1,
+        coolantHighTemperature = tonumber(data.coolantHighTemperature),
+        coolantOverheated = false,
+        lastCoolantFlow = 0,
+        lastCoolantHeatRemovedMW = 0,
+        coolantCooling = false,
         monitorPos = data.monitorPos,
         monitorTarget = data.monitorTarget or data.monitorEntity or data.monitorName,
         monitorOffset = data.monitorOffset or Vector(0, 0, 0)
@@ -84,6 +95,31 @@ end
 
 function LUASQUARE_FLUID.GetNetwork(name)
     return LUASQUARE_FLUID.Networks[name]
+end
+
+function LUASQUARE_FLUID.GetCoolantCirculationFlow(name)
+    local network = LUASQUARE_FLUID.GetNetwork(name)
+    if not network or network.type ~= LUASQUARE_FLUID.TYPE_COOLANT then return 0 end
+
+    local flow = 0
+    if LUASQUARE_PUMP then
+        for _, pump in pairs(LUASQUARE_PUMP.Pumps or {}) do
+            if pump.source == name and (pump.target == name or pump.target == network.coolingTower) then
+                flow = flow + math.max(pump.lastFlow or 0, 0)
+            end
+        end
+    end
+
+    network.lastCoolantFlow = flow
+    return flow
+end
+
+function LUASQUARE_FLUID.GetCoolantNetworkForTower(towerName)
+    if not towerName then return nil end
+    for _, network in pairs(LUASQUARE_FLUID.Networks) do
+        if network.type == LUASQUARE_FLUID.TYPE_COOLANT and network.coolingTower == towerName then return network end
+    end
+    return nil
 end
 
 -- =========================================
@@ -178,7 +214,7 @@ end
 function LUASQUARE_FLUID.UpdatePressure(name)
     local network = LUASQUARE_FLUID.GetNetwork(name)
     if not network then return 0 end
-    if network.type ~= LUASQUARE_FLUID.TYPE_STEAMLINE then return network.pressure or 0 end
+    if network.type ~= LUASQUARE_FLUID.TYPE_STEAMLINE and network.type ~= LUASQUARE_FLUID.TYPE_COOLANT then return network.pressure or 0 end
 
     if network.fluidType == 'steam' then
         local referenceK = LUASQUARE_FLUID.ReferenceSteamTemperature + 273.15
@@ -267,6 +303,12 @@ end
 function LUASQUARE_FLUID.UpdateNetwork(name, dt)
     local network = LUASQUARE_FLUID.GetNetwork(name)
     if not network then return end
+    if network.type == LUASQUARE_FLUID.TYPE_COOLANT then
+        network.lastCoolantFlow = LUASQUARE_FLUID.GetCoolantCirculationFlow(name)
+        network.lastCoolantHeatRemovedMW = 0
+        network.coolantCooling = false
+        network.coolantOverheated = network.coolantHighTemperature and (network.temperature or 0) >= network.coolantHighTemperature or false
+    end
 
     if network.serviceEnabled and network.serviceRate > 0 then
         LUASQUARE_FLUID.AddFluid(name, network.serviceRate * dt)
@@ -281,7 +323,7 @@ function LUASQUARE_FLUID.UpdateNetwork(name, dt)
         network.temperature = network.temperature + (ambient - network.temperature) * math.Clamp(network.thermalLossRate * dt, 0, 1)
     end
 
-    if network.type == LUASQUARE_FLUID.TYPE_STEAMLINE then
+    if network.type == LUASQUARE_FLUID.TYPE_STEAMLINE or network.type == LUASQUARE_FLUID.TYPE_COOLANT then
         LUASQUARE_FLUID.UpdatePressure(name)
         if network.pressure > network.maxPressure then LUASQUARE_FLUID.RuptureNetwork(name) end
     end

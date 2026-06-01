@@ -139,6 +139,24 @@ local function shallowCopyAllowed(source, keys)
     return out
 end
 
+local function normalizeAnchorMode(value)
+    if value == nil then return nil end
+    value = string.lower(tostring(value)):gsub('[^%w]', '')
+    if value == 'center' or value == 'centre' or value == 'middle' or value == 'centered' or value == 'centred' then return 'center' end
+    if value == 'topleft' or value == 'lefttop' or value == 'top' or value == 'left' then return 'topleft' end
+    return nil
+end
+
+local function resolveAnchor(data, axis)
+    local key = axis == 'x' and 'anchorX' or 'anchorY'
+    if data[key] ~= nil then return tonumber(data[key]) or 0 end
+
+    local mode = normalizeAnchorMode(data.targetOrigin or data.anchor or data.anchorMode or data.origin or data.screenOrigin)
+    if not mode and (data.centeredOnTarget or data.centerOnTarget or data.targetCentered or data.centered) then mode = 'center' end
+    if mode == 'center' then return 0.5 end
+    return 0
+end
+
 local lineKeys = {
     'type', 'text', 'label', 'value', 'unit', 'decimals', 'min', 'max', 'fraction',
     'width', 'height', 'font', 'color', 'valueColor', 'barColor', 'backgroundColor',
@@ -198,8 +216,8 @@ local function sanitizeDisplay(name, display)
         padding = tonumber(display.padding) or 8,
         lineHeight = tonumber(display.lineHeight) or 16,
         titleHeight = tonumber(display.titleHeight) or 28,
-        anchorX = tonumber(display.anchorX) or 0,
-        anchorY = tonumber(display.anchorY) or 0,
+        anchorX = resolveAnchor(display, 'x'),
+        anchorY = resolveAnchor(display, 'y'),
         visible = display.visible ~= false,
         facePlayer = display.facePlayer and true or false,
         drawBackground = display.drawBackground ~= false,
@@ -212,6 +230,7 @@ local function sanitizeDisplay(name, display)
         borderColor = copyColor(display.borderColor, Color(80, 190, 220, 220)),
         barColor = copyColor(display.barColor, Color(70, 220, 160)),
         barBackgroundColor = copyColor(display.barBackgroundColor, Color(18, 32, 36, 240)),
+        renderDistance = tonumber(display.renderDistance),
         pos = copyVector(display.resolvedPos or display.pos),
         ang = copyAngle(display.resolvedAng or display.ang or display.angle),
         lines = normalizeLines(display.content)
@@ -269,10 +288,20 @@ if SERVER then
             titleHeight = data.titleHeight,
             anchorX = data.anchorX,
             anchorY = data.anchorY,
+            targetOrigin = data.targetOrigin,
+            anchor = data.anchor,
+            anchorMode = data.anchorMode,
+            origin = data.origin,
+            screenOrigin = data.screenOrigin,
+            centeredOnTarget = data.centeredOnTarget,
+            centerOnTarget = data.centerOnTarget,
+            targetCentered = data.targetCentered,
+            centered = data.centered,
             visible = data.visible,
             facePlayer = data.facePlayer,
             drawBackground = data.drawBackground,
             drawBorder = data.drawBorder,
+            renderDistance = data.renderDistance,
             font = data.font,
             titleFont = data.titleFont,
             textColor = data.textColor,
@@ -389,6 +418,9 @@ end
 -- CLIENT RENDERER
 -- =========================================
 if CLIENT then
+    CreateClientConVar('luasquare_3d2d_maxdistance', '2500', true, false)
+    CreateClientConVar('luasquare_3d2d_fovcheck', '1', true, false)
+
     surface.CreateFont('Luasquare3D2D_Title', {
         font = 'Roboto',
         size = 24,
@@ -526,8 +558,32 @@ if CLIENT then
         end
     end
 
+    function LUASQUARE_3D2D.ShouldRenderDisplay(display)
+        if not display.visible or not display.pos then return false end
+        local ply = LocalPlayer()
+        if not IsValid(ply) then return true end
+
+        local eye = ply:EyePos()
+        local maxDistance = tonumber(display.renderDistance)
+        if not maxDistance then
+            local cvar = GetConVar('luasquare_3d2d_maxdistance')
+            maxDistance = cvar and cvar:GetFloat() or 2500
+        end
+        if maxDistance > 0 and eye:DistToSqr(display.pos) > maxDistance * maxDistance then return false end
+
+        local fovCvar = GetConVar('luasquare_3d2d_fovcheck')
+        if not fovCvar or not fovCvar:GetBool() then return true end
+
+        local toTarget = display.pos - eye
+        if toTarget:LengthSqr() <= 1 then return true end
+        toTarget:Normalize()
+        local fov = ply.GetFOV and ply:GetFOV() or 90
+        local threshold = math.cos(math.rad(math.Clamp(fov * 0.5 + 20, 1, 120)))
+        return ply:EyeAngles():Forward():Dot(toTarget) >= threshold
+    end
+
     function LUASQUARE_3D2D.RenderDisplay(display)
-        if not display.visible or not display.pos then return end
+        if not LUASQUARE_3D2D.ShouldRenderDisplay(display) then return end
 
         local ang = display.ang or Angle(0, 0, 90)
         if display.facePlayer and IsValid(LocalPlayer()) then

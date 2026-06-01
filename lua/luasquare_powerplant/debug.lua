@@ -16,7 +16,7 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     DieselGenerators = {}
 }
 
-local DEBUG_WIRE_VERSION = 3
+local DEBUG_WIRE_VERSION = 6
 local DEBUG_PACKET_START = 1
 local DEBUG_PACKET_CATEGORY = 2
 local DEBUG_PACKET_END = 3
@@ -26,6 +26,8 @@ local DEBUG_CATEGORIES = {
         {'name', 'string'}, {'type', 'string'}, {'fluidType', 'string'},
         {'amount', 'number'}, {'maxAmount', 'number'}, {'hardMaxAmount', 'number'},
         {'volume', 'number'}, {'pressure', 'number'}, {'maxPressure', 'number'}, {'temperature', 'number'},
+        {'coolingTower', 'string'}, {'lastCoolantFlow', 'number'}, {'lastCoolantHeatRemovedMW', 'number'},
+        {'coolantCooling', 'bool'}, {'coolantHighTemperature', 'number'}, {'coolantOverheated', 'bool'},
         {'ruptured', 'bool'}, {'serviceEnabled', 'bool'}, {'pos', 'vector'}
     }},
     {name = 'Pumps', chunkSize = 32, schema = {
@@ -44,7 +46,8 @@ local DEBUG_CATEGORIES = {
     {name = 'Condensers', chunkSize = 32, schema = {
         {'name', 'string'}, {'input', 'string'}, {'output', 'string'}, {'ratio', 'number'},
         {'coolantNetwork', 'string'}, {'coolantPump', 'string'}, {'enabled', 'bool'}, {'godMode', 'bool'},
-        {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'}, {'lastHeatRejectedMW', 'number'},
+        {'steamAmount', 'number'}, {'steamMaxAmount', 'number'}, {'steamPressure', 'number'}, {'steamTemperature', 'number'},
+        {'lastSteamAccepted', 'number'}, {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'}, {'lastHeatRejectedMW', 'number'},
         {'lastCoolantFlow', 'number'}, {'lastCoolantTemperature', 'number'}, {'pos', 'vector'}
     }},
     {name = 'HeatExchangers', chunkSize = 32, schema = {
@@ -55,13 +58,18 @@ local DEBUG_CATEGORIES = {
         {'lastHotTemperature', 'number'}, {'lastColdTemperature', 'number'}, {'pos', 'vector'}
     }},
     {name = 'Deaerators', chunkSize = 32, schema = {
-        {'name', 'string'}, {'tankNetwork', 'string'}, {'steamInput', 'string'},
-        {'enabled', 'bool'}, {'targetTemperature', 'number'}, {'maxSteamRate', 'number'},
-        {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'}, {'lastHeatMW', 'number'},
-        {'tankTemperature', 'number'}, {'tankAmount', 'number'}, {'pos', 'vector'}
+        {'name', 'string'}, {'tankNetwork', 'string'}, {'steamInput', 'string'}, {'steamSource', 'string'},
+        {'enabled', 'bool'}, {'ruptured', 'bool'}, {'flooded', 'bool'}, {'autoRegulator', 'bool'},
+        {'targetTemperature', 'number'}, {'targetPressure', 'number'}, {'highTemperature', 'number'}, {'highPressure', 'number'},
+        {'maxSteamRate', 'number'}, {'amount', 'number'}, {'maxAmount', 'number'}, {'hardMaxAmount', 'number'},
+        {'temperature', 'number'}, {'pressure', 'number'}, {'maxPressure', 'number'}, {'hardMaxPressure', 'number'},
+        {'steamAmount', 'number'}, {'steamMaxAmount', 'number'}, {'steamPressure', 'number'}, {'steamTemperature', 'number'},
+        {'nonCondensibleAmount', 'number'}, {'steamValve', 'number'}, {'reliefValve', 'number'}, {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'},
+        {'lastReliefFlow', 'number'}, {'lastHeatMW', 'number'}, {'ruptureReason', 'string'}, {'pos', 'vector'}
     }},
     {name = 'Turbines', chunkSize = 16, schema = {
         {'name', 'string'}, {'input', 'string'}, {'boiler', 'string'}, {'output', 'string'},
+        {'condenser', 'string'}, {'bypassCondenser', 'string'},
         {'condenserOutput', 'string'}, {'bypassCondenserOutput', 'string'},
         {'enabled', 'bool'}, {'tripped', 'bool'}, {'tripLevel', 'string'}, {'tripRelayFired', 'bool'},
         {'severeTripFired', 'bool'}, {'severeTripStopFired', 'bool'}, {'severeTripRPM', 'number'},
@@ -72,15 +80,19 @@ local DEBUG_CATEGORIES = {
         {'lastBoilerMW', 'number'}, {'lastSteamShare', 'number'}, {'lastTurbineSteamFraction', 'number'},
         {'lastInletSteam', 'number'}, {'lastInletPressureScale', 'number'}, {'lastSteamUsed', 'number'},
         {'lastBypassSteam', 'number'}, {'lastExhaustMade', 'number'}, {'lastCondensateMade', 'number'},
-        {'lastBypassCondensateMade', 'number'}, {'lastCondensateTemperature', 'number'},
+        {'lastBypassCondensateMade', 'number'}, {'lastExhaustStored', 'number'}, {'lastCondenserAccepted', 'number'}, {'lastExhaustExtracted', 'number'},
+        {'exhaustAmount', 'number'}, {'exhaustMaxAmount', 'number'}, {'exhaustPressure', 'number'},
+        {'exhaustTripPressure', 'number'}, {'exhaustTripTimer', 'number'}, {'exhaustTripDelay', 'number'},
+        {'exhaustHardMaxPressure', 'number'}, {'lastCondensateTemperature', 'number'},
         {'lastBypassCondensateTemperature', 'number'}, {'lastMW', 'number'}, {'tripReason', 'string'}, {'pos', 'vector'}
     }},
     {name = 'CoolingTowers', chunkSize = 24, schema = {
-        {'name', 'string'}, {'input', 'string'}, {'basin', 'string'}, {'output', 'string'},
+        {'name', 'string'}, {'input', 'string'}, {'basin', 'string'}, {'output', 'string'}, {'coolantNetwork', 'string'},
         {'maxRate', 'number'}, {'enabled', 'bool'}, {'working', 'bool'}, {'outputTemperature', 'number'},
         {'basinAmount', 'number'}, {'basinMaxAmount', 'number'}, {'basinTemperature', 'number'},
         {'basinPressure', 'number'}, {'basinMaxPressure', 'number'}, {'lastWaterReceived', 'number'},
-        {'lastWaterCooled', 'number'}, {'lastHeatRemoved', 'number'}, {'pos', 'vector'}
+        {'lastWaterCooled', 'number'}, {'lastHeatRemoved', 'number'}, {'lastHeatRemovedMW', 'number'},
+        {'lastCoolantFlow', 'number'}, {'lastCoolantTemperature', 'number'}, {'pos', 'vector'}
     }},
     {name = 'Grids', chunkSize = 24, schema = {
         {'name', 'string'}, {'type', 'string'}, {'enabled', 'bool'}, {'tripped', 'bool'},
@@ -167,6 +179,12 @@ function LUASQUARE_POWERPLANT.Debug.BuildNetworks()
                 pressure = network.pressure or 0,
                 maxPressure = network.maxPressure or 0,
                 temperature = network.temperature or 0,
+                coolingTower = network.coolingTower,
+                lastCoolantFlow = network.lastCoolantFlow or 0,
+                lastCoolantHeatRemovedMW = network.lastCoolantHeatRemovedMW or 0,
+                coolantCooling = network.coolantCooling and true or false,
+                coolantHighTemperature = network.coolantHighTemperature or 0,
+                coolantOverheated = network.coolantOverheated and true or false,
                 ruptured = network.ruptured and true or false,
                 serviceEnabled = network.serviceEnabled and true or false,
                 pos = pos
@@ -242,6 +260,11 @@ function LUASQUARE_POWERPLANT.Debug.BuildCondensers()
                 coolantPump = condenser.coolantPump,
                 enabled = condenser.enabled and true or false,
                 godMode = condenser.godMode and true or false,
+                steamAmount = condenser.steamAmount or 0,
+                steamMaxAmount = condenser.steamMaxAmount or 0,
+                steamPressure = condenser.steamPressure or 0,
+                steamTemperature = condenser.steamTemperature or 0,
+                lastSteamAccepted = condenser.lastSteamAccepted or 0,
                 lastSteamUsed = condenser.lastSteamUsed or 0,
                 lastWaterMade = condenser.lastWaterMade or 0,
                 lastHeatRejectedMW = condenser.lastHeatRejectedMW or 0,
@@ -290,14 +313,35 @@ function LUASQUARE_POWERPLANT.Debug.BuildDeaerators()
                 name = name,
                 tankNetwork = deaerator.tankNetwork,
                 steamInput = deaerator.steamInput,
+                steamSource = deaerator.steamSource,
                 enabled = deaerator.enabled and true or false,
+                ruptured = deaerator.ruptured and true or false,
+                flooded = deaerator.flooded and true or false,
+                autoRegulator = deaerator.autoRegulator and true or false,
                 targetTemperature = deaerator.targetTemperature or 0,
+                targetPressure = deaerator.targetPressure or 0,
+                highTemperature = deaerator.highTemperature or 0,
+                highPressure = deaerator.highPressure or 0,
                 maxSteamRate = deaerator.maxSteamRate or 0,
+                amount = deaerator.amount or deaerator.tankAmount or 0,
+                maxAmount = deaerator.maxAmount or 0,
+                hardMaxAmount = deaerator.hardMaxAmount or 0,
+                temperature = deaerator.temperature or deaerator.tankTemperature or 0,
+                pressure = deaerator.pressure or 0,
+                maxPressure = deaerator.maxPressure or 0,
+                hardMaxPressure = deaerator.hardMaxPressure or 0,
+                steamAmount = deaerator.steamAmount or 0,
+                steamMaxAmount = deaerator.steamMaxAmount or 0,
+                steamPressure = deaerator.steamPressure or 0,
+                steamTemperature = deaerator.steamTemperature or 0,
+                nonCondensibleAmount = deaerator.nonCondensibleAmount or 0,
+                steamValve = deaerator.steamValve or 0,
+                reliefValve = deaerator.reliefValve or 0,
                 lastSteamUsed = deaerator.lastSteamUsed or 0,
                 lastWaterMade = deaerator.lastWaterMade or 0,
+                lastReliefFlow = deaerator.lastReliefFlow or 0,
                 lastHeatMW = deaerator.lastHeatMW or 0,
-                tankTemperature = deaerator.tankTemperature or 0,
-                tankAmount = deaerator.tankAmount or 0,
+                ruptureReason = deaerator.ruptureReason,
                 pos = pos
             })
         end
@@ -315,6 +359,8 @@ function LUASQUARE_POWERPLANT.Debug.BuildTurbines()
                 input = turbine.input,
                 boiler = turbine.boiler,
                 output = turbine.output,
+                condenser = turbine.condenser,
+                bypassCondenser = turbine.bypassCondenser,
                 condenserOutput = turbine.condenserOutput,
                 bypassCondenserOutput = turbine.bypassCondenserOutput,
                 enabled = turbine.enabled and true or false,
@@ -348,6 +394,16 @@ function LUASQUARE_POWERPLANT.Debug.BuildTurbines()
                 lastExhaustMade = turbine.lastExhaustMade or 0,
                 lastCondensateMade = turbine.lastCondensateMade or 0,
                 lastBypassCondensateMade = turbine.lastBypassCondensateMade or 0,
+                lastExhaustStored = turbine.lastExhaustStored or 0,
+                lastCondenserAccepted = turbine.lastCondenserAccepted or 0,
+                lastExhaustExtracted = turbine.lastExhaustExtracted or 0,
+                exhaustAmount = turbine.exhaustAmount or 0,
+                exhaustMaxAmount = turbine.exhaustMaxAmount or 0,
+                exhaustPressure = turbine.exhaustPressure or 0,
+                exhaustTripPressure = turbine.exhaustTripPressure or 0,
+                exhaustTripTimer = turbine.exhaustTripTimer or 0,
+                exhaustTripDelay = turbine.exhaustTripDelay or 0,
+                exhaustHardMaxPressure = turbine.exhaustHardMaxPressure or 0,
                 lastCondensateTemperature = turbine.lastCondensateTemperature or 0,
                 lastBypassCondensateTemperature = turbine.lastBypassCondensateTemperature or 0,
                 lastMW = turbine.lastMW or 0,
@@ -369,6 +425,7 @@ function LUASQUARE_POWERPLANT.Debug.BuildCoolingTowers()
                 input = tower.input,
                 basin = tower.basin,
                 output = tower.output,
+                coolantNetwork = tower.coolantNetwork,
                 maxRate = tower.maxRate or 0,
                 enabled = tower.enabled and true or false,
                 working = tower.working and true or false,
@@ -381,6 +438,9 @@ function LUASQUARE_POWERPLANT.Debug.BuildCoolingTowers()
                 lastWaterReceived = tower.lastWaterReceived or 0,
                 lastWaterCooled = tower.lastWaterCooled or 0,
                 lastHeatRemoved = tower.lastHeatRemoved or 0,
+                lastHeatRemovedMW = tower.lastHeatRemovedMW or 0,
+                lastCoolantFlow = tower.lastCoolantFlow or 0,
+                lastCoolantTemperature = tower.lastCoolantTemperature or 0,
                 pos = pos
             })
         end

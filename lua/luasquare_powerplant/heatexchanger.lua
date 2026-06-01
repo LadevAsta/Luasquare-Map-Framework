@@ -52,6 +52,14 @@ local function getPumpFlow(name)
     return math.max(pump.lastFlow or 0, 0)
 end
 
+local function getNetworkFlow(pumpName, network)
+    if network and LUASQUARE_FLUID and network.type == LUASQUARE_FLUID.TYPE_COOLANT and LUASQUARE_FLUID.GetCoolantCirculationFlow then
+        return LUASQUARE_FLUID.GetCoolantCirculationFlow(network.name)
+    end
+
+    return getPumpFlow(pumpName)
+end
+
 local function addNetworkHeat(network, heatKJ, heatCapacity)
     if not network or math.abs(heatKJ) <= 0 then return end
     local thermalMass = math.max((network.amount or 0) * heatCapacity, 0.0001)
@@ -72,8 +80,8 @@ function LUASQUARE_HEATEXCHANGER.UpdateHeatExchanger(name, dt)
     local cold = LUASQUARE_FLUID.GetNetwork(exchanger.coldNetwork)
     if not hot or not cold then return end
 
-    local hotFlow = getPumpFlow(exchanger.hotPump)
-    local coldFlow = getPumpFlow(exchanger.coldPump)
+    local hotFlow = getNetworkFlow(exchanger.hotPump, hot)
+    local coldFlow = getNetworkFlow(exchanger.coldPump, cold)
     exchanger.lastHotFlow = hotFlow
     exchanger.lastColdFlow = coldFlow
     exchanger.lastHotTemperature = hot.temperature or 0

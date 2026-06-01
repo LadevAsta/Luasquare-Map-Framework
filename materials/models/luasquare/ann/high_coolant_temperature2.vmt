@@ -1,0 +1,5 @@
+UnlitGeneric
+{
+    "$basetexture" "models/luasquare/ann/high_coolant_temperature"
+    "$frame" "1"
+}

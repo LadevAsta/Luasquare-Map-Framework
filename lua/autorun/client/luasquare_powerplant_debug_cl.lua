@@ -17,7 +17,7 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     DieselGenerators = {}
 }
 
-local DEBUG_WIRE_VERSION = 3
+local DEBUG_WIRE_VERSION = 6
 local DEBUG_PACKET_START = 1
 local DEBUG_PACKET_CATEGORY = 2
 local DEBUG_PACKET_END = 3
@@ -27,6 +27,8 @@ local DEBUG_CATEGORIES = {
         {'name', 'string'}, {'type', 'string'}, {'fluidType', 'string'},
         {'amount', 'number'}, {'maxAmount', 'number'}, {'hardMaxAmount', 'number'},
         {'volume', 'number'}, {'pressure', 'number'}, {'maxPressure', 'number'}, {'temperature', 'number'},
+        {'coolingTower', 'string'}, {'lastCoolantFlow', 'number'}, {'lastCoolantHeatRemovedMW', 'number'},
+        {'coolantCooling', 'bool'}, {'coolantHighTemperature', 'number'}, {'coolantOverheated', 'bool'},
         {'ruptured', 'bool'}, {'serviceEnabled', 'bool'}, {'pos', 'vector'}
     }},
     {name = 'Pumps', schema = {
@@ -45,7 +47,8 @@ local DEBUG_CATEGORIES = {
     {name = 'Condensers', schema = {
         {'name', 'string'}, {'input', 'string'}, {'output', 'string'}, {'ratio', 'number'},
         {'coolantNetwork', 'string'}, {'coolantPump', 'string'}, {'enabled', 'bool'}, {'godMode', 'bool'},
-        {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'}, {'lastHeatRejectedMW', 'number'},
+        {'steamAmount', 'number'}, {'steamMaxAmount', 'number'}, {'steamPressure', 'number'}, {'steamTemperature', 'number'},
+        {'lastSteamAccepted', 'number'}, {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'}, {'lastHeatRejectedMW', 'number'},
         {'lastCoolantFlow', 'number'}, {'lastCoolantTemperature', 'number'}, {'pos', 'vector'}
     }},
     {name = 'HeatExchangers', schema = {
@@ -56,13 +59,18 @@ local DEBUG_CATEGORIES = {
         {'lastHotTemperature', 'number'}, {'lastColdTemperature', 'number'}, {'pos', 'vector'}
     }},
     {name = 'Deaerators', schema = {
-        {'name', 'string'}, {'tankNetwork', 'string'}, {'steamInput', 'string'},
-        {'enabled', 'bool'}, {'targetTemperature', 'number'}, {'maxSteamRate', 'number'},
-        {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'}, {'lastHeatMW', 'number'},
-        {'tankTemperature', 'number'}, {'tankAmount', 'number'}, {'pos', 'vector'}
+        {'name', 'string'}, {'tankNetwork', 'string'}, {'steamInput', 'string'}, {'steamSource', 'string'},
+        {'enabled', 'bool'}, {'ruptured', 'bool'}, {'flooded', 'bool'}, {'autoRegulator', 'bool'},
+        {'targetTemperature', 'number'}, {'targetPressure', 'number'}, {'highTemperature', 'number'}, {'highPressure', 'number'},
+        {'maxSteamRate', 'number'}, {'amount', 'number'}, {'maxAmount', 'number'}, {'hardMaxAmount', 'number'},
+        {'temperature', 'number'}, {'pressure', 'number'}, {'maxPressure', 'number'}, {'hardMaxPressure', 'number'},
+        {'steamAmount', 'number'}, {'steamMaxAmount', 'number'}, {'steamPressure', 'number'}, {'steamTemperature', 'number'},
+        {'nonCondensibleAmount', 'number'}, {'steamValve', 'number'}, {'reliefValve', 'number'}, {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'},
+        {'lastReliefFlow', 'number'}, {'lastHeatMW', 'number'}, {'ruptureReason', 'string'}, {'pos', 'vector'}
     }},
     {name = 'Turbines', schema = {
         {'name', 'string'}, {'input', 'string'}, {'boiler', 'string'}, {'output', 'string'},
+        {'condenser', 'string'}, {'bypassCondenser', 'string'},
         {'condenserOutput', 'string'}, {'bypassCondenserOutput', 'string'},
         {'enabled', 'bool'}, {'tripped', 'bool'}, {'tripLevel', 'string'}, {'tripRelayFired', 'bool'},
         {'severeTripFired', 'bool'}, {'severeTripStopFired', 'bool'}, {'severeTripRPM', 'number'},
@@ -73,15 +81,19 @@ local DEBUG_CATEGORIES = {
         {'lastBoilerMW', 'number'}, {'lastSteamShare', 'number'}, {'lastTurbineSteamFraction', 'number'},
         {'lastInletSteam', 'number'}, {'lastInletPressureScale', 'number'}, {'lastSteamUsed', 'number'},
         {'lastBypassSteam', 'number'}, {'lastExhaustMade', 'number'}, {'lastCondensateMade', 'number'},
-        {'lastBypassCondensateMade', 'number'}, {'lastCondensateTemperature', 'number'},
+        {'lastBypassCondensateMade', 'number'}, {'lastExhaustStored', 'number'}, {'lastCondenserAccepted', 'number'}, {'lastExhaustExtracted', 'number'},
+        {'exhaustAmount', 'number'}, {'exhaustMaxAmount', 'number'}, {'exhaustPressure', 'number'},
+        {'exhaustTripPressure', 'number'}, {'exhaustTripTimer', 'number'}, {'exhaustTripDelay', 'number'},
+        {'exhaustHardMaxPressure', 'number'}, {'lastCondensateTemperature', 'number'},
         {'lastBypassCondensateTemperature', 'number'}, {'lastMW', 'number'}, {'tripReason', 'string'}, {'pos', 'vector'}
     }},
     {name = 'CoolingTowers', schema = {
-        {'name', 'string'}, {'input', 'string'}, {'basin', 'string'}, {'output', 'string'},
+        {'name', 'string'}, {'input', 'string'}, {'basin', 'string'}, {'output', 'string'}, {'coolantNetwork', 'string'},
         {'maxRate', 'number'}, {'enabled', 'bool'}, {'working', 'bool'}, {'outputTemperature', 'number'},
         {'basinAmount', 'number'}, {'basinMaxAmount', 'number'}, {'basinTemperature', 'number'},
         {'basinPressure', 'number'}, {'basinMaxPressure', 'number'}, {'lastWaterReceived', 'number'},
-        {'lastWaterCooled', 'number'}, {'lastHeatRemoved', 'number'}, {'pos', 'vector'}
+        {'lastWaterCooled', 'number'}, {'lastHeatRemoved', 'number'}, {'lastHeatRemovedMW', 'number'},
+        {'lastCoolantFlow', 'number'}, {'lastCoolantTemperature', 'number'}, {'pos', 'vector'}
     }},
     {name = 'Grids', schema = {
         {'name', 'string'}, {'type', 'string'}, {'enabled', 'bool'}, {'tripped', 'bool'},
@@ -204,7 +216,30 @@ function LUASQUARE_POWERPLANT.Debug.GetSettingNumber(name, default)
     return cvar:GetFloat()
 end
 
+function LUASQUARE_POWERPLANT.Debug.ShouldRenderPos(pos)
+    if not pos then return false end
+    local ply = LocalPlayer()
+    if not IsValid(ply) then return true end
+
+    local eye = ply:EyePos()
+    local maxDistance = LUASQUARE_POWERPLANT.Debug.GetSettingNumber('debug_maxdistance', 2500)
+    if maxDistance > 0 and eye:DistToSqr(pos) > maxDistance * maxDistance then return false end
+
+    if LUASQUARE_POWERPLANT.Debug.GetSetting('debug_fovcheck', true) then
+        local toTarget = pos - eye
+        if toTarget:LengthSqr() > 1 then
+            toTarget:Normalize()
+            local fov = ply.GetFOV and ply:GetFOV() or 90
+            local threshold = math.cos(math.rad(math.Clamp(fov * 0.5 + 20, 1, 120)))
+            if ply:EyeAngles():Forward():Dot(toTarget) < threshold then return false end
+        end
+    end
+
+    return true
+end
+
 function LUASQUARE_POWERPLANT.Debug.DrawWorldText(pos, text, color)
+    if not LUASQUARE_POWERPLANT.Debug.ShouldRenderPos(pos) then return end
     cam.Start3D2D(pos, Angle(0, LocalPlayer():EyeAngles().y - 90, 90), LUASQUARE_POWERPLANT.Debug.GetSettingNumber('debug_textscale', 0.2))
     local y = 0
     for line in string.gmatch(text, '[^\n]+') do
@@ -215,6 +250,7 @@ function LUASQUARE_POWERPLANT.Debug.DrawWorldText(pos, text, color)
 end
 
 function LUASQUARE_POWERPLANT.Debug.RenderNetwork(network)
+    if not LUASQUARE_POWERPLANT.Debug.ShouldRenderPos(network.pos) then return end
     local lines = {
         'NET ' .. tostring(network.name),
         tostring(network.fluidType) .. ' ' .. tostring(network.type),
@@ -223,11 +259,18 @@ function LUASQUARE_POWERPLANT.Debug.RenderNetwork(network)
         string.format('P %.1f / %.1f bar', network.pressure or 0, network.maxPressure or 0),
         string.format('T %.1f C', network.temperature or 0)
     }
+    if network.type == 'coolant' then
+        table.insert(lines, 'TWR ' .. tostring(network.coolingTower or 'none'))
+        table.insert(lines, string.format('CW %.1f/s HEAT %.1f MW', network.lastCoolantFlow or 0, network.lastCoolantHeatRemovedMW or 0))
+        table.insert(lines, 'COOL ' .. tostring(network.coolantCooling))
+        if network.coolantOverheated then table.insert(lines, string.format('HIGH > %.1f C', network.coolantHighTemperature or 0)) end
+    end
     if network.ruptured then table.insert(lines, 'RUPTURED') end
     LUASQUARE_POWERPLANT.Debug.DrawWorldText(network.pos, table.concat(lines, '\n'), Color(0, 220, 255))
 end
 
 function LUASQUARE_POWERPLANT.Debug.RenderPump(pump)
+    if not LUASQUARE_POWERPLANT.Debug.ShouldRenderPos(pump.pos) then return end
     local lines = {
         'PUMP ' .. tostring(pump.name),
         tostring(pump.source) .. ' > ' .. tostring(pump.target),
@@ -242,6 +285,7 @@ function LUASQUARE_POWERPLANT.Debug.RenderPump(pump)
 end
 
 function LUASQUARE_POWERPLANT.Debug.RenderValve(valve)
+    if not LUASQUARE_POWERPLANT.Debug.ShouldRenderPos(valve.pos) then return end
     local lines = {
         'VALVE ' .. tostring(valve.name),
         tostring(valve.a) .. ' <-> ' .. tostring(valve.b),
@@ -253,10 +297,13 @@ function LUASQUARE_POWERPLANT.Debug.RenderValve(valve)
 end
 
 function LUASQUARE_POWERPLANT.Debug.RenderCondenser(condenser)
+    if not LUASQUARE_POWERPLANT.Debug.ShouldRenderPos(condenser.pos) then return end
     local lines = {
         'COND ' .. tostring(condenser.name),
         tostring(condenser.input) .. ' > ' .. tostring(condenser.output),
         'EN ' .. tostring(condenser.enabled),
+        string.format('LPS %.1f / %.1f %.2f bar', condenser.steamAmount or 0, condenser.steamMaxAmount or 0, condenser.steamPressure or 0),
+        string.format('ACCEPT %.1f/s', condenser.lastSteamAccepted or 0),
         string.format('S %.1f/s', condenser.lastSteamUsed or 0),
         string.format('W %.3f/s', condenser.lastWaterMade or 0),
         string.format('HEAT %.1f MW', condenser.lastHeatRejectedMW or 0)
@@ -270,6 +317,7 @@ function LUASQUARE_POWERPLANT.Debug.RenderCondenser(condenser)
 end
 
 function LUASQUARE_POWERPLANT.Debug.RenderHeatExchanger(exchanger)
+    if not LUASQUARE_POWERPLANT.Debug.ShouldRenderPos(exchanger.pos) then return end
     local lines = {
         'HX ' .. tostring(exchanger.name),
         tostring(exchanger.hotNetwork) .. ' > ' .. tostring(exchanger.coldNetwork),
@@ -282,20 +330,28 @@ function LUASQUARE_POWERPLANT.Debug.RenderHeatExchanger(exchanger)
 end
 
 function LUASQUARE_POWERPLANT.Debug.RenderDeaerator(deaerator)
+    if not LUASQUARE_POWERPLANT.Debug.ShouldRenderPos(deaerator.pos) then return end
+    local level = 0
+    if (deaerator.maxAmount or 0) > 0 then level = (deaerator.amount or 0) / deaerator.maxAmount * 100 end
     local lines = {
         'DEAER ' .. tostring(deaerator.name),
-        tostring(deaerator.steamInput) .. ' > ' .. tostring(deaerator.tankNetwork),
-        'EN ' .. tostring(deaerator.enabled),
-        string.format('TANK %.1f C / %.1f C', deaerator.tankTemperature or 0, deaerator.targetTemperature or 0),
-        string.format('AMT %.1f', deaerator.tankAmount or 0),
-        string.format('BLEED %.1f/s MAKE %.3f/s', deaerator.lastSteamUsed or 0, deaerator.lastWaterMade or 0),
+        tostring(deaerator.steamSource or deaerator.steamInput) .. ' > tank',
+        'EN ' .. tostring(deaerator.enabled) .. ' AUTO ' .. tostring(deaerator.autoRegulator),
+        string.format('LVL %.1f%% %.1f/%.1f', level, deaerator.amount or 0, deaerator.maxAmount or 0),
+        string.format('P %.2f/%.2f bar T %.1f/%.1f C', deaerator.pressure or 0, deaerator.targetPressure or 0, deaerator.temperature or 0, deaerator.targetTemperature or 0),
+        string.format('VAP %.1f/%.1f %.1fC GAS %.1f', deaerator.steamAmount or 0, deaerator.steamMaxAmount or 0, deaerator.steamTemperature or 0, deaerator.nonCondensibleAmount or 0),
+        string.format('SV %.0f%% RV %.0f%%', (deaerator.steamValve or 0) * 100, (deaerator.reliefValve or 0) * 100),
+        string.format('LPS %.1f/s MAKE %.3f/s VENT %.1f/s', deaerator.lastSteamUsed or 0, deaerator.lastWaterMade or 0, deaerator.lastReliefFlow or 0),
         string.format('HEAT %.1f MW', deaerator.lastHeatMW or 0)
     }
+    if deaerator.flooded then table.insert(lines, 'FLOODED') end
+    if deaerator.ruptured then table.insert(lines, 'RUPTURED ' .. tostring(deaerator.ruptureReason or '')) end
     LUASQUARE_POWERPLANT.Debug.DrawWorldText(deaerator.pos, table.concat(lines, '\n'), Color(180, 255, 210))
 end
 
 function LUASQUARE_POWERPLANT.Debug.RenderTurbine(turbine)
-    local outputName = turbine.condenserOutput or turbine.output
+    if not LUASQUARE_POWERPLANT.Debug.ShouldRenderPos(turbine.pos) then return end
+    local outputName = turbine.condenser or turbine.condenserOutput or turbine.output
     local lines = {
         'TURB ' .. tostring(turbine.name),
         tostring(turbine.input) .. ' > ' .. tostring(outputName),
@@ -306,6 +362,7 @@ function LUASQUARE_POWERPLANT.Debug.RenderTurbine(turbine)
         string.format('RATED %.0f/s MAX %.0f/s', turbine.ratedSteamRate or 0, turbine.maxSteamRate or 0),
         string.format('IN %.1f/s %.2fx', turbine.lastInletSteam or 0, turbine.lastInletPressureScale or 0),
         string.format('S %.1f/s B %.1f/s', turbine.lastSteamUsed or 0, turbine.lastBypassSteam or 0),
+        string.format('EXH %.1f/%.1f %.2fbar ACC %.1f/s EXT %.1f/s', turbine.exhaustAmount or 0, turbine.exhaustMaxAmount or 0, turbine.exhaustPressure or 0, turbine.lastCondenserAccepted or 0, turbine.lastExhaustExtracted or 0),
         string.format('HW %.3f/s %.1fC BHW %.3f/s %.1fC', turbine.lastCondensateMade or 0, turbine.lastCondensateTemperature or 0, turbine.lastBypassCondensateMade or 0, turbine.lastBypassCondensateTemperature or 0),
         string.format('MWth %.1f SHARE %.0f%% FLOW %.0f%% EFF %.0f%%', turbine.lastBoilerMW or 0, (turbine.lastSteamShare or 0) * 100, (turbine.lastTurbineSteamFraction or 0) * 100, (turbine.cycleEfficiency or 0) * 100),
         string.format('MW %.1f VIB %.1f', turbine.lastMW or 0, turbine.vibration or 0)
@@ -317,22 +374,29 @@ function LUASQUARE_POWERPLANT.Debug.RenderTurbine(turbine)
 end
 
 function LUASQUARE_POWERPLANT.Debug.RenderCoolingTower(tower)
-    local lines = {
-        'COOL ' .. tostring(tower.name),
-        'BASIN > ' .. tostring(tower.output),
-        'EN ' .. tostring(tower.enabled),
-        'WK ' .. tostring(tower.working),
-        string.format('IN %.2f/s OUT %.2f/s', tower.lastWaterReceived or 0, tower.lastWaterCooled or 0),
-        string.format('B %.1f / %.1f', tower.basinAmount or 0, tower.basinMaxAmount or 0),
-        string.format('BP %.1f / %.1f bar', tower.basinPressure or 0, tower.basinMaxPressure or 0),
-        string.format('BT %.1f C', tower.basinTemperature or 0),
-        string.format('OUT %.1f C', tower.outputTemperature or 0),
-        string.format('HEAT %.1f C-l/s', tower.lastHeatRemoved or 0)
-    }
+    if not LUASQUARE_POWERPLANT.Debug.ShouldRenderPos(tower.pos) then return end
+    local lines = {'COOL ' .. tostring(tower.name)}
+    if tower.coolantNetwork then
+        table.insert(lines, 'LOOP ' .. tostring(tower.coolantNetwork))
+        table.insert(lines, 'EN ' .. tostring(tower.enabled) .. ' WK ' .. tostring(tower.working))
+        table.insert(lines, string.format('CW %.1f/s %.1f C', tower.lastCoolantFlow or 0, tower.lastCoolantTemperature or 0))
+        table.insert(lines, string.format('OUT %.1f C HEAT %.1f MW', tower.outputTemperature or 0, tower.lastHeatRemovedMW or 0))
+    else
+        table.insert(lines, 'BASIN > ' .. tostring(tower.output))
+        table.insert(lines, 'EN ' .. tostring(tower.enabled))
+        table.insert(lines, 'WK ' .. tostring(tower.working))
+        table.insert(lines, string.format('IN %.2f/s OUT %.2f/s', tower.lastWaterReceived or 0, tower.lastWaterCooled or 0))
+        table.insert(lines, string.format('B %.1f / %.1f', tower.basinAmount or 0, tower.basinMaxAmount or 0))
+        table.insert(lines, string.format('BP %.1f / %.1f bar', tower.basinPressure or 0, tower.basinMaxPressure or 0))
+        table.insert(lines, string.format('BT %.1f C', tower.basinTemperature or 0))
+        table.insert(lines, string.format('OUT %.1f C', tower.outputTemperature or 0))
+        table.insert(lines, string.format('HEAT %.1f C-l/s', tower.lastHeatRemoved or 0))
+    end
     LUASQUARE_POWERPLANT.Debug.DrawWorldText(tower.pos, table.concat(lines, '\n'), Color(120, 220, 255))
 end
 
 function LUASQUARE_POWERPLANT.Debug.RenderGrid(grid)
+    if not LUASQUARE_POWERPLANT.Debug.ShouldRenderPos(grid.pos) then return end
     local lines = {
         'GRID ' .. tostring(grid.name),
         tostring(grid.type) .. ' EN ' .. tostring(grid.energized),
@@ -351,6 +415,7 @@ function LUASQUARE_POWERPLANT.Debug.RenderGrid(grid)
 end
 
 function LUASQUARE_POWERPLANT.Debug.RenderBreaker(breaker)
+    if not LUASQUARE_POWERPLANT.Debug.ShouldRenderPos(breaker.pos) then return end
     local lines = {
         'BRKR ' .. tostring(breaker.name),
         tostring(breaker.kind) .. ' ' .. tostring(breaker.owner or ''),
@@ -363,6 +428,7 @@ function LUASQUARE_POWERPLANT.Debug.RenderBreaker(breaker)
 end
 
 function LUASQUARE_POWERPLANT.Debug.RenderTransformer(transformer)
+    if not LUASQUARE_POWERPLANT.Debug.ShouldRenderPos(transformer.pos) then return end
     local lines = {
         'XFMR ' .. tostring(transformer.name),
         tostring(transformer.from) .. ' > ' .. tostring(transformer.to),
@@ -374,6 +440,7 @@ function LUASQUARE_POWERPLANT.Debug.RenderTransformer(transformer)
 end
 
 function LUASQUARE_POWERPLANT.Debug.RenderGenerator(generator)
+    if not LUASQUARE_POWERPLANT.Debug.ShouldRenderPos(generator.pos) then return end
     local lines = {
         'GEN ' .. tostring(generator.name),
         tostring(generator.type) .. ' > ' .. tostring(generator.grid),
@@ -391,6 +458,7 @@ function LUASQUARE_POWERPLANT.Debug.RenderGenerator(generator)
 end
 
 function LUASQUARE_POWERPLANT.Debug.RenderDieselGenerator(diesel)
+    if not LUASQUARE_POWERPLANT.Debug.ShouldRenderPos(diesel.pos) then return end
     local fuelPercent = 0
     if (diesel.fuelTankCapacity or 0) > 0 then fuelPercent = (diesel.fuelTankAmount or 0) / diesel.fuelTankCapacity * 100 end
     local lines = {

@@ -305,10 +305,16 @@ LUASQUARE_POWERGRID.RegisterTransformer('station_emergency_lighting_transformer'
 
 LUASQUARE_TURBINE.RegisterTurbine('tg1', {
     input = 'main_steam',
-    output = 'turbine_exhaust',
-    bypassOutput = 'turbine_exhaust',
+    condenser = 'main_condenser',
+    bypassCondenser = 'main_condenser',
     boiler = 'rbmk',
     cycleEfficiency = 0.32,
+    exhaustVolume = RBMK.SteamSpace,
+    exhaustMaxAmount = RBMK.MaxSteam,
+    exhaustHardMaxAmount = RBMK.HardMaxSteam,
+    exhaustTripPressure = 6,
+    exhaustTripDelay = 2.5,
+    exhaustHardMaxPressure = 15,
     condenserOutputTemperature = 80,
     bypassCondenserOutputTemperature = 95,
     maxSteamRate = 500000,
@@ -384,28 +390,32 @@ LUASQUARE_DIESELGENERATOR.RegisterDieselGenerator('edg1', {
 -- Cooling Tower
 
 LUASQUARE_COOLINGTOWER.RegisterCoolingTower('main_cooling_tower', {
-    output = 'cooling_water_cold',
+    output = 'cooling_water',
+    coolantNetwork = 'cooling_water',
     basinMaxAmount = RBMK.MaxWater,
     basinMaxPressure = 20,
     basinAmount = 30000,
     basinTemperature = 40,
     maxRate = 8000,
+    evaporationFraction = 0.001,
     enabled = true,
     outputTemperature = 20,
-    startRelay = 'cooling_tower_on',
-    stopRelay = 'cooling_tower_off',
+    workRelay = 'cooling_tower_on',
+    idleRelay = 'cooling_tower_off',
     monitorPos = 'tar_coolingtower_a'
 })
 
 LUASQUARE_CONDENSER.RegisterCondenser('main_condenser', {
-    input = 'turbine_exhaust',
     output = 'hotwell',
     ratio = 400,
     maxRate = 200000,
     enabled = true,
     outputTemperature = 55,
-    coolantNetwork = 'cooling_water_warm',
-    coolantPump = 'circulating_water_pump',
+    steamMaxAmount = RBMK.MaxSteam,
+    steamHardMaxAmount = RBMK.HardMaxSteam,
+    steamMaxPressure = 5,
+    steamVolume = RBMK.SteamSpace,
+    coolantNetwork = 'cooling_water',
     effectiveness = 0.85,
     approachTemperature = 8,
     steamLatentHeatKJPerL = 2257,
@@ -414,13 +424,28 @@ LUASQUARE_CONDENSER.RegisterCondenser('main_condenser', {
 })
 
 LUASQUARE_DEAERATOR.RegisterDeaerator('main_deaerator', {
-    tankNetwork = 'deaerator',
-    steamInput = 'main_steam',
+    steamSource = 'tg1',
     enabled = true,
+    amount = RBMK.MaxWater * (2 / 3),
+    maxAmount = RBMK.MaxWater,
+    hardMaxAmount = RBMK.MaxWater * 1.05,
+    maxPressure = 12,
+    hardMaxPressure = 20,
+    pressureFactor = 1,
+    steamSpace = RBMK.SteamSpace * 0.25,
+    steamMaxAmount = RBMK.SteamSpace * 1.5,
+    temperature = 85,
+    steamTemperature = 100,
     targetTemperature = 105,
-    maxSteamRate = 2000,
+    targetPressure = 6,
+    highTemperature = 120,
+    highPressure = 10,
+    autoRegulator = false,
+    maxSteamRate = 50000,
+    maxReliefRate = 50000,
+    floodedReliefFactor = 0.2,
     steamToWaterRatio = 1600,
-    monitorPos = RBMK.WorldOrigin + Vector(0, 96, 96 + MAPDEF_monitorZoffset)
+    monitorPos = RBMK.WorldOrigin + Vector(0, 96, 64 + MAPDEF_monitorZoffset)
 })
 
 -- Fluid Network
@@ -439,33 +464,6 @@ LUASQUARE_FLUID.RegisterNetwork('main_steam', {
 })
 RBMK.SetSteamNetwork('main_steam')
 
-LUASQUARE_FLUID.RegisterNetwork('turbine_exhaust', {
-    type = LUASQUARE_FLUID.TYPE_STEAMLINE,
-    fluidType = 'steam',
-    amount = 0,
-    volume = RBMK.SteamSpace,
-    maxAmount = RBMK.MaxSteam,
-    hardMaxAmount = RBMK.HardMaxSteam,
-    maxPressure = 20,
-    temperature = 100,
-    thermalLossRate = 0.005,
-    monitorPos = 'tar_turbine_a',
-    monitorOffset = Vector(0, 0, 96)
-})
-
-LUASQUARE_FLUID.RegisterNetwork('deaerator', {
-    type = LUASQUARE_FLUID.TYPE_STEAMLINE,
-    fluidType = 'water',
-    amount = 100000,
-    maxAmount = RBMK.MaxWater,
-    hardMaxAmount = RBMK.MaxWater,
-    maxPressure = 150,
-    temperature = 85,
-    thermalLossRate = 0.005,
-    serviceRate = 0,
-    monitorPos = RBMK.WorldOrigin + Vector(0, 96, 96 + MAPDEF_monitorZoffset)
-})
-
 LUASQUARE_FLUID.RegisterNetwork('hotwell', {
     type = LUASQUARE_FLUID.TYPE_STEAMLINE,
     fluidType = 'water',
@@ -479,32 +477,21 @@ LUASQUARE_FLUID.RegisterNetwork('hotwell', {
     monitorPos = 'tar_hotwell'
 })
 
-LUASQUARE_FLUID.RegisterNetwork('cooling_water_cold', {
-    type = LUASQUARE_FLUID.TYPE_STEAMLINE,
-    fluidType = 'water',
+LUASQUARE_FLUID.RegisterNetwork('cooling_water', {
+    type = LUASQUARE_FLUID.TYPE_COOLANT,
+    fluidType = 'coolant',
+    coolingTower = 'main_cooling_tower',
     amount = 60000,
-    maxAmount = RBMK.MaxWater,
-    hardMaxAmount = RBMK.MaxWater,
+    maxAmount = 60000,
+    hardMaxAmount = 70000,
     maxPressure = 20,
-    temperature = 20,
+    temperature = 35,
+    coolantCoolingDelta = 1,
+    coolantHighTemperature = 60,
     thermalLossRate = 0.001,
     serviceRate = 0,
     monitorPos = 'tar_coolingtower_a',
     monitorOffset = Vector(0, 0, 64)
-})
-
-LUASQUARE_FLUID.RegisterNetwork('cooling_water_warm', {
-    type = LUASQUARE_FLUID.TYPE_STEAMLINE,
-    fluidType = 'water',
-    amount = 20000,
-    maxAmount = RBMK.MaxWater,
-    hardMaxAmount = RBMK.MaxWater,
-    maxPressure = 20,
-    temperature = 35,
-    thermalLossRate = 0.001,
-    serviceRate = 0,
-    monitorPos = 'tar_coolingtower_a',
-    monitorOffset = Vector(0, 0, 128)
 })
 
 LUASQUARE_FLUID.RegisterNetwork('drain_tank', {
@@ -554,7 +541,7 @@ LUASQUARE_VALVE.RegisterValve('hotwell_drain_valve', {
 -- Pumps
 
 LUASQUARE_PUMP.RegisterPump('feedwater_pump_a', {
-    source = 'deaerator',
+    source = 'main_deaerator',
     target = 'rbmk',
     rate = 500,
     headPressure = 120,
@@ -578,7 +565,7 @@ LUASQUARE_PUMP.RegisterPump('feedwater_pump_a', {
 })
 
 LUASQUARE_PUMP.RegisterPump('feedwater_pump_b', {
-    source = 'deaerator',
+    source = 'main_deaerator',
     target = 'rbmk',
     rate = 500,
     headPressure = 120,
@@ -603,7 +590,7 @@ LUASQUARE_PUMP.RegisterPump('feedwater_pump_b', {
 
 LUASQUARE_PUMP.RegisterPump('condensate_pump_a1', {
     source = 'hotwell',
-    target = 'deaerator',
+    target = 'main_deaerator',
     rate = 1000,
     headPressure = 60,
     regulate = true,
@@ -624,27 +611,33 @@ LUASQUARE_PUMP.RegisterPump('condensate_pump_a1', {
     breakerMonitorPos = 'tar_condpump_a1_breaker'
 })
 
-LUASQUARE_PUMP.RegisterPump('circulating_water_pump', {
-    source = 'cooling_water_cold',
-    target = 'cooling_water_warm',
-    rate = 8000,
-    headPressure = 25,
-    minFlowFraction = 0.25,
+LUASQUARE_PUMP.RegisterPump('hotwell_makeup_pump', {
+    source = 'service',
+    target = 'hotwell',
+    rate = 250,
+    headPressure = 30,
+    regulate = true,
+    regulationMode = 'fill',
+    regulationSensor = 'hotwell',
+    regulationTarget = MAPDEF_hotwellTargetPercent,
+    regulationDeadband = 2,
+    regulationGain = 0.08,
+    regulationMinOutput = 0.1,
     speedLevels = {0, 0.25, 0.5, 1},
     speedLevel = 4,
     enabled = true,
     grid = 'station_grid',
-    peakMW = 8,
-    breaker = 'circulating_water_pump_breaker',
+    peakMW = 2,
+    breaker = 'hotwell_makeup_pump_breaker',
     breakerClosed = true,
-    monitorPos = 'tar_coolingtower_a',
+    monitorPos = 'tar_hotwell',
     monitorOffset = Vector(0, 0, -64),
-    breakerMonitorPos = 'tar_coolingtower_a',
+    breakerMonitorPos = 'tar_hotwell',
     breakerMonitorOffset = Vector(0, 0, -96)
 })
 
-LUASQUARE_PUMP.RegisterPump('cooling_tower_return_pump', {
-    source = 'cooling_water_warm',
+LUASQUARE_PUMP.RegisterPump('circulating_water_pump_a1', {
+    source = 'cooling_water',
     target = 'main_cooling_tower',
     rate = 8000,
     headPressure = 25,
@@ -654,7 +647,32 @@ LUASQUARE_PUMP.RegisterPump('cooling_tower_return_pump', {
     enabled = true,
     grid = 'station_grid',
     peakMW = 8,
-    breaker = 'cooling_tower_return_pump_breaker',
+    breaker = 'circulating_water_pump_a1_breaker',
+    breakerClosed = true,
+    monitorPos = 'tar_coolingtower_a',
+    monitorOffset = Vector(0, 0, -64),
+    breakerMonitorPos = 'tar_coolingtower_a',
+    breakerMonitorOffset = Vector(0, 0, -96)
+})
+
+LUASQUARE_PUMP.RegisterPump('cooling_water_makeup_pump', {
+    source = 'service',
+    target = 'cooling_water',
+    rate = 500,
+    headPressure = 25,
+    regulate = true,
+    regulationMode = 'fill',
+    regulationSensor = 'cooling_water',
+    regulationTarget = 90,
+    regulationDeadband = 2,
+    regulationGain = 0.08,
+    regulationMinOutput = 0.1,
+    speedLevels = {0, 0.25, 0.5, 1},
+    speedLevel = 4,
+    enabled = true,
+    grid = 'station_grid',
+    peakMW = 2,
+    breaker = 'cooling_water_makeup_pump_breaker',
     breakerClosed = true,
     monitorPos = 'tar_coolingtower_a',
     monitorOffset = Vector(0, 0, -128),
@@ -781,6 +799,17 @@ LUASQUARE_GAUGE.BindGauge('gauge_steamlevel', function()
     return (RBMK.Steam / RBMK.MaxSteam) * 100 or 0
 end)
 
+LUASQUARE_GAUGE.RegisterGauge('gauge_steamline_pressure', {
+    entity = 'gauge_steamline_pressure',
+    min = 0,
+    max = 1,
+    speed = 18
+})
+LUASQUARE_GAUGE.BindGauge('gauge_steamline_pressure', function()
+    local steamline = LUASQUARE_FLUID.GetNetwork('main_steam')
+    return (steamline.pressure / steamline.maxPressure)
+end)
+
 LUASQUARE_GAUGE.RegisterGauge('gauge_rpvpressure', {
     entity = 'gauge_rpvpressure',
     min = 0,
@@ -855,8 +884,17 @@ local function MAPDEF_panelBase(title, pos, width, height, angle)
         ang = displayAngle,
         offset = data.offset,
         angleOffset = data.angleOffset or data.angOffset,
-        anchorX = data.anchorX or 0.5,
-        anchorY = data.anchorY or 0.5,
+        anchorX = data.anchorX,
+        anchorY = data.anchorY,
+        targetOrigin = data.targetOrigin,
+        anchor = data.anchor,
+        anchorMode = data.anchorMode,
+        origin = data.origin,
+        screenOrigin = data.screenOrigin,
+        centeredOnTarget = data.centeredOnTarget,
+        centerOnTarget = data.centerOnTarget,
+        targetCentered = data.targetCentered,
+        centered = data.centered,
         scale = data.scale or MAPDEF_panelScale,
         width = displayWidth,
         height = displayHeight,
@@ -913,10 +951,12 @@ local function MAPDEF_coolingTowerColumn(label, towerName)
     local state, color = MAPDEF_powerState(tower.enabled)
     local basinPercent = 0
     if tower.basinMaxAmount and tower.basinMaxAmount > 0 then basinPercent = math.Clamp((tower.basinAmount or 0) / tower.basinMaxAmount, 0, 1) * 100 end
+    local sub = string.format('I%.0f O%.0f %.0f%% %.0fC', tower.lastWaterReceived or 0, tower.lastWaterCooled or 0, basinPercent, tower.basinTemperature or 20)
+    if tower.coolantNetwork then sub = string.format('F%.0f %.0fC %.1fMW', tower.lastCoolantFlow or 0, tower.lastCoolantTemperature or 0, tower.lastHeatRemovedMW or 0) end
     return {
         label = label,
         value = state,
-        sub = string.format('I%.0f O%.0f %.0f%% %.0fC', tower.lastWaterReceived or 0, tower.lastWaterCooled or 0, basinPercent, tower.basinTemperature or 20),
+        sub = sub,
         color = Color(205, 235, 240),
         valueColor = color
     }
@@ -941,7 +981,7 @@ local function MAPDEF_condenserColumn(label, condenserName)
     return {
         label = label,
         value = state,
-        sub = string.format('S%.0f W%.1f %.0fMW', condenser.lastSteamUsed or 0, condenser.lastWaterMade or 0, condenser.lastHeatRejectedMW or 0),
+        sub = string.format('L%.0f S%.0f W%.1f %.0fMW', condenser.steamAmount or 0, condenser.lastSteamUsed or 0, condenser.lastWaterMade or 0, condenser.lastHeatRejectedMW or 0),
         color = Color(205, 235, 240),
         valueColor = color
     }
@@ -950,10 +990,19 @@ end
 local function MAPDEF_deaeratorColumn(label, deaeratorName)
     local deaerator = LUASQUARE_DEAERATOR.GetDeaerator(deaeratorName) or {}
     local state, color = MAPDEF_powerState(deaerator.enabled)
+    if deaerator.ruptured then
+        state = 'RUPT'
+        color = Color(255, 95, 95)
+    elseif deaerator.flooded then
+        state = 'FLOOD'
+        color = Color(255, 210, 80)
+    end
+    local level = 0
+    if (deaerator.maxAmount or 0) > 0 then level = math.Clamp((deaerator.amount or 0) / deaerator.maxAmount, 0, 1) * 100 end
     return {
         label = label,
         value = state,
-        sub = string.format('%.0fC B%.0f/s', deaerator.tankTemperature or 0, deaerator.lastSteamUsed or 0),
+        sub = string.format('%.0f%% %.1fbar V%.0f', level, deaerator.pressure or 0, deaerator.steamAmount or 0),
         color = Color(205, 235, 240),
         valueColor = color
     }
@@ -1045,12 +1094,14 @@ end
 -- 3D2D PANEL DISPLAYS REGISTER
 -- =========================================
 
-LUASQUARE_3D2D.RegisterDisplay('aux_flow_status_panel', MAPDEF_panelBase(
-    'AUX FLOW STATUS',
-    Vector(91, -535, 598), 44, 22,
-    Angle(0, -90, 90)
+LUASQUARE_3D2D.RegisterDisplay('fw_flow_panel', MAPDEF_panelBase({
+    title = 'FEEDWATER',
+    target = 'tar_display_feedwater',
+    width = 44,
+    height = 33
+}
 ))
-LUASQUARE_3D2D.BindDisplay('aux_flow_status_panel', function()
+LUASQUARE_3D2D.BindDisplay('fw_flow_panel', function()
     return {
         {
             type = 'columns',
@@ -1068,8 +1119,8 @@ end)
 LUASQUARE_3D2D.RegisterDisplay('condensate_pump_status_panel', MAPDEF_panelBase({
     title = 'COOLING LOOP',
     target = 'tar_display_coolingloop',
-    width = 58,
-    height = 34
+    width = 54,
+    height = 33
 }))
 LUASQUARE_3D2D.BindDisplay('condensate_pump_status_panel', function()
     return {
@@ -1078,9 +1129,9 @@ LUASQUARE_3D2D.BindDisplay('condensate_pump_status_panel', function()
             height = 64,
             columns = {
                 MAPDEF_pumpColumn('COND PUMP A1', 'condensate_pump_a1'),
+                MAPDEF_pumpColumn('HW MAKEUP', 'hotwell_makeup_pump'),
                 MAPDEF_deaeratorColumn('DEAERATOR', 'main_deaerator'),
-                MAPDEF_networkColumn('HOTWELL', 'hotwell'),
-                MAPDEF_networkColumn('FEED TANK', 'deaerator')
+                MAPDEF_networkColumn('HOTWELL', 'hotwell')
             }
         },
         {
@@ -1088,29 +1139,57 @@ LUASQUARE_3D2D.BindDisplay('condensate_pump_status_panel', function()
             height = 64,
             columns = {
                 MAPDEF_condenserColumn('CONDENSER', 'main_condenser'),
-                MAPDEF_pumpColumn('CW PUMP', 'circulating_water_pump'),
-                MAPDEF_pumpColumn('CT RETURN', 'cooling_tower_return_pump'),
-                MAPDEF_coolingTowerColumn('COOLING TWR A', 'main_cooling_tower')
+                MAPDEF_pumpColumn('CW PUMP', 'circulating_water_pump_a1'),
+                MAPDEF_pumpColumn('CW MAKEUP', 'cooling_water_makeup_pump'),
+                MAPDEF_coolingTowerColumn('COOLING TWR A', 'main_cooling_tower'),
+                MAPDEF_networkColumn('CW LOOP', 'cooling_water')
             }
         },
         {
             type = 'columns',
             height = 64,
             columns = {
-                MAPDEF_networkColumn('CW COLD', 'cooling_water_cold'),
-                MAPDEF_networkColumn('CW WARM', 'cooling_water_warm'),
-                MAPDEF_networkColumn('EXHAUST', 'turbine_exhaust'),
                 MAPDEF_valveColumn('HOTWELL DRN', 'hotwell_drain_valve')
             }
         }
     }
 end)
 
-LUASQUARE_3D2D.RegisterDisplay('rpv_status_panel', MAPDEF_panelBase(
-    'RPV STATUS',
-    Vector(91, -461, 598), 24, 22,
-    Angle(0, -90, 90)
-))
+LUASQUARE_3D2D.RegisterDisplay('deaerator_status_panel', MAPDEF_panelBase({
+    title = 'DEAERATOR',
+    target = 'tar_display_deaerator',
+    width = 44,
+    height = 33
+}))
+LUASQUARE_3D2D.BindDisplay('deaerator_status_panel', function()
+    local deaerator = LUASQUARE_DEAERATOR.GetDeaerator('main_deaerator') or {}
+    local level = 0
+    if (deaerator.maxAmount or 0) > 0 then level = math.Clamp((deaerator.amount or 0) / deaerator.maxAmount, 0, 1) end
+    local pressureFraction = 0
+    if (deaerator.hardMaxPressure or 0) > 0 then pressureFraction = math.Clamp((deaerator.pressure or 0) / deaerator.hardMaxPressure, 0, 1) end
+    local temperatureFraction = math.Clamp(((deaerator.temperature or 20) - 20) / math.max((deaerator.highTemperature or 120) - 20, 1), 0, 1)
+    return {
+        { type = 'value', label = 'Mode', value = deaerator.autoRegulator and 'AUTO' or 'MAN' },
+        { type = 'bar', label = 'Level', fraction = level, height = 5, warn = deaerator.flooded },
+        { type = 'value', label = 'Pressure', value = deaerator.pressure or 0, decimals = 2, unit = 'bar', warn = (deaerator.pressure or 0) >= (deaerator.highPressure or 10) },
+        { type = 'bar', fraction = pressureFraction, height = 5 },
+        { type = 'value', label = 'Vapor Space', value = deaerator.steamAmount or 0, decimals = 0, unit = 'LPS' },
+        { type = 'value', label = 'Temperature', value = deaerator.temperature or 0, decimals = 0, unit = 'C', warn = (deaerator.temperature or 0) >= (deaerator.highTemperature or 120) },
+        { type = 'bar', fraction = temperatureFraction, height = 5 },
+        { type = 'value', label = 'Steam Valve', value = (deaerator.steamValve or 0) * 100, decimals = 0, unit = '%' },
+        { type = 'value', label = 'Vapor Relief', value = (deaerator.reliefValve or 0) * 100, decimals = 0, unit = '%' },
+        { type = 'value', label = 'LPS Draw', value = deaerator.lastSteamUsed or 0, decimals = 0, unit = '/s' }
+    }
+end)
+
+LUASQUARE_3D2D.RegisterDisplay('rpv_status_panel', MAPDEF_panelBase({
+    title = 'RPV STATUS',
+    pos = Vector(91, -461, 598),
+    width = 24,
+    height = 22,
+    angle = Angle(0, -90, 90),
+    centered = true
+}))
 LUASQUARE_3D2D.BindDisplay('rpv_status_panel', function()
     local waterFraction = 0
     if RBMK.MaxWater and RBMK.MaxWater > 0 then waterFraction = math.Clamp((RBMK.Water or 0) / RBMK.MaxWater, 0, 1) end
@@ -1146,6 +1225,9 @@ LUASQUARE_3D2D.BindDisplay('tg1_status_panel', function()
         { type = 'bar', fraction = data.valve, height = 5 },
         { type = 'value', label = 'Bypass Valve', value = data.bypassValve * 100 or 0, decimals = 1 },
         { type = 'bar', fraction = data.bypassValve, height = 5 },
+        { type = 'value', label = 'Exhaust Pressure', value = data.exhaustPressure or 0, decimals = 2, unit = 'bar', warn = (data.exhaustPressure or 0) >= (data.exhaustTripPressure or 0) },
+        { type = 'bar', fraction = (data.exhaustPressure or 0) / math.max(data.exhaustHardMaxPressure or 1, 0.0001), height = 5 },
+        { type = 'value', label = 'LPS To Deaerator', value = data.lastExhaustExtracted or 0, decimals = 0, unit = '/s' },
         { type = 'value', label = 'Vibration', value = (data.vibration / data.tripVibration) * 100 or 0, decimals = 2, unit = '%'},
         { type = 'bar', fraction = data.vibration / data.tripVibration, height = 5 },
         { type = 'value', label = 'Generator Output', value = generator.lastAcceptedMW or data.lastMW or 0, decimals = 2, unit = 'MW', warn = (generator.lastAcceptedMW or 0) < 0 },
@@ -1202,7 +1284,7 @@ LUASQUARE_3D2D.BindDisplay('electrical_status_panel', function()
                 MAPDEF_dieselColumn('EDG1', 'edg1'),
                 {
                     label = 'PUMP LOAD',
-                    value = string.format('%.1fMW', MAPDEF_pumpLoadMW('feedwater_pump_a', 'feedwater_pump_b', 'condensate_pump_a1', 'circulating_water_pump', 'cooling_tower_return_pump')),
+                    value = string.format('%.1fMW', MAPDEF_pumpLoadMW('feedwater_pump_a', 'feedwater_pump_b', 'condensate_pump_a1', 'circulating_water_pump_a1')),
                     sub = 'FW + COND + CW',
                     color = Color(205, 235, 240),
                     valueColor = Color(110, 255, 150)
@@ -1225,6 +1307,7 @@ end
 local function MAPDEF_setHotwellTarget(percent)
     MAPDEF_hotwellTargetPercent = math.Clamp(tonumber(percent) or 0, 0, 100)
     LUASQUARE_PUMP.SetRegulationTarget('condensate_pump_a1', MAPDEF_hotwellTargetPercent)
+    LUASQUARE_PUMP.SetRegulationTarget('hotwell_makeup_pump', MAPDEF_hotwellTargetPercent)
 end
 
 -- Feedwater pump regulator target keypad, value is RPV water level percent.
@@ -1403,7 +1486,122 @@ LUASQUARE_ANNUNCIATOR.RegisterAlarm('station_grid_overload', {
 
 LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('station_grid_panel', {
     indicators = {
-        station_grid_overload = 'ann_station_grid_overload'
+        station_grid_overload = 'ann_station_grid_overload',
+    }
+})
+
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('cooling_water_high_temperature', {
+    label = 'COOLING WATER HIGH TEMP',
+    soundWav = 'bms_objects/alarms/alarm6.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 105,
+    getter = function()
+        local coolant = LUASQUARE_FLUID.GetNetwork('cooling_water')
+        if not coolant then return false end
+
+        local threshold = coolant.coolantHighTemperature or 60
+        if (coolant.temperature or 0) >= threshold then return true, string.format('%.1f / %.1f C', coolant.temperature or 0, threshold) end
+        return false
+    end
+})
+
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('cooling_water_low_level', {
+    label = 'COOLING WATER LOW LEVEL',
+    soundWav = 'bms_objects/alarms/alarm6.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 95,
+    getter = function()
+        local coolant = LUASQUARE_FLUID.GetNetwork('cooling_water')
+        if not coolant then return false end
+        local level = 0
+        if (coolant.maxAmount or 0) > 0 then level = (coolant.amount or 0) / coolant.maxAmount * 100 end
+        if level <= 70 then return true, string.format('%.0f%%', level) end
+        return false
+    end
+})
+
+LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('coolant_panel', {
+    indicators = {
+        cooling_water_high_temperature = 'ann_cooling_water_high_temperature',
+        cooling_water_low_level = 'ann_cooling_water_low_level',
+    }
+})
+
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('deaerator_high_pressure', {
+    label = 'DEAERATOR HIGH PRESS',
+    soundWav = 'bms_objects/alarms/alarm6.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 115,
+    getter = function()
+        local deaerator = LUASQUARE_DEAERATOR.GetDeaerator('main_deaerator')
+        if not deaerator then return false end
+        local threshold = deaerator.highPressure or deaerator.maxPressure or 10
+        if (deaerator.pressure or 0) >= threshold then return true, string.format('%.1f / %.1f bar', deaerator.pressure or 0, threshold) end
+        return false
+    end
+})
+
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('deaerator_high_temperature', {
+    label = 'DEAERATOR HIGH TEMP',
+    soundWav = 'bms_objects/alarms/alarm6.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 105,
+    getter = function()
+        local deaerator = LUASQUARE_DEAERATOR.GetDeaerator('main_deaerator')
+        if not deaerator then return false end
+        local threshold = deaerator.highTemperature or 120
+        if (deaerator.temperature or 0) >= threshold then return true, string.format('%.1f / %.1f C', deaerator.temperature or 0, threshold) end
+        return false
+    end
+})
+
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('deaerator_flooded', {
+    label = 'DEAERATOR FLOODED',
+    soundWav = 'bms_objects/alarms/alarm6.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 90,
+    getter = function()
+        local deaerator = LUASQUARE_DEAERATOR.GetDeaerator('main_deaerator')
+        if not deaerator then return false end
+        if deaerator.flooded then return true, string.format('%.0f%%', LUASQUARE_DEAERATOR.GetLevelPercent('main_deaerator')) end
+        return false
+    end
+})
+
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('deaerator_water_low', {
+    label = 'DEAERATOR WATER LOW',
+    soundWav = 'bms_objects/alarms/alarm1.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 90,
+    getter = function()
+        return LUASQUARE_DEAERATOR.GetLevelPercent('main_deaerator') < 10
+    end
+})
+
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('deaerator_water_high', {
+    label = 'DEAERATOR WATER HIGH',
+    soundWav = 'bms_objects/alarms/alarm1.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 90,
+    getter = function()
+        return LUASQUARE_DEAERATOR.GetLevelPercent('main_deaerator') > 80
+    end
+})
+
+LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('deaerator_panel', {
+    indicators = {
+        deaerator_high_pressure = 'ann_deaerator_high_pressure',
+        deaerator_high_temperature = 'ann_deaerator_high_temperature',
+        deaerator_flooded = 'ann_deaerator_flooded',
+        deaerator_water_low = 'ann_deaerator_water_low',
+        deaerator_water_high = 'ann_deaerator_water_high',
     }
 })
 

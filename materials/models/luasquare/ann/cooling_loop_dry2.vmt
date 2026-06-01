@@ -1,0 +1,5 @@
+UnlitGeneric
+{
+    "$basetexture" "models/luasquare/ann/cooling_loop_dry"
+    "$frame" "1"
+}

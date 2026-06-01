@@ -23,6 +23,8 @@ function LUASQUARE_TURBINE.RegisterTurbine(name, data)
         input = data.input,
         output = data.output,
         bypassOutput = data.bypassOutput or data.output,
+        condenser = data.condenser,
+        bypassCondenser = data.bypassCondenser or data.condenser,
         condenserOutput = data.condenserOutput or data.condensateOutput,
         bypassCondenserOutput = data.bypassCondenserOutput or data.condenserOutput or data.condensateOutput,
         condenserOutputTemperature = tonumber(data.condenserOutputTemperature) or 80,
@@ -45,6 +47,16 @@ function LUASQUARE_TURBINE.RegisterTurbine(name, data)
         steamRatio = tonumber(data.steamRatio) or 1600,
         exhaustRatio = tonumber(data.exhaustRatio) or 400,
         condenserRatio = tonumber(data.condenserRatio) or tonumber(data.exhaustRatio) or 400,
+        exhaustAmount = math.max(tonumber(data.exhaustAmount) or 0, 0),
+        exhaustVolume = math.max(tonumber(data.exhaustVolume) or 10000, 0.0001),
+        exhaustMaxAmount = math.max(tonumber(data.exhaustMaxAmount) or 10000, 0.0001),
+        exhaustHardMaxAmount = math.max(tonumber(data.exhaustHardMaxAmount) or tonumber(data.exhaustMaxAmount) or 20000, tonumber(data.exhaustMaxAmount) or 10000, 0.0001),
+        exhaustPressure = 0,
+        exhaustTemperature = tonumber(data.exhaustTemperature) or 100,
+        exhaustTripPressure = tonumber(data.exhaustTripPressure) or 5,
+        exhaustTripDelay = tonumber(data.exhaustTripDelay) or 5,
+        exhaustTripTimer = 0,
+        exhaustHardMaxPressure = tonumber(data.exhaustHardMaxPressure) or 12,
         designRPM = tonumber(data.designRPM) or 1800,
         gridRPM = tonumber(data.gridRPM) or 1800,
         rpm = tonumber(data.rpm) or 0,
@@ -107,6 +119,9 @@ function LUASQUARE_TURBINE.RegisterTurbine(name, data)
         lastInletSteam = 0,
         lastInletPressureScale = 0,
         lastExhaustMade = 0,
+        lastExhaustStored = 0,
+        lastCondenserAccepted = 0,
+        lastExhaustExtracted = 0,
         lastCondensateMade = 0,
         lastBypassCondensateMade = 0,
         lastCondensateTemperature = tonumber(data.condenserOutputTemperature) or 80,
@@ -124,6 +139,7 @@ function LUASQUARE_TURBINE.RegisterTurbine(name, data)
         monitorTarget = data.monitorTarget or data.monitorEntity or data.monitorName,
         monitorOffset = data.monitorOffset or Vector(0, 0, 0)
     }
+    LUASQUARE_TURBINE.UpdateExhaustPressure(name)
 end
 
 function LUASQUARE_TURBINE.GetTurbine(name)
@@ -482,6 +498,79 @@ function LUASQUARE_TURBINE.GetNetworkPressure(network)
     return network.pressure or 0
 end
 
+function LUASQUARE_TURBINE.UpdateExhaustPressure(nameOrTurbine)
+    local turbine = type(nameOrTurbine) == 'table' and nameOrTurbine or LUASQUARE_TURBINE.GetTurbine(nameOrTurbine)
+    if not turbine then return 0 end
+
+    local referenceK = (LUASQUARE_FLUID and LUASQUARE_FLUID.ReferenceSteamTemperature or 100) + 273.15
+    local temperatureK = math.max((turbine.exhaustTemperature or 100) + 273.15, 1)
+    turbine.exhaustPressure = math.max(turbine.exhaustAmount or 0, 0) / math.max(turbine.exhaustVolume or 1, 0.0001) * (temperatureK / referenceK)
+    return turbine.exhaustPressure
+end
+
+function LUASQUARE_TURBINE.GetInternalExhaustFreeSteam(turbine)
+    local free = math.max((turbine.exhaustHardMaxAmount or turbine.exhaustMaxAmount or 0) - (turbine.exhaustAmount or 0), 0)
+    return free * math.max(turbine.steamRatio or 1, 0.0001) / math.max(turbine.exhaustRatio or 1, 0.0001)
+end
+
+function LUASQUARE_TURBINE.AddInternalExhaust(turbine, amount, temperature)
+    amount = math.max(tonumber(amount) or 0, 0)
+    local free = math.max((turbine.exhaustHardMaxAmount or turbine.exhaustMaxAmount or 0) - (turbine.exhaustAmount or 0), 0)
+    local moved = math.min(amount, free)
+    if moved <= 0 then return 0 end
+
+    if LUASQUARE_FLUID and LUASQUARE_FLUID.MixTemperature then
+        turbine.exhaustTemperature = LUASQUARE_FLUID.MixTemperature(turbine.exhaustAmount or 0, turbine.exhaustTemperature or 100, moved, temperature or turbine.exhaustTemperature)
+    end
+    turbine.exhaustAmount = (turbine.exhaustAmount or 0) + moved
+    turbine.lastExhaustStored = (turbine.lastExhaustStored or 0) + moved
+    LUASQUARE_TURBINE.UpdateExhaustPressure(turbine)
+    return moved
+end
+
+function LUASQUARE_TURBINE.PushExhaustToCondenser(turbine, condenserName)
+    if not condenserName or not LUASQUARE_CONDENSER then return 0 end
+    local amount = math.max(turbine.exhaustAmount or 0, 0)
+    if amount <= 0 then return 0 end
+
+    local accepted = LUASQUARE_CONDENSER.AcceptSteam(condenserName, amount, turbine.exhaustTemperature)
+    accepted = math.min(accepted or 0, amount)
+    if accepted <= 0 then return 0 end
+    turbine.exhaustAmount = math.max((turbine.exhaustAmount or 0) - accepted, 0)
+    turbine.lastCondenserAccepted = (turbine.lastCondenserAccepted or 0) + accepted
+    LUASQUARE_TURBINE.UpdateExhaustPressure(turbine)
+    return accepted
+end
+
+function LUASQUARE_TURBINE.TakeExhaustSteam(nameOrTurbine, amount)
+    local turbine = type(nameOrTurbine) == 'table' and nameOrTurbine or LUASQUARE_TURBINE.GetTurbine(nameOrTurbine)
+    if not turbine then return 0, 100 end
+
+    amount = math.max(tonumber(amount) or 0, 0)
+    local removed = math.min(amount, turbine.exhaustAmount or 0)
+    if removed <= 0 then return 0, turbine.exhaustTemperature or 100 end
+
+    turbine.exhaustAmount = math.max((turbine.exhaustAmount or 0) - removed, 0)
+    turbine.lastExhaustExtracted = (turbine.lastExhaustExtracted or 0) + removed
+    LUASQUARE_TURBINE.UpdateExhaustPressure(turbine)
+    return removed, turbine.exhaustTemperature or 100
+end
+
+function LUASQUARE_TURBINE.OfferExhaustToDeaerators(turbine, dt)
+    if not LUASQUARE_DEAERATOR or not LUASQUARE_DEAERATOR.PullFromTurbineExhaust then return 0 end
+    return LUASQUARE_DEAERATOR.PullFromTurbineExhaust(turbine.name, turbine, dt) or 0
+end
+
+function LUASQUARE_TURBINE.PushStoredExhaust(turbine, dt)
+    local accepted = 0
+    LUASQUARE_TURBINE.OfferExhaustToDeaerators(turbine, dt or LUASQUARE_TURBINE.TickInterval)
+    accepted = accepted + LUASQUARE_TURBINE.PushExhaustToCondenser(turbine, turbine.condenser)
+    if turbine.bypassCondenser and turbine.bypassCondenser ~= turbine.condenser then
+        accepted = accepted + LUASQUARE_TURBINE.PushExhaustToCondenser(turbine, turbine.bypassCondenser)
+    end
+    return accepted
+end
+
 function LUASQUARE_TURBINE.MoveSteam(inputName, outputName, amount, exhaustRatio, steamRatio)
     if not LUASQUARE_FLUID or amount <= 0 then return 0, 0 end
     local input = LUASQUARE_FLUID.GetNetwork(inputName)
@@ -543,6 +632,25 @@ function LUASQUARE_TURBINE.CondenseSteamToWater(inputName, outputName, amount, w
     return removed, waterMade
 end
 
+function LUASQUARE_TURBINE.MoveSteamToInternalExhaust(turbine, amount, input, condenserName)
+    if not LUASQUARE_FLUID or amount <= 0 then return 0, 0, 0 end
+    local removed = LUASQUARE_FLUID.RemoveFluid(turbine.input, amount)
+    local exhaustMade = removed * math.max(turbine.exhaustRatio, 0) / math.max(turbine.steamRatio, 0.0001)
+    local stored = LUASQUARE_TURBINE.AddInternalExhaust(turbine, exhaustMade, input and input.temperature or turbine.exhaustTemperature)
+    if stored < exhaustMade then
+        local returned = (exhaustMade - stored) * math.max(turbine.steamRatio, 0.0001) / math.max(turbine.exhaustRatio, 0.0001)
+        LUASQUARE_FLUID.AddFluid(turbine.input, returned, input and input.temperature or turbine.exhaustTemperature)
+        removed = math.max(removed - returned, 0)
+        exhaustMade = stored
+    end
+
+    local oldCondenser = turbine.condenser
+    turbine.condenser = condenserName or turbine.condenser
+    local accepted = LUASQUARE_TURBINE.PushStoredExhaust(turbine, LUASQUARE_TURBINE.TickInterval)
+    turbine.condenser = oldCondenser
+    return removed, exhaustMade, accepted
+end
+
 function LUASQUARE_TURBINE.GetFlowRequest(turbine, input, output, valve, maxSteamRate, dt)
     if valve <= 0 or maxSteamRate <= 0 then return 0 end
     local inputPressure = LUASQUARE_TURBINE.GetNetworkPressure(input)
@@ -576,6 +684,9 @@ function LUASQUARE_TURBINE.ResetFlowTelemetry(turbine)
     turbine.lastInletSteam = 0
     turbine.lastInletPressureScale = 0
     turbine.lastExhaustMade = 0
+    turbine.lastExhaustStored = 0
+    turbine.lastCondenserAccepted = 0
+    turbine.lastExhaustExtracted = 0
     turbine.lastCondensateMade = 0
     turbine.lastBypassCondensateMade = 0
     turbine.lastFlowLimited = false
@@ -601,8 +712,10 @@ end
 function LUASQUARE_TURBINE.GetSharedFlowRequests(turbine, input, turbineOutput, bypassOutput, dt)
     local turbineWeight = 0
     local bypassWeight = 0
-    if turbine.valve > 0 and turbineOutput then turbineWeight = turbine.valve * math.max(turbine.maxSteamRate or 0, 0) end
-    if turbine.bypassValve > 0 and bypassOutput then bypassWeight = turbine.bypassValve * math.max(turbine.bypassMaxSteamRate or 0, 0) end
+    local turbineAvailable = turbineOutput or turbine.condenser
+    local bypassAvailable = bypassOutput or turbine.bypassCondenser
+    if turbine.valve > 0 and turbineAvailable then turbineWeight = turbine.valve * math.max(turbine.maxSteamRate or 0, 0) end
+    if turbine.bypassValve > 0 and bypassAvailable then bypassWeight = turbine.bypassValve * math.max(turbine.bypassMaxSteamRate or 0, 0) end
 
     local totalWeight = turbineWeight + bypassWeight
     if totalWeight <= 0 then return 0, 0, 0, 0 end
@@ -616,8 +729,16 @@ function LUASQUARE_TURBINE.GetSharedFlowRequests(turbine, input, turbineOutput, 
     local turbineRequest = requested * (turbineWeight / totalWeight)
     local bypassRequest = requested * (bypassWeight / totalWeight)
 
-    if turbineOutput then turbineRequest = math.min(turbineRequest, LUASQUARE_TURBINE.GetOutputFreeSteam(turbine, turbineOutput, 'turbine')) end
-    if bypassOutput then bypassRequest = math.min(bypassRequest, LUASQUARE_TURBINE.GetOutputFreeSteam(turbine, bypassOutput, 'bypass')) end
+    if turbine.condenser then
+        turbineRequest = math.min(turbineRequest, LUASQUARE_TURBINE.GetInternalExhaustFreeSteam(turbine))
+    elseif turbineOutput then
+        turbineRequest = math.min(turbineRequest, LUASQUARE_TURBINE.GetOutputFreeSteam(turbine, turbineOutput, 'turbine'))
+    end
+    if turbine.bypassCondenser then
+        bypassRequest = math.min(bypassRequest, LUASQUARE_TURBINE.GetInternalExhaustFreeSteam(turbine))
+    elseif bypassOutput then
+        bypassRequest = math.min(bypassRequest, LUASQUARE_TURBINE.GetOutputFreeSteam(turbine, bypassOutput, 'bypass'))
+    end
 
     return turbineRequest, bypassRequest, requested, pressureScale
 end
@@ -627,7 +748,9 @@ function LUASQUARE_TURBINE.MoveTurbineBranchSteam(turbine, amount, input)
     local moved
     local exhaust = 0
     local condensate = 0
-    if turbine.condenserOutput then
+    if turbine.condenser then
+        moved, exhaust = LUASQUARE_TURBINE.MoveSteamToInternalExhaust(turbine, amount, input, turbine.condenser)
+    elseif turbine.condenserOutput then
         local outputTemperature = LUASQUARE_TURBINE.GetCondensateOutputTemperature(turbine, input, turbine.condenserOutputTemperature, turbine.condenserSteamTemperatureInfluence)
         moved, condensate = LUASQUARE_TURBINE.CondenseSteamToWater(turbine.input, turbine.condenserOutput, amount, LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine), outputTemperature)
         turbine.lastCondensateTemperature = outputTemperature
@@ -643,8 +766,11 @@ end
 function LUASQUARE_TURBINE.MoveBypassBranchSteam(turbine, amount, input)
     if amount <= 0 then return 0 end
     local moved
+    local exhaust = 0
     local condensate = 0
-    if turbine.bypassCondenserOutput then
+    if turbine.bypassCondenser then
+        moved, exhaust = LUASQUARE_TURBINE.MoveSteamToInternalExhaust(turbine, amount, input, turbine.bypassCondenser)
+    elseif turbine.bypassCondenserOutput then
         local outputTemperature = LUASQUARE_TURBINE.GetCondensateOutputTemperature(turbine, input, turbine.bypassCondenserOutputTemperature, turbine.bypassSteamTemperatureInfluence)
         moved, condensate = LUASQUARE_TURBINE.CondenseSteamToWater(turbine.input, turbine.bypassCondenserOutput, amount, LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine), outputTemperature)
         turbine.lastBypassCondensateTemperature = outputTemperature
@@ -652,13 +778,20 @@ function LUASQUARE_TURBINE.MoveBypassBranchSteam(turbine, amount, input)
         moved = LUASQUARE_TURBINE.MoveSteam(turbine.input, turbine.bypassOutput, amount, turbine.exhaustRatio, turbine.steamRatio)
     end
 
+    turbine.lastExhaustMade = (turbine.lastExhaustMade or 0) + exhaust
     turbine.lastBypassCondensateMade = condensate
     return moved
 end
 
 function LUASQUARE_TURBINE.DoSharedSteamFlow(turbine, dt)
     LUASQUARE_TURBINE.ResetFlowTelemetry(turbine)
-    if turbine.tripped or not turbine.enabled then return 0 end
+    if turbine.tripped or not turbine.enabled then
+        LUASQUARE_TURBINE.PushStoredExhaust(turbine, dt)
+        turbine.lastExhaustStored = turbine.lastExhaustStored / math.max(dt, 0.0001)
+        turbine.lastCondenserAccepted = turbine.lastCondenserAccepted / math.max(dt, 0.0001)
+        turbine.lastExhaustExtracted = turbine.lastExhaustExtracted / math.max(dt, 0.0001)
+        return 0
+    end
     if not LUASQUARE_FLUID then return 0 end
     local input = LUASQUARE_FLUID.GetNetwork(turbine.input)
     if not input then return 0 end
@@ -677,6 +810,9 @@ function LUASQUARE_TURBINE.DoSharedSteamFlow(turbine, dt)
     turbine.lastInletSteam = turbine.lastSteamUsed + turbine.lastBypassSteam
     turbine.lastInletPressureScale = pressureScale or 0
     turbine.lastExhaustMade = turbine.lastExhaustMade / math.max(dt, 0.0001)
+    turbine.lastExhaustStored = turbine.lastExhaustStored / math.max(dt, 0.0001)
+    turbine.lastCondenserAccepted = turbine.lastCondenserAccepted / math.max(dt, 0.0001)
+    turbine.lastExhaustExtracted = turbine.lastExhaustExtracted / math.max(dt, 0.0001)
     turbine.lastCondensateMade = turbine.lastCondensateMade / math.max(dt, 0.0001)
     turbine.lastBypassCondensateMade = turbine.lastBypassCondensateMade / math.max(dt, 0.0001)
     turbine.lastFlowLimited = sharedRequest > 0 and (turbineMoved + bypassMoved) < sharedRequest * 0.99
@@ -772,6 +908,22 @@ end
 
 function LUASQUARE_TURBINE.UpdateTrips(name, turbine)
     if turbine.tripped then return end
+    LUASQUARE_TURBINE.UpdateExhaustPressure(turbine)
+    if (turbine.exhaustPressure or 0) >= (turbine.exhaustHardMaxPressure or math.huge) then
+        LUASQUARE_TURBINE.ExtremeTrip(name, 'EXHAUST_HARD_PRESSURE')
+        return
+    end
+
+    if (turbine.exhaustPressure or 0) >= (turbine.exhaustTripPressure or math.huge) then
+        turbine.exhaustTripTimer = (turbine.exhaustTripTimer or 0) + LUASQUARE_TURBINE.TickInterval
+        if turbine.exhaustTripTimer >= (turbine.exhaustTripDelay or 0) then
+            LUASQUARE_TURBINE.Trip(name, 'EXHAUST_BACKPRESSURE', 'normal')
+            return
+        end
+    else
+        turbine.exhaustTripTimer = 0
+    end
+
     if turbine.rpm >= turbine.tripRPM then
         LUASQUARE_TURBINE.Trip(name, 'OVERSPEED')
         return

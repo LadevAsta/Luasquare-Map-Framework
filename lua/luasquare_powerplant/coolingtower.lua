@@ -4,6 +4,8 @@ LUASQUARE_COOLINGTOWER = LUASQUARE_COOLINGTOWER or {}
 LUASQUARE_COOLINGTOWER.CoolingTowers = LUASQUARE_COOLINGTOWER.CoolingTowers or {}
 LUASQUARE_COOLINGTOWER.TickInterval = LUASQUARE_COOLINGTOWER.TickInterval or 0.1
 
+local DEFAULT_WATER_HEAT_CAPACITY = 4.186
+
 -- =========================================
 -- REGISTER
 -- =========================================
@@ -13,6 +15,7 @@ function LUASQUARE_COOLINGTOWER.RegisterCoolingTower(name, data)
     LUASQUARE_COOLINGTOWER.CoolingTowers[name] = {
         name = name,
         output = data.output,
+        coolantNetwork = data.coolantNetwork,
         maxRate = tonumber(data.maxRate) or 1000,
         enabled = data.enabled and true or false,
         working = data.working and true or false,
@@ -22,6 +25,7 @@ function LUASQUARE_COOLINGTOWER.RegisterCoolingTower(name, data)
         basinTemperature = tonumber(data.basinTemperature) or tonumber(data.temperature) or 40,
         basinPressure = 0,
         basinMaxPressure = tonumber(data.basinMaxPressure) or 20,
+        evaporationFraction = math.Clamp(tonumber(data.evaporationFraction) or tonumber(data.driftFraction) or 0, 0, 1),
         startRelay = data.startRelay,
         stopRelay = data.stopRelay,
         workRelay = data.workRelay,
@@ -30,6 +34,9 @@ function LUASQUARE_COOLINGTOWER.RegisterCoolingTower(name, data)
         lastWaterReceived = 0,
         lastWaterCooled = 0,
         lastHeatRemoved = 0,
+        lastHeatRemovedMW = 0,
+        lastCoolantFlow = 0,
+        lastCoolantTemperature = 0,
         monitorPos = data.monitorPos,
         monitorTarget = data.monitorTarget or data.monitorEntity or data.monitorName,
         monitorOffset = data.monitorOffset or Vector(0, 0, 0)
@@ -97,6 +104,82 @@ end
 -- =========================================
 -- UPDATE
 -- =========================================
+local function setWorking(tower, working)
+    working = working and true or false
+    if tower.working == working then return end
+    tower.working = working
+    if not LUASQUARE_FLUID then return end
+    if working and tower.workRelay then LUASQUARE_FLUID.FireRelay(tower.workRelay) end
+    if not working and tower.idleRelay then LUASQUARE_FLUID.FireRelay(tower.idleRelay) end
+end
+
+local function findCoolantNetwork(name, tower)
+    if not LUASQUARE_FLUID then return nil end
+    if tower.coolantNetwork then
+        local coolant = LUASQUARE_FLUID.GetNetwork(tower.coolantNetwork)
+        if coolant and coolant.type == LUASQUARE_FLUID.TYPE_COOLANT then return coolant end
+    end
+
+    return LUASQUARE_FLUID.GetCoolantNetworkForTower and LUASQUARE_FLUID.GetCoolantNetworkForTower(name) or nil
+end
+
+local function updateCoolantTower(name, tower, coolant, dt)
+    tower.coolantNetwork = coolant.name
+    tower.lastWaterCooled = 0
+    tower.lastHeatRemoved = 0
+    tower.lastHeatRemovedMW = 0
+    tower.lastCoolantFlow = 0
+    tower.lastCoolantTemperature = coolant.temperature or 0
+    coolant.lastCoolantHeatRemovedMW = 0
+    coolant.coolantCooling = false
+    coolant.coolantOverheated = coolant.coolantHighTemperature and (coolant.temperature or 0) >= coolant.coolantHighTemperature or false
+    if not tower.enabled then
+        setWorking(tower, false)
+        return
+    end
+
+    local coolantFlow = LUASQUARE_FLUID.GetCoolantCirculationFlow and LUASQUARE_FLUID.GetCoolantCirculationFlow(coolant.name) or 0
+    local coolingFlow = math.min(coolantFlow, math.max(tower.maxRate or 0, 0))
+    local returnAmount = math.min(tower.basinAmount or 0, coolingFlow * dt, math.max((coolant.hardMaxAmount or coolant.maxAmount) - (coolant.amount or 0), 0))
+    local inputTemperature = tower.basinTemperature or coolant.temperature or 20
+    local delta = inputTemperature - (tower.outputTemperature or 20)
+    local active = returnAmount > 0 and delta > (coolant.coolantCoolingDelta or 1)
+    tower.lastCoolantFlow = coolantFlow
+    tower.lastWaterCooled = returnAmount / math.max(dt, 0.0001)
+    tower.lastCoolantTemperature = coolant.temperature or 0
+    coolant.coolantCooling = active
+    coolant.lastCoolantFlow = coolantFlow
+    if returnAmount <= 0 then
+        setWorking(tower, false)
+        return
+    end
+
+    local cp = math.max(coolant.coolantHeatCapacityKJPerL or DEFAULT_WATER_HEAT_CAPACITY, 0.0001)
+    local returnTemperature = inputTemperature
+    local heatKJ = 0
+    if active then
+        returnTemperature = tower.outputTemperature or inputTemperature
+        heatKJ = math.max(inputTemperature - returnTemperature, 0) * returnAmount * cp
+    end
+
+    local returned = LUASQUARE_FLUID.AddFluid(coolant.name, returnAmount, returnTemperature)
+    tower.basinAmount = math.max((tower.basinAmount or 0) - returned, 0)
+
+    local evaporation = 0
+    if active and (tower.evaporationFraction or 0) > 0 then
+        evaporation = math.min(tower.basinAmount or 0, returned * tower.evaporationFraction)
+        tower.basinAmount = math.max((tower.basinAmount or 0) - evaporation, 0)
+    end
+
+    LUASQUARE_COOLINGTOWER.UpdateBasinPressure(name)
+    tower.lastCoolantTemperature = coolant.temperature or 0
+    tower.lastHeatRemoved = heatKJ / math.max(cp * math.max(dt, 0.0001), 0.0001)
+    tower.lastHeatRemovedMW = heatKJ / math.max(dt, 0.0001) / 1000
+    coolant.lastCoolantHeatRemovedMW = tower.lastHeatRemovedMW
+    coolant.coolantOverheated = coolant.coolantHighTemperature and (coolant.temperature or 0) >= coolant.coolantHighTemperature or false
+    setWorking(tower, active)
+end
+
 function LUASQUARE_COOLINGTOWER.UpdateCoolingTower(name, dt)
     local tower = LUASQUARE_COOLINGTOWER.GetCoolingTower(name)
     if not tower then return end
@@ -104,6 +187,15 @@ function LUASQUARE_COOLINGTOWER.UpdateCoolingTower(name, dt)
     tower.pendingWaterReceived = 0
     tower.lastWaterCooled = 0
     tower.lastHeatRemoved = 0
+    tower.lastHeatRemovedMW = 0
+    tower.lastCoolantFlow = 0
+
+    local coolant = findCoolantNetwork(name, tower)
+    if coolant then
+        updateCoolantTower(name, tower, coolant, dt)
+        return
+    end
+
     if not tower.enabled then return end
     if not LUASQUARE_FLUID then return end
 

@@ -1,0 +1,15 @@
+UnlitGeneric
+{
+    "$basetexture" "models/luasquare/ann/water_level_low"
+    "$frame" "0"
+
+    "Proxies"
+    {
+        "AnimatedTexture"
+        {
+            "animatedtexturevar" "$basetexture"
+            "animatedtextureframenumvar" "$frame"
+            "animatedtextureframerate" "1"
+        }
+    }
+}
