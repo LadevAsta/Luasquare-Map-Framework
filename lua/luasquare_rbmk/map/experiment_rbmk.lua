@@ -139,6 +139,19 @@ RBMK.ControlrodScramBoost = 2
 --Control rod func_movelinear's move distance you set in Hammer (inches)
 RBMK.RodMoveDistance = 64
 
+RBMK.ControlRodPowerGrid = 'control_room_grid'
+RBMK.ControlRodPowerBreaker = 'rbmk_control_rods_breaker'
+RBMK.ControlRodMWPerRod = 0.1
+RBMK.ControlRodPowerAllOrNothing = true
+
+RBMK.IntegrityTemperatureDamageStart = 900
+RBMK.IntegrityTemperatureSevere = 1800
+RBMK.IntegrityPressureDamageStart = RBMK.RPVMaxPressure
+RBMK.IntegrityPressureSevere = RBMK.CatastrophicPressure
+RBMK.ScramStuckBaseChance = 0.01
+RBMK.ScramStuckDamageChance = 0.12
+RBMK.ScramStuckMaxChance = 0.25
+
 
 -- =========================================
 -- REACTOR CONSTRUCTION
@@ -299,6 +312,16 @@ LUASQUARE_POWERGRID.RegisterTransformer('station_emergency_lighting_transformer'
     bidirectional = false,
     monitorPos = 'tar_transformer_offsite_station',
     monitorOffset = Vector(0,0,256)
+})
+
+LUASQUARE_POWERGRID.RegisterBreaker('rbmk_control_rods_breaker', {
+    grid = 'control_room_grid',
+    owner = 'rbmk_control_rods',
+    kind = 'rbmk_control_rods',
+    closed = true,
+    maxMW = 2,
+    monitorPos = 'tar_grid_station',
+    monitorOffset = Vector(0,0,288)
 })
 
 -- Steam Turbine
@@ -1431,11 +1454,54 @@ LUASQUARE_ANNUNCIATOR.RegisterAlarm('fuel_channel_leak', {
         return true, string.format('%d CHANNEL(S)', leakCount)
     end
 })
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('control_rods_unpowered', {
+    label = 'CONTROL RODS UNPOWERED',
+    soundWav = 'bms_objects/alarms/alarm6.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 110,
+    getter = function()
+        local state = RBMK.GetControlRodPowerState and RBMK.GetControlRodPowerState() or {}
+        if (state.demandMW or 0) > 0 and not state.powered then
+            return true, string.format('%.3f / %.3f MW', state.acceptedMW or 0, state.demandMW or 0)
+        end
+        return false
+    end
+})
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('scram_rods_stuck', {
+    label = 'SCRAM RODS STUCK',
+    soundWav = 'bms_objects/alarms/alarm6.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 120,
+    ackStopsSound = false,
+    getter = function()
+        local state = RBMK.GetControlRodPowerState and RBMK.GetControlRodPowerState() or {}
+        local count = state.stuckCount or 0
+        if count > 0 then return true, string.format('%d ROD(S)', count) end
+        return false
+    end
+})
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('rbmk_integrity_low', {
+    label = 'RBMK INTEGRITY LOW',
+    soundWav = 'bms_objects/alarms/alarm1.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 100,
+    getter = function()
+        local score = RBMK.IntegrityScore or 1
+        if score <= 0.75 then return true, string.format('%.0f%%', score * 100) end
+        return false
+    end
+})
 LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('reactor_panel', {
     indicators = {
         rpv_pressure_high = 'ann_rpv_pressure_high',
         rpv_temperature_high = 'ann_rpv_temperature_high',
-        fuel_channel_leak = 'ann_fuel_channel_leak'
+        fuel_channel_leak = 'ann_fuel_channel_leak',
+        control_rods_unpowered = 'ann_control_rods_unpowered',
+        scram_rods_stuck = 'ann_scram_rods_stuck',
+        rbmk_integrity_low = 'ann_rbmk_integrity_low'
     }
 })
 

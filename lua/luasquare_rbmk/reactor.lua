@@ -68,6 +68,35 @@ RBMK.AutoRegulatorLastError = 0
 RBMK.AutoRegulatorIntegralLimit = 10000
 RBMK.AutoRegulatorResponseRate = 0.03
 
+RBMK.ControlRodPowerGrid = RBMK.ControlRodPowerGrid or nil
+RBMK.ControlRodPowerBreaker = RBMK.ControlRodPowerBreaker or nil
+RBMK.ControlRodMWPerRod = RBMK.ControlRodMWPerRod or 0.02
+RBMK.ControlRodPowerAllOrNothing = RBMK.ControlRodPowerAllOrNothing ~= false
+RBMK.ControlRodPowerDemandMW = 0
+RBMK.ControlRodPowerAcceptedMW = 0
+RBMK.ControlRodPowered = true
+RBMK.ControlRodMovingCount = 0
+RBMK.ControlRodBlockedCount = 0
+RBMK.ControlRodStuckCount = 0
+
+RBMK.IntegrityDamage = RBMK.IntegrityDamage or 0
+RBMK.IntegrityScore = RBMK.IntegrityScore or 1
+RBMK.IntegrityPressureDamageStart = RBMK.IntegrityPressureDamageStart or nil
+RBMK.IntegrityPressureSevere = RBMK.IntegrityPressureSevere or nil
+RBMK.IntegrityPressureDamageRate = RBMK.IntegrityPressureDamageRate or 0.015
+RBMK.IntegrityTemperatureDamageStart = RBMK.IntegrityTemperatureDamageStart or 900
+RBMK.IntegrityTemperatureSevere = RBMK.IntegrityTemperatureSevere or 1800
+RBMK.IntegrityTemperatureDamageRate = RBMK.IntegrityTemperatureDamageRate or 0.010
+RBMK.IntegrityLastDamage = 0
+RBMK.IntegrityLastDamageReason = nil
+
+RBMK.ScramStuckBaseChance = RBMK.ScramStuckBaseChance or 0.01
+RBMK.ScramStuckDamageChance = RBMK.ScramStuckDamageChance or 0.12
+RBMK.ScramStuckMaxChance = RBMK.ScramStuckMaxChance or 0.25
+RBMK.ScramStuckEligibleMaxInsertion = RBMK.ScramStuckEligibleMaxInsertion or 0.40
+RBMK.ScramStuckMinInsertion = RBMK.ScramStuckMinInsertion or 0.20
+RBMK.ScramStuckMaxInsertion = RBMK.ScramStuckMaxInsertion or 0.35
+
 RBMK.EventState = RBMK.EventState or {}
 RBMK.EventState.NextBlowout = 0
 RBMK.EventState.BlowoutValveCooldowns = RBMK.EventState.BlowoutValveCooldowns or {}
@@ -481,6 +510,10 @@ function RBMK.ClearReactorData()
     RBMK.MinSteamSpace = 0
     RBMK.AverageHeat = 0
     RBMK.MaxHeat = 0
+    RBMK.IntegrityDamage = 0
+    RBMK.IntegrityScore = 1
+    RBMK.IntegrityLastDamage = 0
+    RBMK.IntegrityLastDamageReason = nil
 end
 
 function RBMK.DoPressureEventStep()
@@ -527,6 +560,43 @@ function RBMK.UpdateTelemetry()
     if validCells > 0 then RBMK.AverageHeat = totalHeat / validCells end
     RBMK.MaxHeat = maxHeat
     RBMK.UpdateRPVPressure()
+    RBMK.UpdateIntegrity(RBMK.TickInterval or 0.1)
+end
+
+function RBMK.UpdateIntegrity(dt)
+    dt = math.max(tonumber(dt) or 0, 0)
+    local damageAdd = 0
+    local reason = nil
+
+    local pressure = RBMK.RPVPressure or 0
+    local pressureStart = RBMK.IntegrityPressureDamageStart or RBMK.RPVMaxPressure or 70
+    local pressureSevere = RBMK.IntegrityPressureSevere or RBMK.CatastrophicPressure or pressureStart + 50
+    if pressure > pressureStart then
+        local factor = math.Clamp((pressure - pressureStart) / math.max(pressureSevere - pressureStart, 1), 0, 2)
+        local pressureDamage = factor * (RBMK.IntegrityPressureDamageRate or 0) * dt
+        damageAdd = damageAdd + pressureDamage
+        reason = 'OVERPRESSURE'
+    end
+
+    local temperature = RBMK.MaxHeat or 0
+    local temperatureStart = RBMK.IntegrityTemperatureDamageStart or 900
+    local temperatureSevere = RBMK.IntegrityTemperatureSevere or 1800
+    if temperature > temperatureStart then
+        local factor = math.Clamp((temperature - temperatureStart) / math.max(temperatureSevere - temperatureStart, 1), 0, 2)
+        local temperatureDamage = factor * (RBMK.IntegrityTemperatureDamageRate or 0) * dt
+        damageAdd = damageAdd + temperatureDamage
+        if reason then
+            reason = reason .. '+OVERTEMP'
+        else
+            reason = 'OVERTEMP'
+        end
+    end
+
+    RBMK.IntegrityLastDamage = damageAdd
+    RBMK.IntegrityLastDamageReason = reason
+    if damageAdd > 0 then RBMK.IntegrityDamage = math.Clamp((RBMK.IntegrityDamage or 0) + damageAdd, 0, 1) end
+    RBMK.IntegrityScore = math.Clamp(1 - (RBMK.IntegrityDamage or 0), 0, 1)
+    return RBMK.IntegrityScore
 end
 
 function RBMK.GetFuelChannelLeakCount()

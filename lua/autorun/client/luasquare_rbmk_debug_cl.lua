@@ -6,7 +6,7 @@ RBMK.Debug.ClientState = {
     VesselInfo = {}
 }
 
-local DEBUG_WIRE_VERSION = 1
+local DEBUG_WIRE_VERSION = 2
 local DEBUG_PACKET_VESSEL = 1
 local DEBUG_PACKET_CELLS = 2
 local DEBUG_PACKET_FLUX = 3
@@ -52,6 +52,18 @@ local function readVesselInfo()
         autoRegulatorTargetMW = net.ReadFloat(),
         autoRegulatorTargetInsertion = net.ReadFloat(),
         autoRegulatorLastError = net.ReadFloat(),
+        controlRodPowerGrid = readOptionalString(),
+        controlRodPowerBreaker = readOptionalString(),
+        controlRodPowerDemandMW = net.ReadFloat(),
+        controlRodPowerAcceptedMW = net.ReadFloat(),
+        controlRodPowered = net.ReadBool(),
+        controlRodMovingCount = net.ReadUInt(16),
+        controlRodBlockedCount = net.ReadUInt(16),
+        controlRodStuckCount = net.ReadUInt(16),
+        integrityScore = net.ReadFloat(),
+        integrityDamage = net.ReadFloat(),
+        integrityLastDamage = net.ReadFloat(),
+        integrityLastDamageReason = readOptionalString(),
         waterTemperature = net.ReadFloat(),
         steamTemperature = net.ReadFloat(),
         boilingTemperature = net.ReadFloat(),
@@ -122,6 +134,12 @@ local function readCell()
         cell.graphiteTip = net.ReadBool()
         cell.reflector = net.ReadBool()
         cell.visualEnt = net.ReadEntity()
+        cell.powerBlocked = net.ReadBool()
+        cell.stuck = net.ReadBool()
+        cell.scramStuck = net.ReadBool()
+        cell.scramStuckPending = net.ReadBool()
+        cell.stuckInsertion = net.ReadFloat()
+        cell.lastStuckReason = readOptionalString()
     elseif cell.type == RBMK.CELL_REFLECTOR then
         cell.reflectorIn = net.ReadBool()
     elseif cell.type == RBMK.CELL_SOURCE then
@@ -316,6 +334,9 @@ function RBMK.Debug.RenderCell(x, y, cell)
         if cell.autoRegulator then
             table.insert(lines, string.format('A: %.3f', cell.autoInsertion or 0))
         end
+        if cell.powerBlocked then table.insert(lines, 'NO PWR') end
+        if cell.stuck then table.insert(lines, 'STUCK') end
+        if cell.scramStuckPending then table.insert(lines, 'SPIKE') end
     elseif cell.type == RBMK.CELL_REFLECTOR then
         table.insert(lines, string.format('RE: %s', tostring(cell.reflectorIn)))
     elseif cell.type == RBMK.CELL_SOURCE then
@@ -412,6 +433,8 @@ function RBMK.Debug.RenderVesselInfo()
     string.format('MWt: %.2f', info.lastThermalMW or 0),
     string.format('FLASH MW: %.2f', info.lastFlashBoilMW or 0),
     string.format('APR: %s %s %.1fMW %.3f', tostring(info.autoRegulatorEnabled), info.autoRegulatorUsePID and 'PID' or 'P', info.autoRegulatorTargetMW or 0, info.autoRegulatorTargetInsertion or 0),
+    string.format('ROD PWR: %s %.3f/%.3fMW M%d B%d S%d', tostring(info.controlRodPowered), info.controlRodPowerAcceptedMW or 0, info.controlRodPowerDemandMW or 0, info.controlRodMovingCount or 0, info.controlRodBlockedCount or 0, info.controlRodStuckCount or 0),
+    string.format('INTEGRITY: %.1f%% DMG %.3f %s', (info.integrityScore or 1) * 100, info.integrityLastDamage or 0, tostring(info.integrityLastDamageReason or '')),
     string.format('FLUX: %.1f', info.totalFlux or 0),
     string.format('XENON: %.1f', info.averageXenon or 0),
     string.format('--------------------------------'),

@@ -1,40 +1,235 @@
 RBMK = RBMK or {}
-function RBMK.DoControlStep()
-    RBMK.DoAutoRegulatorStep()
+local ROD_EPSILON = 0.0001
+
+local function clamp01(value)
+    return math.Clamp(tonumber(value) or 0, 0, 1)
+end
+
+local function rodNeedsMainMovement(cell)
+    return math.abs((cell.targetInsertion or 0) - (cell.insertion or 0)) > ROD_EPSILON
+end
+
+local function updateAutoRegulatorTarget(cell)
+    if not cell.autoRegulator then
+        cell.autoTargetInsertion = 0
+    else
+        local maxInsertion = cell.autoMaxInsertion or RBMK.AutoRegulatorMaxInsertion or 0.1
+        cell.autoTargetInsertion = math.Clamp(RBMK.AutoRegulatorTargetInsertion or 0, 0, maxInsertion)
+    end
+end
+
+local function rodNeedsAutoMovement(cell)
+    updateAutoRegulatorTarget(cell)
+    return math.abs((cell.autoTargetInsertion or 0) - (cell.autoInsertion or 0)) > ROD_EPSILON
+end
+
+local function moveToward(value, target, speed)
+    local diff = target - value
+    if math.abs(diff) <= speed then return target end
+    local dir = diff < 0 and -1 or 1
+    return value + dir * speed
+end
+
+local function forEachControlRod(callback)
     for x = 1, RBMK.Width do
         for y = 1, RBMK.Height do
-            local cell = RBMK.Matrix[x][y]
-            if cell.type == RBMK.CELL_CONTROL then
-                local diff = cell.targetInsertion - cell.insertion
-                local speed = cell.moveSpeed or 0.005
-                if cell.scramBoost then
-                    speed = speed * RBMK.ControlrodScramBoost
-                    if cell.insertion >= 0.95 then cell.scramBoost = false end
-                end
-
-                if math.abs(diff) <= speed then
-                    cell.insertion = cell.targetInsertion
-                else
-                    local dir = 1
-                    if diff < 0 then dir = -1 end
-                    cell.insertion = cell.insertion + dir * speed
-                end
-
-                local delta = cell.insertion - cell.lastInsertion
-                cell.inserting = delta > 0
-                if math.abs(delta) > 0.0001 then
-                    cell.stationaryTime = 0
-                    if cell.inserting then cell.movingTime = math.min(cell.movingTime + RBMK.TickInterval, 10) end
-                else
-                    cell.stationaryTime = cell.stationaryTime + RBMK.TickInterval
-                    if cell.stationaryTime >= 10 then cell.movingTime = 0 end
-                end
-
-                cell.lastInsertion = cell.insertion
-                RBMK.UpdateAutoRegulatorRod(cell)
-            end
+            local column = RBMK.Matrix[x]
+            local cell = column and column[y]
+            if cell and cell.type == RBMK.CELL_CONTROL then callback(cell, x, y) end
         end
     end
+end
+
+function RBMK.GetControlRodPowerState()
+    return {
+        grid = RBMK.ControlRodPowerGrid,
+        breaker = RBMK.ControlRodPowerBreaker,
+        demandMW = RBMK.ControlRodPowerDemandMW or 0,
+        acceptedMW = RBMK.ControlRodPowerAcceptedMW or 0,
+        powered = RBMK.ControlRodPowered ~= false,
+        movingCount = RBMK.ControlRodMovingCount or 0,
+        blockedCount = RBMK.ControlRodBlockedCount or 0,
+        stuckCount = RBMK.ControlRodStuckCount or 0
+    }
+end
+
+function RBMK.UpdateControlRodPower(movingCount)
+    movingCount = math.max(math.floor(tonumber(movingCount) or 0), 0)
+    local demandMW = movingCount * math.max(tonumber(RBMK.ControlRodMWPerRod) or 0, 0)
+    local gridName = RBMK.ControlRodPowerGrid
+    local breakerName = RBMK.ControlRodPowerBreaker
+    local acceptedMW = 0
+    local powered = true
+    if demandMW > 0 and gridName then
+        powered = false
+        if LUASQUARE_POWERGRID and LUASQUARE_POWERGRID.CanServeLoad and LUASQUARE_POWERGRID.SubmitLoad and LUASQUARE_POWERGRID.CanServeLoad(gridName, demandMW, breakerName) then
+            acceptedMW = LUASQUARE_POWERGRID.SubmitLoad(gridName, 'rbmk_control_rods', demandMW, breakerName)
+            if RBMK.ControlRodPowerAllOrNothing == false then
+                powered = acceptedMW > 0
+            else
+                powered = acceptedMW >= demandMW * 0.999
+            end
+        end
+    elseif demandMW > 0 and RBMK.ControlRodPowerRequired then
+        powered = false
+    end
+
+    RBMK.ControlRodPowerDemandMW = demandMW
+    RBMK.ControlRodPowerAcceptedMW = acceptedMW
+    RBMK.ControlRodPowered = powered
+    RBMK.ControlRodMovingCount = movingCount
+    return powered, acceptedMW, demandMW
+end
+
+function RBMK.GetScramStuckChance(rod)
+    if not rod or not rod.graphiteTip then return 0 end
+    local baseChance = tonumber(RBMK.ScramStuckBaseChance) or 0.01
+    local damageChance = tonumber(RBMK.ScramStuckDamageChance) or 0.12
+    local maxChance = tonumber(RBMK.ScramStuckMaxChance) or 0.25
+    local integrity = math.Clamp(tonumber(RBMK.IntegrityScore) or 1, 0, 1)
+    return math.Clamp(baseChance + damageChance * (1 - integrity), 0, maxChance)
+end
+
+function RBMK.GetScramStuckInsertion(rod)
+    local current = clamp01(rod and rod.insertion or 0)
+    local minInsertion = clamp01(RBMK.ScramStuckMinInsertion or 0.20)
+    local maxInsertion = clamp01(RBMK.ScramStuckMaxInsertion or 0.35)
+    return math.Clamp(math.max(current, minInsertion), minInsertion, maxInsertion)
+end
+
+function RBMK.TryScheduleScramStuck(rod)
+    if not rod or not rod.graphiteTip then return false end
+    if rod.stuck or rod.scramStuck or rod.scramStuckPending then return false end
+
+    local eligibleMax = clamp01(RBMK.ScramStuckEligibleMaxInsertion or 0.40)
+    if (rod.insertion or 0) > eligibleMax then return false end
+
+    local chance = RBMK.GetScramStuckChance(rod)
+    if math.Rand(0, 1) > chance then return false end
+
+    rod.scramStuck = true
+    rod.scramStuckPending = true
+    rod.stuckInsertion = RBMK.GetScramStuckInsertion(rod)
+    rod.lastStuckReason = 'SCRAM_GRAPHITE_SPIKE'
+    return true
+end
+
+function RBMK.RepairRod(name)
+    local rod = RBMK.GetRod(name)
+    if not rod then
+        print('[' .. RBMK.ModelName .. '] Unknown rod repair target: ' .. tostring(name))
+        return false
+    end
+
+    rod.stuck = false
+    rod.scramStuck = false
+    rod.scramStuckPending = false
+    rod.stuckInsertion = nil
+    rod.lastStuckReason = nil
+    rod.powerBlocked = false
+    rod.visualHeld = false
+    RBMK.UpdateRodVisual(rod)
+    return true
+end
+
+function RBMK.RepairAllRods()
+    local repaired = 0
+    for _, rod in pairs(RBMK.Rods) do
+        if rod.stuck or rod.scramStuck or rod.scramStuckPending then repaired = repaired + 1 end
+        rod.stuck = false
+        rod.scramStuck = false
+        rod.scramStuckPending = false
+        rod.stuckInsertion = nil
+        rod.lastStuckReason = nil
+        rod.powerBlocked = false
+        rod.visualHeld = false
+        RBMK.UpdateRodVisual(rod)
+    end
+    return repaired
+end
+
+function RBMK.DoControlStep()
+    RBMK.DoAutoRegulatorStep()
+    local movingCount = 0
+    local stuckCount = 0
+
+    forEachControlRod(function(cell)
+        cell.powerBlocked = false
+        if cell.stuck or cell.scramStuckPending or cell.scramStuck then stuckCount = stuckCount + 1 end
+        if not cell.stuck and not cell.scramStuckPending then
+            if rodNeedsMainMovement(cell) and not cell.scramBoost then movingCount = movingCount + 1 end
+            if rodNeedsAutoMovement(cell) then movingCount = movingCount + 1 end
+        else
+            updateAutoRegulatorTarget(cell)
+        end
+    end)
+
+    local powered = RBMK.UpdateControlRodPower(movingCount)
+    local blockedCount = 0
+
+    forEachControlRod(function(cell)
+        local previousInsertion = cell.insertion or 0
+        local canMoveMain = powered or cell.scramBoost
+        local needsMain = rodNeedsMainMovement(cell)
+        local needsAuto = rodNeedsAutoMovement(cell)
+        local rodBlocked = false
+
+        if cell.scramStuckPending and cell.stuckInsertion then
+            local speed = (cell.moveSpeed or 0.005) * (RBMK.ControlrodScramBoost or 1)
+            cell.insertion = moveToward(cell.insertion or 0, cell.stuckInsertion, speed)
+            if (cell.insertion or 0) >= (cell.stuckInsertion or 0) - ROD_EPSILON then
+                cell.insertion = cell.stuckInsertion
+                cell.stuck = true
+                cell.scramStuckPending = false
+                RBMK.HoldRodVisual(cell)
+            end
+        elseif cell.stuck then
+            if cell.stuckInsertion then cell.insertion = clamp01(cell.stuckInsertion) end
+            RBMK.HoldRodVisual(cell)
+        else
+            if needsMain then
+                if canMoveMain then
+                    if cell.visualHeld then RBMK.UpdateRodVisual(cell) end
+                    local speed = cell.moveSpeed or 0.005
+                    if cell.scramBoost then speed = speed * (RBMK.ControlrodScramBoost or 1) end
+                    cell.insertion = moveToward(cell.insertion or 0, cell.targetInsertion or 0, speed)
+                else
+                    cell.powerBlocked = true
+                    rodBlocked = true
+                    RBMK.HoldRodVisual(cell)
+                end
+            end
+
+            if needsAuto then
+                if powered then
+                    local speed = (RBMK.AutoRegulatorResponseRate or 0.03) * (RBMK.TickInterval or 0.1)
+                    cell.autoInsertion = moveToward(cell.autoInsertion or 0, cell.autoTargetInsertion or 0, speed)
+                else
+                    cell.powerBlocked = true
+                    rodBlocked = true
+                end
+            end
+
+            if cell.scramBoost and (cell.insertion or 0) >= 0.95 then cell.scramBoost = false end
+        end
+
+        if rodBlocked then blockedCount = blockedCount + 1 end
+
+        local delta = (cell.insertion or 0) - (cell.lastInsertion or previousInsertion)
+        cell.inserting = delta > 0
+        if math.abs(delta) > ROD_EPSILON then
+            cell.stationaryTime = 0
+            if cell.inserting then cell.movingTime = math.min((cell.movingTime or 0) + (RBMK.TickInterval or 0.1), 10) end
+        else
+            cell.stationaryTime = (cell.stationaryTime or 0) + (RBMK.TickInterval or 0.1)
+            if cell.stationaryTime >= 10 then cell.movingTime = 0 end
+        end
+
+        cell.lastInsertion = cell.insertion
+    end)
+
+    RBMK.ControlRodBlockedCount = blockedCount
+    RBMK.ControlRodStuckCount = stuckCount
 end
 
 function RBMK.DoAutoRegulatorStep()
@@ -73,22 +268,10 @@ function RBMK.DoAutoRegulatorStep()
 end
 
 function RBMK.UpdateAutoRegulatorRod(cell)
-    if not cell.autoRegulator then
-        cell.autoTargetInsertion = 0
-    else
-        local maxInsertion = cell.autoMaxInsertion or RBMK.AutoRegulatorMaxInsertion or 0.1
-        cell.autoTargetInsertion = math.Clamp(RBMK.AutoRegulatorTargetInsertion or 0, 0, maxInsertion)
-    end
+    updateAutoRegulatorTarget(cell)
 
-    local diff = (cell.autoTargetInsertion or 0) - (cell.autoInsertion or 0)
     local speed = (RBMK.AutoRegulatorResponseRate or 0.03) * (RBMK.TickInterval or 0.1)
-    if math.abs(diff) <= speed then
-        cell.autoInsertion = cell.autoTargetInsertion or 0
-    else
-        local dir = 1
-        if diff < 0 then dir = -1 end
-        cell.autoInsertion = (cell.autoInsertion or 0) + dir * speed
-    end
+    cell.autoInsertion = moveToward(cell.autoInsertion or 0, cell.autoTargetInsertion or 0, speed)
 end
 
 function RBMK.SetAutoRegulatorEnabled(enabled)
@@ -210,19 +393,38 @@ function RBMK.GetRodVisualSpeed(cell)
     return cell.moveSpeed * moveDistance * tickRate
 end
 
+function RBMK.GetRodVisualTargetInsertion(cell)
+    if cell.stuck then return cell.insertion or cell.stuckInsertion or cell.targetInsertion or 0 end
+    if cell.scramStuckPending and cell.stuckInsertion then return cell.stuckInsertion end
+    return cell.targetInsertion or 0
+end
+
 function RBMK.UpdateRodVisual(cell)
     if not cell.visualEnt then return end
     local ent = ents.FindByName(cell.visualEnt)[1]
     if not IsValid(ent) then return end
     local speed = RBMK.GetRodVisualSpeed(cell)
     ent:Fire('SetSpeed', tostring(speed))
-    ent:Fire('SetPosition', tostring(1 - cell.targetInsertion))
+    ent:Fire('SetPosition', tostring(1 - RBMK.GetRodVisualTargetInsertion(cell)))
+    cell.visualHeld = false
+end
+
+function RBMK.HoldRodVisual(cell)
+    if not cell.visualEnt then return end
+    if cell.visualHeld and math.abs((cell.visualHoldInsertion or 0) - (cell.insertion or 0)) <= ROD_EPSILON then return end
+    local ent = ents.FindByName(cell.visualEnt)[1]
+    if not IsValid(ent) then return end
+    ent:Fire('SetSpeed', '0')
+    ent:Fire('SetPosition', tostring(1 - (cell.insertion or 0)))
+    cell.visualHeld = true
+    cell.visualHoldInsertion = cell.insertion or 0
 end
 
 function RBMK.SCRAM()
     for _, rod in pairs(RBMK.Rods) do
         rod.targetInsertion = 1
         rod.scramBoost = true
+        RBMK.TryScheduleScramStuck(rod)
         RBMK.UpdateRodVisual(rod)
     end
 end

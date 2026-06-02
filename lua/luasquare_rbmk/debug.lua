@@ -6,7 +6,7 @@ RBMK.Debug.ClientState = {
     VesselInfo = {}
 }
 
-local DEBUG_WIRE_VERSION = 1
+local DEBUG_WIRE_VERSION = 2
 local DEBUG_PACKET_VESSEL = 1
 local DEBUG_PACKET_CELLS = 2
 local DEBUG_PACKET_FLUX = 3
@@ -90,6 +90,12 @@ function RBMK.Debug.BuildCell(x, y, cell)
         data.graphiteTip = cell.graphiteTip and true or false
         data.reflector = cell.reflector and true or false
         data.visualEnt = cell.visualEnt
+        data.powerBlocked = cell.powerBlocked and true or false
+        data.stuck = cell.stuck and true or false
+        data.scramStuck = cell.scramStuck and true or false
+        data.scramStuckPending = cell.scramStuckPending and true or false
+        data.stuckInsertion = cell.stuckInsertion or 0
+        data.lastStuckReason = cell.lastStuckReason
     end
 
     if cell.type == RBMK.CELL_REFLECTOR then data.reflectorIn = cell.reflectorIn and true or false end
@@ -140,6 +146,18 @@ function RBMK.Debug.BuildVesselInfo()
         autoRegulatorTargetMW = RBMK.AutoRegulatorTargetMW or 0,
         autoRegulatorTargetInsertion = RBMK.AutoRegulatorTargetInsertion or 0,
         autoRegulatorLastError = RBMK.AutoRegulatorLastError or 0,
+        controlRodPowerGrid = RBMK.ControlRodPowerGrid,
+        controlRodPowerBreaker = RBMK.ControlRodPowerBreaker,
+        controlRodPowerDemandMW = RBMK.ControlRodPowerDemandMW or 0,
+        controlRodPowerAcceptedMW = RBMK.ControlRodPowerAcceptedMW or 0,
+        controlRodPowered = RBMK.ControlRodPowered ~= false,
+        controlRodMovingCount = RBMK.ControlRodMovingCount or 0,
+        controlRodBlockedCount = RBMK.ControlRodBlockedCount or 0,
+        controlRodStuckCount = RBMK.ControlRodStuckCount or 0,
+        integrityScore = RBMK.IntegrityScore or 1,
+        integrityDamage = RBMK.IntegrityDamage or 0,
+        integrityLastDamage = RBMK.IntegrityLastDamage or 0,
+        integrityLastDamageReason = RBMK.IntegrityLastDamageReason,
         waterTemperature = RBMK.WaterTemperature or 0,
         steamTemperature = RBMK.SteamTemperature or 0,
         boilingTemperature = RBMK.LastBoilingTemperature or RBMK.WaterBoilingTemperature or 0,
@@ -215,6 +233,18 @@ function RBMK.Debug.BroadcastVesselInfo(sequence, info)
     net.WriteFloat(info.autoRegulatorTargetMW or 0)
     net.WriteFloat(info.autoRegulatorTargetInsertion or 0)
     net.WriteFloat(info.autoRegulatorLastError or 0)
+    writeOptionalString(info.controlRodPowerGrid)
+    writeOptionalString(info.controlRodPowerBreaker)
+    net.WriteFloat(info.controlRodPowerDemandMW or 0)
+    net.WriteFloat(info.controlRodPowerAcceptedMW or 0)
+    net.WriteBool(info.controlRodPowered and true or false)
+    net.WriteUInt(info.controlRodMovingCount or 0, 16)
+    net.WriteUInt(info.controlRodBlockedCount or 0, 16)
+    net.WriteUInt(info.controlRodStuckCount or 0, 16)
+    net.WriteFloat(info.integrityScore or 1)
+    net.WriteFloat(info.integrityDamage or 0)
+    net.WriteFloat(info.integrityLastDamage or 0)
+    writeOptionalString(info.integrityLastDamageReason)
     net.WriteFloat(info.waterTemperature or 0)
     net.WriteFloat(info.steamTemperature or 0)
     net.WriteFloat(info.boilingTemperature or 0)
@@ -282,6 +312,12 @@ function RBMK.Debug.WriteCell(cell)
         net.WriteBool(cell.graphiteTip and true or false)
         net.WriteBool(cell.reflector and true or false)
         net.WriteEntity(IsValid(cell.visualEnt) and cell.visualEnt or NULL)
+        net.WriteBool(cell.powerBlocked and true or false)
+        net.WriteBool(cell.stuck and true or false)
+        net.WriteBool(cell.scramStuck and true or false)
+        net.WriteBool(cell.scramStuckPending and true or false)
+        net.WriteFloat(cell.stuckInsertion or 0)
+        writeOptionalString(cell.lastStuckReason)
     elseif cell.type == RBMK.CELL_REFLECTOR then
         net.WriteBool(cell.reflectorIn and true or false)
     elseif cell.type == RBMK.CELL_SOURCE then
