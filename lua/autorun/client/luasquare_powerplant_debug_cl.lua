@@ -8,6 +8,7 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     Condensers = {},
     HeatExchangers = {},
     Deaerators = {},
+    SteamSeparators = {},
     Turbines = {},
     CoolingTowers = {},
     Grids = {},
@@ -17,7 +18,7 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     DieselGenerators = {}
 }
 
-local DEBUG_WIRE_VERSION = 6
+local DEBUG_WIRE_VERSION = 8
 local DEBUG_PACKET_START = 1
 local DEBUG_PACKET_CATEGORY = 2
 local DEBUG_PACKET_END = 3
@@ -27,8 +28,10 @@ local DEBUG_CATEGORIES = {
         {'name', 'string'}, {'type', 'string'}, {'fluidType', 'string'},
         {'amount', 'number'}, {'maxAmount', 'number'}, {'hardMaxAmount', 'number'},
         {'volume', 'number'}, {'pressure', 'number'}, {'maxPressure', 'number'}, {'temperature', 'number'},
+        {'thermalEnergyKJ', 'number'}, {'lastThermalMW', 'number'}, {'steamQuality', 'number'}, {'wetCarryover', 'number'},
         {'coolingTower', 'string'}, {'lastCoolantFlow', 'number'}, {'lastCoolantHeatRemovedMW', 'number'},
         {'coolantCooling', 'bool'}, {'coolantHighTemperature', 'number'}, {'coolantOverheated', 'bool'},
+        {'overflowEnabled', 'bool'}, {'overflowTarget', 'string'}, {'overflowLevelFraction', 'number'}, {'lastOverflowFlow', 'number'},
         {'ruptured', 'bool'}, {'serviceEnabled', 'bool'}, {'pos', 'vector'}
     }},
     {name = 'Pumps', schema = {
@@ -66,7 +69,18 @@ local DEBUG_CATEGORIES = {
         {'temperature', 'number'}, {'pressure', 'number'}, {'maxPressure', 'number'}, {'hardMaxPressure', 'number'},
         {'steamAmount', 'number'}, {'steamMaxAmount', 'number'}, {'steamPressure', 'number'}, {'steamTemperature', 'number'},
         {'nonCondensibleAmount', 'number'}, {'steamValve', 'number'}, {'reliefValve', 'number'}, {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'},
+        {'overflowValve', 'number'}, {'overflowTarget', 'string'}, {'overflowLevelFraction', 'number'}, {'lastOverflowFlow', 'number'},
         {'lastReliefFlow', 'number'}, {'lastHeatMW', 'number'}, {'ruptureReason', 'string'}, {'pos', 'vector'}
+    }},
+    {name = 'SteamSeparators', schema = {
+        {'name', 'string'}, {'drySteamNetwork', 'string'}, {'enabled', 'bool'},
+        {'waterAmount', 'number'}, {'maxWaterAmount', 'number'}, {'waterTemperature', 'number'},
+        {'steamAmount', 'number'}, {'maxSteamAmount', 'number'}, {'steamTemperature', 'number'},
+        {'pressure', 'number'}, {'maxPressure', 'number'}, {'outletValve', 'number'},
+        {'separationEfficiency', 'number'}, {'lowLevel', 'bool'}, {'flooded', 'bool'},
+        {'lastWetWaterIn', 'number'}, {'lastWetSteamIn', 'number'}, {'lastDrySteamOut', 'number'},
+        {'lastCarryover', 'number'}, {'lastFeedwaterIn', 'number'}, {'lastRecircOut', 'number'},
+        {'lastPressureScale', 'number'}, {'lastThermalMW', 'number'}, {'lastSteamQuality', 'number'}, {'pos', 'vector'}
     }},
     {name = 'Turbines', schema = {
         {'name', 'string'}, {'input', 'string'}, {'boiler', 'string'}, {'output', 'string'},
@@ -78,6 +92,8 @@ local DEBUG_CATEGORIES = {
         {'catastrophicFailed', 'bool'}, {'synced', 'bool'}, {'autoSync', 'bool'},
         {'valve', 'number'}, {'bypassValve', 'number'}, {'maxSteamRate', 'number'}, {'ratedSteamRate', 'number'},
         {'rpm', 'number'}, {'phase', 'number'}, {'vibration', 'number'}, {'cycleEfficiency', 'number'},
+        {'useSteamEnergy', 'bool'}, {'lastSteamThermalMW', 'number'}, {'lastBypassSteamThermalMW', 'number'},
+        {'lastSteamQuality', 'number'}, {'lastWetCarryover', 'number'},
         {'lastBoilerMW', 'number'}, {'lastSteamShare', 'number'}, {'lastTurbineSteamFraction', 'number'},
         {'lastInletSteam', 'number'}, {'lastInletPressureScale', 'number'}, {'lastSteamUsed', 'number'},
         {'lastBypassSteam', 'number'}, {'lastExhaustMade', 'number'}, {'lastCondensateMade', 'number'},
@@ -259,14 +275,41 @@ function LUASQUARE_POWERPLANT.Debug.RenderNetwork(network)
         string.format('P %.1f / %.1f bar', network.pressure or 0, network.maxPressure or 0),
         string.format('T %.1f C', network.temperature or 0)
     }
+    if network.fluidType == 'steam' then
+        table.insert(lines, string.format('ETH %.1f MW %.1f KJ', network.lastThermalMW or 0, network.thermalEnergyKJ or 0))
+        table.insert(lines, string.format('Q %.3f CARRY %.2f', network.steamQuality or 1, network.wetCarryover or 0))
+    end
     if network.type == 'coolant' then
         table.insert(lines, 'TWR ' .. tostring(network.coolingTower or 'none'))
         table.insert(lines, string.format('CW %.1f/s HEAT %.1f MW', network.lastCoolantFlow or 0, network.lastCoolantHeatRemovedMW or 0))
         table.insert(lines, 'COOL ' .. tostring(network.coolantCooling))
         if network.coolantOverheated then table.insert(lines, string.format('HIGH > %.1f C', network.coolantHighTemperature or 0)) end
     end
+    if network.overflowEnabled then
+        table.insert(lines, string.format('OVF > %s %.1f%% %.1f/s', tostring(network.overflowTarget or 'void'), (network.overflowLevelFraction or 0) * 100, network.lastOverflowFlow or 0))
+    end
     if network.ruptured then table.insert(lines, 'RUPTURED') end
     LUASQUARE_POWERPLANT.Debug.DrawWorldText(network.pos, table.concat(lines, '\n'), Color(0, 220, 255))
+end
+
+function LUASQUARE_POWERPLANT.Debug.RenderSteamSeparator(separator)
+    if not LUASQUARE_POWERPLANT.Debug.ShouldRenderPos(separator.pos) then return end
+    local level = 0
+    if (separator.maxWaterAmount or 0) > 0 then level = (separator.waterAmount or 0) / separator.maxWaterAmount * 100 end
+    local lines = {
+        'SEP ' .. tostring(separator.name),
+        'DRY > ' .. tostring(separator.drySteamNetwork),
+        'EN ' .. tostring(separator.enabled),
+        string.format('LVL %.1f%% %.1f/%.1f', level, separator.waterAmount or 0, separator.maxWaterAmount or 0),
+        string.format('W %.1f C S %.1f/%.1f %.1f C', separator.waterTemperature or 0, separator.steamAmount or 0, separator.maxSteamAmount or 0, separator.steamTemperature or 0),
+        string.format('P %.2f/%.2f bar VLV %.0f%%', separator.pressure or 0, separator.maxPressure or 0, (separator.outletValve or 0) * 100),
+        string.format('IN W %.1f/s S %.1f/s Q %.3f', separator.lastWetWaterIn or 0, separator.lastWetSteamIn or 0, separator.lastSteamQuality or 1),
+        string.format('OUT %.1f/s %.1f MW CARRY %.2f/s', separator.lastDrySteamOut or 0, separator.lastThermalMW or 0, separator.lastCarryover or 0),
+        string.format('FW %.1f RECIRC %.1f/s', separator.lastFeedwaterIn or 0, separator.lastRecircOut or 0)
+    }
+    if separator.lowLevel then table.insert(lines, 'LOW LEVEL') end
+    if separator.flooded then table.insert(lines, 'FLOODED') end
+    LUASQUARE_POWERPLANT.Debug.DrawWorldText(separator.pos, table.concat(lines, '\n'), Color(180, 255, 255))
 end
 
 function LUASQUARE_POWERPLANT.Debug.RenderPump(pump)
@@ -340,8 +383,9 @@ function LUASQUARE_POWERPLANT.Debug.RenderDeaerator(deaerator)
         string.format('LVL %.1f%% %.1f/%.1f', level, deaerator.amount or 0, deaerator.maxAmount or 0),
         string.format('P %.2f/%.2f bar T %.1f/%.1f C', deaerator.pressure or 0, deaerator.targetPressure or 0, deaerator.temperature or 0, deaerator.targetTemperature or 0),
         string.format('VAP %.1f/%.1f %.1fC GAS %.1f', deaerator.steamAmount or 0, deaerator.steamMaxAmount or 0, deaerator.steamTemperature or 0, deaerator.nonCondensibleAmount or 0),
-        string.format('SV %.0f%% RV %.0f%%', (deaerator.steamValve or 0) * 100, (deaerator.reliefValve or 0) * 100),
+        string.format('SV %.0f%% RV %.0f%% OVF %.0f%%', (deaerator.steamValve or 0) * 100, (deaerator.reliefValve or 0) * 100, (deaerator.overflowValve or 0) * 100),
         string.format('LPS %.1f/s MAKE %.3f/s VENT %.1f/s', deaerator.lastSteamUsed or 0, deaerator.lastWaterMade or 0, deaerator.lastReliefFlow or 0),
+        string.format('OVF > %s %.1f%% %.1f/s', tostring(deaerator.overflowTarget or 'none'), (deaerator.overflowLevelFraction or 0) * 100, deaerator.lastOverflowFlow or 0),
         string.format('HEAT %.1f MW', deaerator.lastHeatMW or 0)
     }
     if deaerator.flooded then table.insert(lines, 'FLOODED') end
@@ -362,6 +406,7 @@ function LUASQUARE_POWERPLANT.Debug.RenderTurbine(turbine)
         string.format('RATED %.0f/s MAX %.0f/s', turbine.ratedSteamRate or 0, turbine.maxSteamRate or 0),
         string.format('IN %.1f/s %.2fx', turbine.lastInletSteam or 0, turbine.lastInletPressureScale or 0),
         string.format('S %.1f/s B %.1f/s', turbine.lastSteamUsed or 0, turbine.lastBypassSteam or 0),
+        string.format('ETH %.1f MW BYP %.1f MW Q %.3f', turbine.lastSteamThermalMW or 0, turbine.lastBypassSteamThermalMW or 0, turbine.lastSteamQuality or 1),
         string.format('EXH %.1f/%.1f %.2fbar ACC %.1f/s EXT %.1f/s', turbine.exhaustAmount or 0, turbine.exhaustMaxAmount or 0, turbine.exhaustPressure or 0, turbine.lastCondenserAccepted or 0, turbine.lastExhaustExtracted or 0),
         string.format('HW %.3f/s %.1fC BHW %.3f/s %.1fC', turbine.lastCondensateMade or 0, turbine.lastCondensateTemperature or 0, turbine.lastBypassCondensateMade or 0, turbine.lastBypassCondensateTemperature or 0),
         string.format('MWth %.1f SHARE %.0f%% FLOW %.0f%% EFF %.0f%%', turbine.lastBoilerMW or 0, (turbine.lastSteamShare or 0) * 100, (turbine.lastTurbineSteamFraction or 0) * 100, (turbine.cycleEfficiency or 0) * 100),
@@ -499,6 +544,9 @@ function LUASQUARE_POWERPLANT.Debug.Render()
         end
         for _, deaerator in ipairs(state.Deaerators or {}) do
             LUASQUARE_POWERPLANT.Debug.RenderDeaerator(deaerator)
+        end
+        for _, separator in ipairs(state.SteamSeparators or {}) do
+            LUASQUARE_POWERPLANT.Debug.RenderSteamSeparator(separator)
         end
     end
     if LUASQUARE_POWERPLANT.Debug.GetSetting('show_turbines', true) then

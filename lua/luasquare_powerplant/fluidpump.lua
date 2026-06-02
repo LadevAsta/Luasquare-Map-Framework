@@ -151,6 +151,9 @@ function LUASQUARE_PUMP.GetEndpointLevelPercent(endpoint)
     local deaerator = LUASQUARE_DEAERATOR and LUASQUARE_DEAERATOR.GetDeaerator(endpoint)
     if deaerator then return LUASQUARE_DEAERATOR.GetLevelPercent(endpoint) end
 
+    local separator = LUASQUARE_STEAMSEPARATOR and LUASQUARE_STEAMSEPARATOR.GetSteamSeparator(endpoint)
+    if separator then return LUASQUARE_STEAMSEPARATOR.GetLevelPercent(endpoint) end
+
     return 0
 end
 
@@ -206,6 +209,13 @@ function LUASQUARE_PUMP.GetTargetPressure(target)
             LUASQUARE_DEAERATOR.UpdatePressure(deaerator)
             return deaerator.pressure or 0
         end
+        if target == 'rbmk_recirc' then
+            if not RBMK then return 0 end
+            return RBMK.RPVPressure or 0
+        end
+        if LUASQUARE_STEAMSEPARATOR and LUASQUARE_STEAMSEPARATOR.GetSteamSeparator(target) then
+            return LUASQUARE_STEAMSEPARATOR.GetPressure(target)
+        end
         return 0
     end
     return network.pressure or 0
@@ -223,6 +233,15 @@ function LUASQUARE_PUMP.AddToTarget(target, amount, dischargePressure, temperatu
 
     if LUASQUARE_DEAERATOR and LUASQUARE_DEAERATOR.GetDeaerator(target) then
         return LUASQUARE_DEAERATOR.AddWater(target, amount, temperature)
+    end
+
+    if target == 'rbmk_recirc' then
+        if not RBMK or not RBMK.AddRecirculationWater then return 0 end
+        return RBMK.AddRecirculationWater(amount, dischargePressure, temperature)
+    end
+
+    if LUASQUARE_STEAMSEPARATOR and LUASQUARE_STEAMSEPARATOR.GetSteamSeparator(target) then
+        return LUASQUARE_STEAMSEPARATOR.AddWater(target, amount, temperature)
     end
 
     if not LUASQUARE_FLUID then return 0 end
@@ -261,6 +280,17 @@ function LUASQUARE_PUMP.GetSourceEndpoint(sourceName)
             temperature = deaerator.temperature or 20,
             remove = function(amount) return LUASQUARE_DEAERATOR.RemoveWater(sourceName, amount) end,
             addBack = function(amount, temperature) return LUASQUARE_DEAERATOR.AddWater(sourceName, amount, temperature) end
+        }
+    end
+
+    if LUASQUARE_STEAMSEPARATOR and LUASQUARE_STEAMSEPARATOR.GetSteamSeparator(sourceName) then
+        local separator = LUASQUARE_STEAMSEPARATOR.GetSteamSeparator(sourceName)
+        return {
+            amount = separator.waterAmount or 0,
+            pressure = separator.pressure or 0,
+            temperature = separator.waterTemperature or 100,
+            remove = function(amount) return LUASQUARE_STEAMSEPARATOR.RemoveWater(sourceName, amount) end,
+            addBack = function(amount, temperature) return LUASQUARE_STEAMSEPARATOR.AddWater(sourceName, amount, temperature) end
         }
     end
 

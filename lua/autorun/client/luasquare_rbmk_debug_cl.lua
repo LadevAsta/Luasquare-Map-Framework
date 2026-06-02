@@ -6,7 +6,7 @@ RBMK.Debug.ClientState = {
     VesselInfo = {}
 }
 
-local DEBUG_WIRE_VERSION = 2
+local DEBUG_WIRE_VERSION = 3
 local DEBUG_PACKET_VESSEL = 1
 local DEBUG_PACKET_CELLS = 2
 local DEBUG_PACKET_FLUX = 3
@@ -64,6 +64,15 @@ local function readVesselInfo()
         integrityDamage = net.ReadFloat(),
         integrityLastDamage = net.ReadFloat(),
         integrityLastDamageReason = readOptionalString(),
+        steamSeparator = readOptionalString(),
+        lastRecircFlow = net.ReadFloat(),
+        lastNaturalCirculationFlow = net.ReadFloat(),
+        lastEffectiveCoreFlow = net.ReadFloat(),
+        lastSteamQuality = net.ReadFloat(),
+        lastVoidFraction = net.ReadFloat(),
+        lastWetSteamReturned = net.ReadFloat(),
+        lastWetWaterReturned = net.ReadFloat(),
+        lastDryoutRisk = net.ReadFloat(),
         waterTemperature = net.ReadFloat(),
         steamTemperature = net.ReadFloat(),
         boilingTemperature = net.ReadFloat(),
@@ -435,6 +444,8 @@ function RBMK.Debug.RenderVesselInfo()
     string.format('APR: %s %s %.1fMW %.3f', tostring(info.autoRegulatorEnabled), info.autoRegulatorUsePID and 'PID' or 'P', info.autoRegulatorTargetMW or 0, info.autoRegulatorTargetInsertion or 0),
     string.format('ROD PWR: %s %.3f/%.3fMW M%d B%d S%d', tostring(info.controlRodPowered), info.controlRodPowerAcceptedMW or 0, info.controlRodPowerDemandMW or 0, info.controlRodMovingCount or 0, info.controlRodBlockedCount or 0, info.controlRodStuckCount or 0),
     string.format('INTEGRITY: %.1f%% DMG %.3f %s', (info.integrityScore or 1) * 100, info.integrityLastDamage or 0, tostring(info.integrityLastDamageReason or '')),
+    string.format('SEP: %s FLOW %.0f/s NAT %.0f/s', tostring(info.steamSeparator or 'none'), info.lastRecircFlow or 0, info.lastNaturalCirculationFlow or 0),
+    string.format('Q %.3f VOID %.3f DRY %.0f%%', info.lastSteamQuality or 0, info.lastVoidFraction or 0, (info.lastDryoutRisk or 0) * 100),
     string.format('FLUX: %.1f', info.totalFlux or 0),
     string.format('XENON: %.1f', info.averageXenon or 0),
     string.format('--------------------------------'),

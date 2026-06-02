@@ -71,6 +71,7 @@ function LUASQUARE_TURBINE.RegisterTurbine(name, data)
         efficiency = tonumber(data.efficiency) or 0.32,
         cycleEfficiency = tonumber(data.cycleEfficiency) or tonumber(data.efficiency) or 0.32,
         boiler = boiler,
+        useSteamEnergy = (data.useSteamEnergy or data.thermalFromSteam) and true or false,
         mwPerSteamPerSecond = tonumber(data.mwPerSteamPerSecond) or 0.02,
         loadMW = tonumber(data.loadMW),
         maxMW = tonumber(data.maxMW) or (boiler and 1000000000 or 1000),
@@ -129,6 +130,10 @@ function LUASQUARE_TURBINE.RegisterTurbine(name, data)
         lastBoilerMW = 0,
         lastSteamShare = 0,
         lastTurbineSteamFraction = 0,
+        lastSteamThermalMW = 0,
+        lastBypassSteamThermalMW = 0,
+        lastSteamQuality = 1,
+        lastWetCarryover = 0,
         lastMW = 0,
         lastFlowLimited = false,
         tripReason = nil,
@@ -585,17 +590,35 @@ function LUASQUARE_TURBINE.MoveSteam(inputName, outputName, amount, exhaustRatio
         return 0, 0
     end
 
-    local removed = LUASQUARE_FLUID.RemoveFluid(inputName, amount)
+    local removed, inputTemperature, thermalKJ, quality, wetCarryover
+    if LUASQUARE_FLUID.RemoveSteam and input.fluidType == 'steam' then
+        removed, inputTemperature, thermalKJ, quality, wetCarryover = LUASQUARE_FLUID.RemoveSteam(inputName, amount)
+    else
+        removed = LUASQUARE_FLUID.RemoveFluid(inputName, amount)
+        inputTemperature = input.temperature
+        thermalKJ = 0
+        quality = 1
+        wetCarryover = 0
+    end
     local exhaustMade = removed * math.max(exhaustRatio, 0) / math.max(steamRatio, 0.0001)
-    local added = LUASQUARE_FLUID.AddFluid(outputName, exhaustMade, input.temperature)
+    local added
+    if output.fluidType == 'steam' and LUASQUARE_FLUID.AddSteam then
+        added = LUASQUARE_FLUID.AddSteam(outputName, exhaustMade, inputTemperature, thermalKJ, quality, wetCarryover)
+    else
+        added = LUASQUARE_FLUID.AddFluid(outputName, exhaustMade, inputTemperature)
+    end
     if added < exhaustMade then
         local returned = (exhaustMade - added) * math.max(steamRatio, 0.0001) / math.max(exhaustRatio, 0.0001)
-        LUASQUARE_FLUID.AddFluid(inputName, returned, input.temperature)
+        if LUASQUARE_FLUID.AddSteam and input.fluidType == 'steam' then
+            LUASQUARE_FLUID.AddSteam(inputName, returned, inputTemperature, thermalKJ * (returned / math.max(removed, 0.0001)), quality, wetCarryover)
+        else
+            LUASQUARE_FLUID.AddFluid(inputName, returned, inputTemperature)
+        end
         removed = math.max(removed - returned, 0)
         exhaustMade = added
     end
 
-    return removed, exhaustMade
+    return removed, exhaustMade, thermalKJ, quality, wetCarryover
 end
 
 function LUASQUARE_TURBINE.GetCondensateOutputTemperature(turbine, input, baseTemperature, influence)
@@ -620,35 +643,61 @@ function LUASQUARE_TURBINE.CondenseSteamToWater(inputName, outputName, amount, w
     end
 
     local ratio = math.max(waterRatio, 0.0001)
-    local removed = LUASQUARE_FLUID.RemoveFluid(inputName, amount)
+    local removed, inputTemperature, thermalKJ
+    if LUASQUARE_FLUID.RemoveSteam and input.fluidType == 'steam' then
+        removed, inputTemperature, thermalKJ = LUASQUARE_FLUID.RemoveSteam(inputName, amount)
+    else
+        removed = LUASQUARE_FLUID.RemoveFluid(inputName, amount)
+        inputTemperature = input.temperature
+        thermalKJ = 0
+    end
     local waterMade = removed / ratio
-    local added = LUASQUARE_FLUID.AddFluid(outputName, waterMade, outputTemperature or input.temperature)
+    local added = LUASQUARE_FLUID.AddFluid(outputName, waterMade, outputTemperature or inputTemperature)
     if added < waterMade then
-        LUASQUARE_FLUID.AddFluid(inputName, (waterMade - added) * ratio, input.temperature)
+        local returned = (waterMade - added) * ratio
+        if LUASQUARE_FLUID.AddSteam and input.fluidType == 'steam' then
+            LUASQUARE_FLUID.AddSteam(inputName, returned, inputTemperature, thermalKJ * (returned / math.max(removed, 0.0001)), 1, 0)
+        else
+            LUASQUARE_FLUID.AddFluid(inputName, returned, inputTemperature)
+        end
         waterMade = added
         removed = added * ratio
     end
 
-    return removed, waterMade
+    return removed, waterMade, thermalKJ
 end
 
 function LUASQUARE_TURBINE.MoveSteamToInternalExhaust(turbine, amount, input, condenserName)
     if not LUASQUARE_FLUID or amount <= 0 then return 0, 0, 0 end
-    local removed = LUASQUARE_FLUID.RemoveFluid(turbine.input, amount)
+    local removed, inputTemperature, thermalKJ, quality, wetCarryover
+    if LUASQUARE_FLUID.RemoveSteam and input and input.fluidType == 'steam' then
+        removed, inputTemperature, thermalKJ, quality, wetCarryover = LUASQUARE_FLUID.RemoveSteam(turbine.input, amount)
+    else
+        removed = LUASQUARE_FLUID.RemoveFluid(turbine.input, amount)
+        inputTemperature = input and input.temperature or turbine.exhaustTemperature
+        thermalKJ = 0
+        quality = 1
+        wetCarryover = 0
+    end
     local exhaustMade = removed * math.max(turbine.exhaustRatio, 0) / math.max(turbine.steamRatio, 0.0001)
-    local stored = LUASQUARE_TURBINE.AddInternalExhaust(turbine, exhaustMade, input and input.temperature or turbine.exhaustTemperature)
+    local stored = LUASQUARE_TURBINE.AddInternalExhaust(turbine, exhaustMade, inputTemperature or turbine.exhaustTemperature)
     if stored < exhaustMade then
         local returned = (exhaustMade - stored) * math.max(turbine.steamRatio, 0.0001) / math.max(turbine.exhaustRatio, 0.0001)
-        LUASQUARE_FLUID.AddFluid(turbine.input, returned, input and input.temperature or turbine.exhaustTemperature)
+        if LUASQUARE_FLUID.AddSteam and input and input.fluidType == 'steam' then
+            LUASQUARE_FLUID.AddSteam(turbine.input, returned, inputTemperature, thermalKJ * (returned / math.max(removed, 0.0001)), quality, wetCarryover)
+        else
+            LUASQUARE_FLUID.AddFluid(turbine.input, returned, inputTemperature)
+        end
         removed = math.max(removed - returned, 0)
         exhaustMade = stored
+        thermalKJ = thermalKJ * (removed / math.max(removed + returned, 0.0001))
     end
 
     local oldCondenser = turbine.condenser
     turbine.condenser = condenserName or turbine.condenser
     local accepted = LUASQUARE_TURBINE.PushStoredExhaust(turbine, LUASQUARE_TURBINE.TickInterval)
     turbine.condenser = oldCondenser
-    return removed, exhaustMade, accepted
+    return removed, exhaustMade, accepted, thermalKJ, quality, wetCarryover
 end
 
 function LUASQUARE_TURBINE.GetFlowRequest(turbine, input, output, valve, maxSteamRate, dt)
@@ -690,6 +739,10 @@ function LUASQUARE_TURBINE.ResetFlowTelemetry(turbine)
     turbine.lastCondensateMade = 0
     turbine.lastBypassCondensateMade = 0
     turbine.lastFlowLimited = false
+    turbine.lastSteamThermalMW = 0
+    turbine.lastBypassSteamThermalMW = 0
+    turbine.lastSteamQuality = 1
+    turbine.lastWetCarryover = 0
 end
 
 function LUASQUARE_TURBINE.GetOutputFreeSteam(turbine, output, branch)
@@ -749,13 +802,23 @@ function LUASQUARE_TURBINE.MoveTurbineBranchSteam(turbine, amount, input)
     local exhaust = 0
     local condensate = 0
     if turbine.condenser then
-        moved, exhaust = LUASQUARE_TURBINE.MoveSteamToInternalExhaust(turbine, amount, input, turbine.condenser)
+        local thermalKJ, quality, wetCarryover
+        moved, exhaust, _, thermalKJ, quality, wetCarryover = LUASQUARE_TURBINE.MoveSteamToInternalExhaust(turbine, amount, input, turbine.condenser)
+        turbine.lastSteamThermalMW = (thermalKJ or 0) / math.max(LUASQUARE_TURBINE.TickInterval, 0.0001) / 1000
+        turbine.lastSteamQuality = quality or 1
+        turbine.lastWetCarryover = wetCarryover or 0
     elseif turbine.condenserOutput then
         local outputTemperature = LUASQUARE_TURBINE.GetCondensateOutputTemperature(turbine, input, turbine.condenserOutputTemperature, turbine.condenserSteamTemperatureInfluence)
-        moved, condensate = LUASQUARE_TURBINE.CondenseSteamToWater(turbine.input, turbine.condenserOutput, amount, LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine), outputTemperature)
+        local thermalKJ
+        moved, condensate, thermalKJ = LUASQUARE_TURBINE.CondenseSteamToWater(turbine.input, turbine.condenserOutput, amount, LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine), outputTemperature)
+        turbine.lastSteamThermalMW = (thermalKJ or 0) / math.max(LUASQUARE_TURBINE.TickInterval, 0.0001) / 1000
         turbine.lastCondensateTemperature = outputTemperature
     else
-        moved, exhaust = LUASQUARE_TURBINE.MoveSteam(turbine.input, turbine.output, amount, turbine.exhaustRatio, turbine.steamRatio)
+        local thermalKJ, quality, wetCarryover
+        moved, exhaust, thermalKJ, quality, wetCarryover = LUASQUARE_TURBINE.MoveSteam(turbine.input, turbine.output, amount, turbine.exhaustRatio, turbine.steamRatio)
+        turbine.lastSteamThermalMW = (thermalKJ or 0) / math.max(LUASQUARE_TURBINE.TickInterval, 0.0001) / 1000
+        turbine.lastSteamQuality = quality or 1
+        turbine.lastWetCarryover = wetCarryover or 0
     end
 
     turbine.lastExhaustMade = exhaust
@@ -769,13 +832,19 @@ function LUASQUARE_TURBINE.MoveBypassBranchSteam(turbine, amount, input)
     local exhaust = 0
     local condensate = 0
     if turbine.bypassCondenser then
-        moved, exhaust = LUASQUARE_TURBINE.MoveSteamToInternalExhaust(turbine, amount, input, turbine.bypassCondenser)
+        local thermalKJ
+        moved, exhaust, _, thermalKJ = LUASQUARE_TURBINE.MoveSteamToInternalExhaust(turbine, amount, input, turbine.bypassCondenser)
+        turbine.lastBypassSteamThermalMW = (thermalKJ or 0) / math.max(LUASQUARE_TURBINE.TickInterval, 0.0001) / 1000
     elseif turbine.bypassCondenserOutput then
         local outputTemperature = LUASQUARE_TURBINE.GetCondensateOutputTemperature(turbine, input, turbine.bypassCondenserOutputTemperature, turbine.bypassSteamTemperatureInfluence)
-        moved, condensate = LUASQUARE_TURBINE.CondenseSteamToWater(turbine.input, turbine.bypassCondenserOutput, amount, LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine), outputTemperature)
+        local thermalKJ
+        moved, condensate, thermalKJ = LUASQUARE_TURBINE.CondenseSteamToWater(turbine.input, turbine.bypassCondenserOutput, amount, LUASQUARE_TURBINE.GetCondenserWaterRatio(turbine), outputTemperature)
+        turbine.lastBypassSteamThermalMW = (thermalKJ or 0) / math.max(LUASQUARE_TURBINE.TickInterval, 0.0001) / 1000
         turbine.lastBypassCondensateTemperature = outputTemperature
     else
-        moved = LUASQUARE_TURBINE.MoveSteam(turbine.input, turbine.bypassOutput, amount, turbine.exhaustRatio, turbine.steamRatio)
+        local thermalKJ
+        moved, _, thermalKJ = LUASQUARE_TURBINE.MoveSteam(turbine.input, turbine.bypassOutput, amount, turbine.exhaustRatio, turbine.steamRatio)
+        turbine.lastBypassSteamThermalMW = (thermalKJ or 0) / math.max(LUASQUARE_TURBINE.TickInterval, 0.0001) / 1000
     end
 
     turbine.lastExhaustMade = (turbine.lastExhaustMade or 0) + exhaust
@@ -887,7 +956,12 @@ function LUASQUARE_TURBINE.UpdatePower(turbine)
 
     local boilerMW = LUASQUARE_TURBINE.GetBoilerThermalMW(turbine)
     local rawMW
-    if boilerMW then
+    if turbine.useSteamEnergy then
+        turbine.lastBoilerMW = turbine.lastSteamThermalMW or 0
+        turbine.lastSteamShare = 0
+        turbine.lastTurbineSteamFraction = math.Clamp((turbine.lastSteamUsed or 0) / math.max(turbine.ratedSteamRate or turbine.maxSteamRate, 0.0001), 0, 1)
+        rawMW = (turbine.lastSteamThermalMW or 0) * math.Clamp(turbine.cycleEfficiency or turbine.efficiency or 0.32, 0, 1)
+    elseif boilerMW then
         local totalSteamUse = LUASQUARE_TURBINE.GetBoilerSteamUse(turbine)
         local steamShare = totalSteamUse > 0 and math.Clamp((turbine.lastSteamUsed or 0) / totalSteamUse, 0, 1) or 0
         local steamFraction = math.Clamp((turbine.lastSteamUsed or 0) / math.max(turbine.ratedSteamRate or turbine.maxSteamRate, 0.0001), 0, 1)

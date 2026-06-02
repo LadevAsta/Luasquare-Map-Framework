@@ -44,6 +44,10 @@ function LUASQUARE_VALVE.GetEndpointPressure(endpoint)
         return RBMK.GetRPVPressure and RBMK.GetRPVPressure() or RBMK.RPVPressure or 0
     end
 
+    if LUASQUARE_STEAMSEPARATOR and LUASQUARE_STEAMSEPARATOR.GetSteamSeparator(endpoint) then
+        return LUASQUARE_STEAMSEPARATOR.GetPressure(endpoint)
+    end
+
     local network = LUASQUARE_FLUID and LUASQUARE_FLUID.GetNetwork(endpoint)
     if not network then return 0 end
     return network.pressure or 0
@@ -59,6 +63,11 @@ function LUASQUARE_VALVE.GetEndpointTemperature(endpoint)
     if endpoint == 'rbmk_water' then
         if not RBMK then return 20 end
         return RBMK.WaterTemperature or 20
+    end
+
+    if LUASQUARE_STEAMSEPARATOR and LUASQUARE_STEAMSEPARATOR.GetSteamSeparator(endpoint) then
+        local separator = LUASQUARE_STEAMSEPARATOR.GetSteamSeparator(endpoint)
+        return separator.waterTemperature or 100
     end
 
     local network = LUASQUARE_FLUID and LUASQUARE_FLUID.GetNetwork(endpoint)
@@ -84,6 +93,10 @@ function LUASQUARE_VALVE.RemoveFromEndpoint(endpoint, amount)
         return moved
     end
 
+    if LUASQUARE_STEAMSEPARATOR and LUASQUARE_STEAMSEPARATOR.GetSteamSeparator(endpoint) then
+        return LUASQUARE_STEAMSEPARATOR.RemoveWater(endpoint, amount)
+    end
+
     if not LUASQUARE_FLUID then return 0 end
     return LUASQUARE_FLUID.RemoveFluid(endpoint, amount)
 end
@@ -104,6 +117,10 @@ function LUASQUARE_VALVE.AddToEndpoint(endpoint, amount, pressure, temperature)
     if endpoint == 'rbmk_water' then
         if not RBMK or not RBMK.AddWaterFromPump then return 0 end
         return RBMK.AddWaterFromPump(amount, pressure or 0, temperature)
+    end
+
+    if LUASQUARE_STEAMSEPARATOR and LUASQUARE_STEAMSEPARATOR.GetSteamSeparator(endpoint) then
+        return LUASQUARE_STEAMSEPARATOR.AddWater(endpoint, amount, temperature)
     end
 
     if not LUASQUARE_FLUID then return 0 end
@@ -130,6 +147,10 @@ function LUASQUARE_VALVE.RestoreToEndpoint(endpoint, amount, temperature)
         RBMK.Water = RBMK.Water + moved
         RBMK.UpdateRPVPressure()
         return moved
+    end
+
+    if LUASQUARE_STEAMSEPARATOR and LUASQUARE_STEAMSEPARATOR.GetSteamSeparator(endpoint) then
+        return LUASQUARE_STEAMSEPARATOR.AddWater(endpoint, amount, temperature)
     end
 
     if not LUASQUARE_FLUID then return 0 end

@@ -43,8 +43,14 @@ function LUASQUARE_FLUID.RegisterNetwork(name, data)
     data = data or {}
     local networkType = data.type or LUASQUARE_FLUID.TYPE_SIMPLE
     local maxAmount = math.max(tonumber(data.maxAmount) or 100, 0.0001)
-    local hardMaxAmount = maxAmount
-    if networkType == LUASQUARE_FLUID.TYPE_STEAMLINE or networkType == LUASQUARE_FLUID.TYPE_COOLANT then hardMaxAmount = tonumber(data.hardMaxAmount) or maxAmount * 2 end
+    local hardMaxAmount = tonumber(data.hardMaxAmount)
+    if not hardMaxAmount then
+        if networkType == LUASQUARE_FLUID.TYPE_STEAMLINE or networkType == LUASQUARE_FLUID.TYPE_COOLANT then
+            hardMaxAmount = maxAmount * 2
+        else
+            hardMaxAmount = maxAmount
+        end
+    end
     hardMaxAmount = math.max(hardMaxAmount, maxAmount)
     local maxPressure = tonumber(data.maxPressure) or 100
     local volume = tonumber(data.volume)
@@ -68,10 +74,19 @@ function LUASQUARE_FLUID.RegisterNetwork(name, data)
         maxPressure = maxPressure,
         pressureFactor = tonumber(data.pressureFactor) or 1,
         temperature = tonumber(data.temperature) or 20,
+        thermalEnergyKJ = math.max(tonumber(data.thermalEnergyKJ) or 0, 0),
+        lastThermalMW = 0,
+        steamQuality = math.Clamp(tonumber(data.steamQuality) or 1, 0, 1),
+        wetCarryover = math.max(tonumber(data.wetCarryover) or 0, 0),
         ambientTemperature = tonumber(data.ambientTemperature) or 20,
         thermalLossRate = tonumber(data.thermalLossRate) or 0,
         serviceRate = tonumber(data.serviceRate) or 0,
         serviceEnabled = data.serviceEnabled and true or false,
+        overflowEnabled = data.overflowEnabled and true or false,
+        overflowTarget = data.overflowTarget or 'void',
+        overflowLevelFraction = math.Clamp(tonumber(data.overflowLevelFraction) or 0.99, 0, 1),
+        overflowRate = tonumber(data.overflowRate) or math.huge,
+        lastOverflowFlow = 0,
         ruptured = false,
         ruptureRelays = data.ruptureRelays or {},
         ruptureLeakRate = tonumber(data.ruptureLeakRate) or 0,
@@ -172,9 +187,62 @@ function LUASQUARE_FLUID.RemoveFluid(name, amount)
 
     amount = math.max(tonumber(amount) or 0, 0)
     local moved = math.min(amount, network.amount)
+    if moved > 0 and (network.thermalEnergyKJ or 0) > 0 then
+        local share = moved / math.max(network.amount, 0.0001)
+        network.thermalEnergyKJ = math.max((network.thermalEnergyKJ or 0) - (network.thermalEnergyKJ or 0) * share, 0)
+    end
     network.amount = network.amount - moved
     LUASQUARE_FLUID.UpdatePressure(name)
     return moved
+end
+
+function LUASQUARE_FLUID.AddSteam(name, amount, temperature, thermalKJ, quality, wetCarryover)
+    local network = LUASQUARE_FLUID.GetNetwork(name)
+    if not network then
+        print('[LUASQUARE_FLUID] Unknown steam network: ' .. tostring(name))
+        return 0
+    end
+
+    amount = math.max(tonumber(amount) or 0, 0)
+    local beforeAmount = network.amount or 0
+    local beforeQuality = network.steamQuality or 1
+    local beforeCarryover = network.wetCarryover or 0
+    local moved = LUASQUARE_FLUID.AddFluid(name, amount, temperature)
+    if moved <= 0 then return 0 end
+
+    local acceptedFraction = amount > 0 and moved / amount or 0
+    network.thermalEnergyKJ = (network.thermalEnergyKJ or 0) + math.max(tonumber(thermalKJ) or 0, 0) * acceptedFraction
+    network.steamQuality = LUASQUARE_FLUID.MixTemperature(beforeAmount, beforeQuality, moved, math.Clamp(tonumber(quality) or 1, 0, 1))
+    network.wetCarryover = LUASQUARE_FLUID.MixTemperature(beforeAmount, beforeCarryover, moved, math.max(tonumber(wetCarryover) or 0, 0))
+    return moved
+end
+
+function LUASQUARE_FLUID.RemoveSteam(name, amount)
+    local network = LUASQUARE_FLUID.GetNetwork(name)
+    if not network then
+        print('[LUASQUARE_FLUID] Unknown steam network: ' .. tostring(name))
+        return 0, 100, 0, 1, 0
+    end
+
+    amount = math.max(tonumber(amount) or 0, 0)
+    local beforeAmount = math.max(network.amount or 0, 0)
+    local moved = math.min(amount, beforeAmount)
+    local share = beforeAmount > 0 and moved / beforeAmount or 0
+    local thermalKJ = (network.thermalEnergyKJ or 0) * share
+    local temperature = network.temperature or 100
+    local quality = network.steamQuality or 1
+    local wetCarryover = network.wetCarryover or 0
+    if moved <= 0 then return 0, temperature, 0, quality, wetCarryover end
+
+    network.amount = beforeAmount - moved
+    network.thermalEnergyKJ = math.max((network.thermalEnergyKJ or 0) - thermalKJ, 0)
+    if network.amount <= 0 then
+        network.steamQuality = 1
+        network.wetCarryover = 0
+        network.thermalEnergyKJ = 0
+    end
+    LUASQUARE_FLUID.UpdatePressure(name)
+    return moved, temperature, thermalKJ, quality, wetCarryover
 end
 
 function LUASQUARE_FLUID.TransferFluid(fromName, toName, amount)
@@ -206,6 +274,49 @@ end
 
 function LUASQUARE_FLUID.GetFillPercent(name)
     return LUASQUARE_FLUID.GetFillFraction(name) * 100
+end
+
+function LUASQUARE_FLUID.SetOverflow(name, enabled)
+    local network = LUASQUARE_FLUID.GetNetwork(name)
+    if not network then
+        print('[LUASQUARE_FLUID] Unknown network: ' .. tostring(name))
+        return false
+    end
+
+    network.overflowEnabled = enabled and true or false
+    if not network.overflowEnabled then network.lastOverflowFlow = 0 end
+    return true
+end
+
+function LUASQUARE_FLUID.AddToOverflowTarget(target, amount, temperature)
+    amount = math.max(tonumber(amount) or 0, 0)
+    if target == 'void' or target == nil then return amount end
+    if LUASQUARE_STEAMSEPARATOR and LUASQUARE_STEAMSEPARATOR.GetSteamSeparator(target) then
+        return LUASQUARE_STEAMSEPARATOR.AddWater(target, amount, temperature)
+    end
+    if LUASQUARE_DEAERATOR and LUASQUARE_DEAERATOR.GetDeaerator(target) then
+        return LUASQUARE_DEAERATOR.AddWater(target, amount, temperature)
+    end
+    return LUASQUARE_FLUID.AddFluid(target, amount, temperature)
+end
+
+function LUASQUARE_FLUID.ApplyOverflow(name, dt)
+    local network = LUASQUARE_FLUID.GetNetwork(name)
+    if not network then return 0 end
+    network.lastOverflowFlow = 0
+    if not network.overflowEnabled then return 0 end
+
+    local threshold = (network.maxAmount or 0) * math.Clamp(network.overflowLevelFraction or 0.99, 0, 1)
+    local excess = math.max((network.amount or 0) - threshold, 0)
+    if excess <= 0 then return 0 end
+
+    local requested = math.min(excess, math.max(network.overflowRate or math.huge, 0) * math.max(dt or LUASQUARE_FLUID.TickInterval or 0.1, 0))
+    local temperature = network.temperature or 20
+    local removed = LUASQUARE_FLUID.RemoveFluid(name, requested)
+    local accepted = LUASQUARE_FLUID.AddToOverflowTarget(network.overflowTarget, removed, temperature)
+    if accepted < removed then LUASQUARE_FLUID.AddFluid(name, removed - accepted, temperature) end
+    network.lastOverflowFlow = accepted / math.max(dt or LUASQUARE_FLUID.TickInterval or 0.1, 0.0001)
+    return accepted
 end
 
 -- =========================================
@@ -303,12 +414,14 @@ end
 function LUASQUARE_FLUID.UpdateNetwork(name, dt)
     local network = LUASQUARE_FLUID.GetNetwork(name)
     if not network then return end
+    network.lastOverflowFlow = 0
     if network.type == LUASQUARE_FLUID.TYPE_COOLANT then
         network.lastCoolantFlow = LUASQUARE_FLUID.GetCoolantCirculationFlow(name)
         network.lastCoolantHeatRemovedMW = 0
         network.coolantCooling = false
         network.coolantOverheated = network.coolantHighTemperature and (network.temperature or 0) >= network.coolantHighTemperature or false
     end
+    network.lastThermalMW = 0
 
     if network.serviceEnabled and network.serviceRate > 0 then
         LUASQUARE_FLUID.AddFluid(name, network.serviceRate * dt)
@@ -318,9 +431,14 @@ function LUASQUARE_FLUID.UpdateNetwork(name, dt)
         LUASQUARE_FLUID.RemoveFluid(name, network.ruptureLeakRate * dt)
     end
 
+    LUASQUARE_FLUID.ApplyOverflow(name, dt)
+
     if network.thermalLossRate and network.thermalLossRate > 0 then
         local ambient = network.ambientTemperature or 20
         network.temperature = network.temperature + (ambient - network.temperature) * math.Clamp(network.thermalLossRate * dt, 0, 1)
+    end
+    if network.fluidType == 'steam' and (network.thermalEnergyKJ or 0) > 0 then
+        network.lastThermalMW = (network.thermalEnergyKJ or 0) / math.max(dt, 0.0001) / 1000
     end
 
     if network.type == LUASQUARE_FLUID.TYPE_STEAMLINE or network.type == LUASQUARE_FLUID.TYPE_COOLANT then

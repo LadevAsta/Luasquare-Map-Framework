@@ -1,0 +1,5 @@
+UnlitGeneric
+{
+    "$basetexture" "models/luasquare/ann/wet_steam_carry_over"
+    "$frame" "1"
+}

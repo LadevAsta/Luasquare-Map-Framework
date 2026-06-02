@@ -55,6 +55,7 @@ LUASQUARE_VALVE.TickInterval = 0.1
 LUASQUARE_PUMP.TickInterval = 0.1
 LUASQUARE_HEATEXCHANGER.TickInterval = 0.1
 LUASQUARE_DEAERATOR.TickInterval = 0.1
+LUASQUARE_STEAMSEPARATOR.TickInterval = 0.1
 LUASQUARE_TURBINE.TickInterval = 0.1
 LUASQUARE_COOLINGTOWER.TickInterval = 0.1
 LUASQUARE_POWERGRID.TickInterval = 0.1
@@ -138,8 +139,12 @@ RBMK.TotalFluxSubtractDefine = 26 * 0 -- The source can close via button.
 RBMK.ControlrodScramBoost = 2
 --Control rod func_movelinear's move distance you set in Hammer (inches)
 RBMK.RodMoveDistance = 64
+RBMK.RecirculationRatedFlow = 16000
+RBMK.NaturalCirculationFraction = 0.05
+RBMK.NaturalCirculationMinLevelFraction = 0.15
+RBMK.CoreHoldUpSeconds = 1.5
 
-RBMK.ControlRodPowerGrid = 'control_room_grid'
+RBMK.ControlRodPowerGrid = 'station_grid'
 RBMK.ControlRodPowerBreaker = 'rbmk_control_rods_breaker'
 RBMK.ControlRodMWPerRod = 0.1
 RBMK.ControlRodPowerAllOrNothing = true
@@ -330,7 +335,7 @@ LUASQUARE_TURBINE.RegisterTurbine('tg1', {
     input = 'main_steam',
     condenser = 'main_condenser',
     bypassCondenser = 'main_condenser',
-    boiler = 'rbmk',
+    useSteamEnergy = true,
     cycleEfficiency = 0.32,
     exhaustVolume = RBMK.SteamSpace,
     exhaustMaxAmount = RBMK.MaxSteam,
@@ -467,9 +472,38 @@ LUASQUARE_DEAERATOR.RegisterDeaerator('main_deaerator', {
     maxSteamRate = 50000,
     maxReliefRate = 50000,
     floodedReliefFactor = 0.2,
+    overflowValve = 1,
+    overflowTarget = 'hotwell',
+    overflowLevelFraction = 0.70,
+    overflowRate = 2000,
     steamToWaterRatio = 1600,
     monitorPos = RBMK.WorldOrigin + Vector(0, 96, 64 + MAPDEF_monitorZoffset)
 })
+
+LUASQUARE_STEAMSEPARATOR.RegisterSteamSeparator('main_steam_separator', {
+    drySteamNetwork = 'main_steam',
+    enabled = true,
+    waterAmount = RBMK.MaxWater * 0.80,
+    maxWaterAmount = RBMK.MaxWater * 1.2,
+    hardMaxWaterAmount = RBMK.MaxWater * 1.35,
+    waterTemperature = 100,
+    steamAmount = 0,
+    maxSteamAmount = RBMK.MaxSteam,
+    hardMaxSteamAmount = RBMK.HardMaxSteam,
+    steamVolume = RBMK.SteamSpace,
+    maxPressure = RBMK.RPVMaxPressure,
+    hardMaxPressure = RBMK.RPVHardPressure,
+    outputMaxSteamRate = 500000,
+    ratedOutputPressure = 10,
+    outletValve = 1,
+    separationEfficiency = 0.995,
+    highLevelFraction = 0.85,
+    lowLevelFraction = 0.15,
+    steamRatio = RBMK.SteamExpansionRatio,
+    steamLatentHeatKJPerL = RBMK.WaterLatentHeatKJPerL,
+    monitorPos = RBMK.WorldOrigin + Vector(0, 0, 192 + MAPDEF_monitorZoffset)
+})
+RBMK.SetSteamSeparator('main_steam_separator')
 
 -- Fluid Network
 
@@ -482,21 +516,27 @@ LUASQUARE_FLUID.RegisterNetwork('main_steam', {
     hardMaxAmount = RBMK.HardMaxSteam / 2,
     maxPressure = 150,
     temperature = 100,
+    thermalEnergyKJ = 0,
+    steamQuality = 1,
+    wetCarryover = 0,
     thermalLossRate = 0.002,
     monitorPos = RBMK.WorldOrigin + Vector(0, 0, 96 + MAPDEF_monitorZoffset)
 })
-RBMK.SetSteamNetwork('main_steam')
 
 LUASQUARE_FLUID.RegisterNetwork('hotwell', {
-    type = LUASQUARE_FLUID.TYPE_STEAMLINE,
+    type = LUASQUARE_FLUID.TYPE_SIMPLE,
     fluidType = 'water',
     amount = 20000,
     maxAmount = RBMK.MaxWater,
-    hardMaxAmount = RBMK.MaxWater,
+    hardMaxAmount = RBMK.MaxWater * 1.2,
     maxPressure = 20,
     temperature = 80,
     thermalLossRate = 0.001,
     serviceRate = 0,
+    overflowEnabled = true,
+    overflowTarget = 'void',
+    overflowLevelFraction = 0.99,
+    overflowRate = 10000,
     monitorPos = 'tar_hotwell'
 })
 
@@ -517,20 +557,6 @@ LUASQUARE_FLUID.RegisterNetwork('cooling_water', {
     monitorOffset = Vector(0, 0, 64)
 })
 
-LUASQUARE_FLUID.RegisterNetwork('drain_tank', {
-    type = LUASQUARE_FLUID.TYPE_STEAMLINE,
-    fluidType = 'water',
-    amount = 0,
-    maxAmount = RBMK.MaxWater,
-    hardMaxAmount = RBMK.MaxWater,
-    maxPressure = 5,
-    temperature = 40,
-    thermalLossRate = 0.01,
-    serviceRate = 0,
-    monitorPos = RBMK.WorldOrigin + Vector(0, 96, 128 + MAPDEF_monitorZoffset)
-})
-RBMK.SetDrainNetwork('drain_tank')
-
 LUASQUARE_FLUID.RegisterNetwork('diesel_fuel', {
     type = LUASQUARE_FLUID.TYPE_SIMPLE,
     fluidType = 'diesel',
@@ -542,9 +568,9 @@ LUASQUARE_FLUID.RegisterNetwork('diesel_fuel', {
 
 -- Fluid Valve
 
-LUASQUARE_VALVE.RegisterValve('rpv_drain_valve', {
-    a = 'rbmk_water',
-    b = 'drain_tank',
+LUASQUARE_VALVE.RegisterValve('recirc_drain_valve', {
+    a = 'main_steam_separator',
+    b = 'void',
     maxFlow = 500,
     minFlowFraction = 0.2,
     open = false,
@@ -565,13 +591,13 @@ LUASQUARE_VALVE.RegisterValve('hotwell_drain_valve', {
 
 LUASQUARE_PUMP.RegisterPump('feedwater_pump_a', {
     source = 'main_deaerator',
-    target = 'rbmk',
+    target = 'main_steam_separator',
     rate = 500,
     headPressure = 120,
     minFlowFraction = 0.25,
     regulate = true,
     regulationMode = 'fill',
-    regulationSensor = 'rbmk_water_percent',
+    regulationSensor = 'main_steam_separator',
     regulationTarget = MAPDEF_feedwaterTargetPercent,
     regulationDeadband = 0.5,
     regulationGain = 0.3,
@@ -589,13 +615,13 @@ LUASQUARE_PUMP.RegisterPump('feedwater_pump_a', {
 
 LUASQUARE_PUMP.RegisterPump('feedwater_pump_b', {
     source = 'main_deaerator',
-    target = 'rbmk',
+    target = 'main_steam_separator',
     rate = 500,
     headPressure = 120,
     minFlowFraction = 0.25,
     regulate = true,
     regulationMode = 'fill',
-    regulationSensor = 'rbmk_water_percent',
+    regulationSensor = 'main_steam_separator',
     regulationTarget = MAPDEF_feedwaterTargetPercent,
     regulationDeadband = 0.5,
     regulationGain = 0.3,
@@ -611,18 +637,46 @@ LUASQUARE_PUMP.RegisterPump('feedwater_pump_b', {
     breakerMonitorPos = RBMK.WorldOrigin + Vector(0, 256, 128 + MAPDEF_monitorZoffset)
 })
 
+LUASQUARE_PUMP.RegisterPump('main_circulation_pump_a', {
+    source = 'main_steam_separator',
+    target = 'rbmk_recirc',
+    rate = 8000,
+    headPressure = 120,
+    minFlowFraction = 0.25,
+    speedLevels = {0, 0.25, 0.5, 1},
+    speedLevel = 4,
+    enabled = true,
+    grid = 'station_grid',
+    peakMW = 12,
+    breaker = 'main_circulation_pump_a_breaker',
+    breakerClosed = true,
+    monitorPos = RBMK.WorldOrigin + Vector(0, 320, 96 + MAPDEF_monitorZoffset),
+    breakerMonitorPos = RBMK.WorldOrigin + Vector(0, 384, 96 + MAPDEF_monitorZoffset)
+})
+
+LUASQUARE_PUMP.RegisterPump('main_circulation_pump_b', {
+    source = 'main_steam_separator',
+    target = 'rbmk_recirc',
+    rate = 8000,
+    headPressure = 120,
+    minFlowFraction = 0.25,
+    speedLevels = {0, 0.25, 0.5, 1},
+    speedLevel = 4,
+    enabled = false,
+    grid = 'station_grid',
+    peakMW = 12,
+    breaker = 'main_circulation_pump_b_breaker',
+    breakerClosed = true,
+    monitorPos = RBMK.WorldOrigin + Vector(0, 320, 128 + MAPDEF_monitorZoffset),
+    breakerMonitorPos = RBMK.WorldOrigin + Vector(0, 384, 128 + MAPDEF_monitorZoffset)
+})
+
 LUASQUARE_PUMP.RegisterPump('condensate_pump_a1', {
     source = 'hotwell',
     target = 'main_deaerator',
     rate = 1000,
     headPressure = 60,
-    regulate = true,
-    regulationMode = 'drain',
-    regulationSensor = 'hotwell',
-    regulationTarget = MAPDEF_hotwellTargetPercent,
-    regulationDeadband = 1,
-    regulationGain = 0.08,
-    regulationMinOutput = 0.1,
+    regulate = false,
     speedLevels = {0, 0.25, 0.5, 1},
     speedLevel = 4,
     enabled = true,
@@ -807,6 +861,9 @@ LUASQUARE_GAUGE.RegisterGauge('gauge_waterlevel', {
     speed = 18
 })
 LUASQUARE_GAUGE.BindGauge('gauge_waterlevel', function()
+    if LUASQUARE_STEAMSEPARATOR and LUASQUARE_STEAMSEPARATOR.GetSteamSeparator('main_steam_separator') then
+        return LUASQUARE_STEAMSEPARATOR.GetLevelPercent('main_steam_separator')
+    end
     if not RBMK or not RBMK.Water or RBMK.Water <= 0 then return 0 end
     return (RBMK.Water / RBMK.MaxWater) * 100 or 0
 end)
@@ -818,6 +875,8 @@ LUASQUARE_GAUGE.RegisterGauge('gauge_steamlevel', {
     speed = 18
 })
 LUASQUARE_GAUGE.BindGauge('gauge_steamlevel', function()
+    local separator = LUASQUARE_STEAMSEPARATOR and LUASQUARE_STEAMSEPARATOR.GetSteamSeparator('main_steam_separator')
+    if separator then return (separator.steamAmount or 0) / math.max(separator.maxSteamAmount or 1, 0.0001) * 100 end
     if not RBMK or not RBMK.Steam or RBMK.Steam <= 0 then return 0 end
     return (RBMK.Steam / RBMK.MaxSteam) * 100 or 0
 end)
@@ -989,10 +1048,12 @@ local function MAPDEF_networkColumn(label, networkName)
     local network = LUASQUARE_FLUID.GetNetwork(networkName) or {}
     local percent = 0
     if network.maxAmount and network.maxAmount > 0 then percent = math.Clamp((network.amount or 0) / network.maxAmount, 0, 1) * 100 end
+    local sub = string.format('%.0fC %.1fbar', network.temperature or 0, network.pressure or 0)
+    if network.overflowEnabled then sub = string.format('OVF %.0f/s %.0fC', network.lastOverflowFlow or 0, network.temperature or 0) end
     return {
         label = label,
         value = string.format('%.0f%%', percent),
-        sub = string.format('%.0fC %.1fbar', network.temperature or 0, network.pressure or 0),
+        sub = sub,
         color = Color(205, 235, 240),
         valueColor = Color(110, 255, 150)
     }
@@ -1025,7 +1086,28 @@ local function MAPDEF_deaeratorColumn(label, deaeratorName)
     return {
         label = label,
         value = state,
-        sub = string.format('%.0f%% %.1fbar V%.0f', level, deaerator.pressure or 0, deaerator.steamAmount or 0),
+        sub = string.format('%.0f%% %.1fbar O%.0f/s', level, deaerator.pressure or 0, deaerator.lastOverflowFlow or 0),
+        color = Color(205, 235, 240),
+        valueColor = color
+    }
+end
+
+local function MAPDEF_separatorColumn(label, separatorName)
+    local separator = LUASQUARE_STEAMSEPARATOR and LUASQUARE_STEAMSEPARATOR.GetSteamSeparator(separatorName) or {}
+    local state, color = MAPDEF_powerState(separator.enabled)
+    if separator.lowLevel then
+        state = 'LOW'
+        color = Color(255, 95, 95)
+    elseif separator.flooded then
+        state = 'FLOOD'
+        color = Color(255, 210, 80)
+    end
+    local level = 0
+    if (separator.maxWaterAmount or 0) > 0 then level = math.Clamp((separator.waterAmount or 0) / separator.maxWaterAmount, 0, 1) * 100 end
+    return {
+        label = label,
+        value = state,
+        sub = string.format('%.0f%% %.1fbar S%.0f/s', level, separator.pressure or 0, separator.lastDrySteamOut or 0),
         color = Color(205, 235, 240),
         valueColor = color
     }
@@ -1120,7 +1202,7 @@ end
 LUASQUARE_3D2D.RegisterDisplay('fw_flow_panel', MAPDEF_panelBase({
     title = 'FEEDWATER',
     target = 'tar_display_feedwater',
-    width = 44,
+    width = 58,
     height = 33
 }
 ))
@@ -1128,12 +1210,26 @@ LUASQUARE_3D2D.BindDisplay('fw_flow_panel', function()
     return {
         {
             type = 'columns',
-            height = 120,
+            height = 64,
             columns = {
                 MAPDEF_pumpColumn('FW PUMP A', 'feedwater_pump_a'),
                 MAPDEF_pumpColumn('FW PUMP B', 'feedwater_pump_b'),
-                MAPDEF_levelTargetColumn('RPV TARGET', RBMK.MaxWater > 0 and ((RBMK.Water or 0) / RBMK.MaxWater) * 100 or 0, MAPDEF_feedwaterTargetPercent),
-                MAPDEF_valveColumn('DRAIN VLV', 'rpv_drain_valve')
+            }
+        },
+        {
+            type = 'columns',
+            height = 64,
+            columns = {
+                MAPDEF_levelTargetColumn('SEP TARGET', LUASQUARE_STEAMSEPARATOR.GetLevelPercent('main_steam_separator'), MAPDEF_feedwaterTargetPercent),
+                MAPDEF_separatorColumn('SEPARATOR', 'main_steam_separator')
+            }
+        },
+        {
+            type = 'columns',
+            height = 64,
+            columns = {
+                MAPDEF_pumpColumn('MCP A', 'main_circulation_pump_a'),
+                MAPDEF_pumpColumn('MCP B', 'main_circulation_pump_b')
             }
         }
     }
@@ -1161,10 +1257,8 @@ LUASQUARE_3D2D.BindDisplay('condensate_pump_status_panel', function()
             type = 'columns',
             height = 64,
             columns = {
-                MAPDEF_condenserColumn('CONDENSER', 'main_condenser'),
                 MAPDEF_pumpColumn('CW PUMP', 'circulating_water_pump_a1'),
                 MAPDEF_pumpColumn('CW MAKEUP', 'cooling_water_makeup_pump'),
-                MAPDEF_coolingTowerColumn('COOLING TWR A', 'main_cooling_tower'),
                 MAPDEF_networkColumn('CW LOOP', 'cooling_water')
             }
         },
@@ -1172,7 +1266,16 @@ LUASQUARE_3D2D.BindDisplay('condensate_pump_status_panel', function()
             type = 'columns',
             height = 64,
             columns = {
-                MAPDEF_valveColumn('HOTWELL DRN', 'hotwell_drain_valve')
+                MAPDEF_condenserColumn('CONDENSER', 'main_condenser'),
+                MAPDEF_coolingTowerColumn('COOLING TWR A', 'main_cooling_tower'),
+            }
+        },
+        {
+            type = 'columns',
+            height = 64,
+            columns = {
+                MAPDEF_valveColumn('HOTWELL DRN', 'hotwell_drain_valve'),
+                MAPDEF_valveColumn('RECIRC DRN', 'recirc_drain_valve')
             }
         }
     }
@@ -1182,7 +1285,7 @@ LUASQUARE_3D2D.RegisterDisplay('deaerator_status_panel', MAPDEF_panelBase({
     title = 'DEAERATOR',
     target = 'tar_display_deaerator',
     width = 44,
-    height = 33
+    height = 39
 }))
 LUASQUARE_3D2D.BindDisplay('deaerator_status_panel', function()
     local deaerator = LUASQUARE_DEAERATOR.GetDeaerator('main_deaerator') or {}
@@ -1201,17 +1304,17 @@ LUASQUARE_3D2D.BindDisplay('deaerator_status_panel', function()
         { type = 'bar', fraction = temperatureFraction, height = 5 },
         { type = 'value', label = 'Steam Valve', value = (deaerator.steamValve or 0) * 100, decimals = 0, unit = '%' },
         { type = 'value', label = 'Vapor Relief', value = (deaerator.reliefValve or 0) * 100, decimals = 0, unit = '%' },
+        { type = 'value', label = 'Water Overflow', value = (deaerator.overflowValve or 0) * 100, decimals = 0, unit = '%' },
+        { type = 'value', label = 'Overflow Flow', value = deaerator.lastOverflowFlow or 0, decimals = 0, unit = '/s' },
         { type = 'value', label = 'LPS Draw', value = deaerator.lastSteamUsed or 0, decimals = 0, unit = '/s' }
     }
 end)
 
 LUASQUARE_3D2D.RegisterDisplay('rpv_status_panel', MAPDEF_panelBase({
     title = 'RPV STATUS',
-    pos = Vector(91, -461, 598),
-    width = 24,
-    height = 22,
-    angle = Angle(0, -90, 90),
-    centered = true
+    pos = 'tar_display_rpv',
+    width = 34,
+    height = 53,
 }))
 LUASQUARE_3D2D.BindDisplay('rpv_status_panel', function()
     local waterFraction = 0
@@ -1223,10 +1326,12 @@ LUASQUARE_3D2D.BindDisplay('rpv_status_panel', function()
         { type = 'value', label = 'MWth', value = RBMK.LastThermalMW or 0, decimals = 0 },
         { type = 'value', label = 'RPV Pressure', value = RBMK.RPVPressure or 0, decimals = 1, unit = 'bar', warn = pressureFraction > 0.85 },
         { type = 'bar', fraction = pressureFraction, height = 5 },
-        { type = 'bar', label = 'Water Level', fraction = waterFraction, height = 5 },
-        { type = 'value', label = 'Water Temp.', value = RBMK.WaterTemperature or 0, decimals = 0, unit = 'C' },
-        { type = 'value', label = 'Steam Temp.', value = RBMK.SteamTemperature or 0, decimals = 0, unit = 'C' },
-        { type = 'value', label = 'Cooling Eff.', value = (RBMK.LastCoolingEfficiency or 0) * 100, decimals = 0, unit = '%' }
+        { type = 'bar', label = 'Core Hold-up', fraction = waterFraction, height = 5 },
+        { type = 'value', label = 'Core Flow', value = RBMK.LastEffectiveCoreFlow or 0, decimals = 0, unit = '/s', warn = (RBMK.LastDryoutRisk or 0) > 0.6 },
+        { type = 'value', label = 'Natural Flow', value = RBMK.LastNaturalCirculationFlow or 0, decimals = 0, unit = '/s' },
+        { type = 'value', label = 'Quality', value = (RBMK.LastSteamQuality or 0) * 100, decimals = 1, unit = '%' },
+        { type = 'value', label = 'Void', value = (RBMK.LastVoidFraction or 0) * 100, decimals = 1, unit = '%' },
+        { type = 'bar', label = 'Dryout Risk', fraction = RBMK.LastDryoutRisk or 0, height = 5, warn = (RBMK.LastDryoutRisk or 0) > 0.6 }
     }
 end)
 
@@ -1234,7 +1339,7 @@ LUASQUARE_3D2D.RegisterDisplay('tg1_status_panel', MAPDEF_panelBase({
     title = 'TURBINE A',
     target = 'tar_display_tg1',
     width = 44,
-    height = 32
+    height = 33
 }))
 LUASQUARE_3D2D.BindDisplay('tg1_status_panel', function()
     local data = LUASQUARE_TURBINE.GetTurbine('tg1')
@@ -1307,7 +1412,7 @@ LUASQUARE_3D2D.BindDisplay('electrical_status_panel', function()
                 MAPDEF_dieselColumn('EDG1', 'edg1'),
                 {
                     label = 'PUMP LOAD',
-                    value = string.format('%.1fMW', MAPDEF_pumpLoadMW('feedwater_pump_a', 'feedwater_pump_b', 'condensate_pump_a1', 'circulating_water_pump_a1')),
+                    value = string.format('%.1fMW', MAPDEF_pumpLoadMW('feedwater_pump_a', 'feedwater_pump_b', 'main_circulation_pump_a', 'main_circulation_pump_b', 'condensate_pump_a1', 'circulating_water_pump_a1')),
                     sub = 'FW + COND + CW',
                     color = Color(205, 235, 240),
                     valueColor = Color(110, 255, 150)
@@ -1329,7 +1434,6 @@ end
 
 local function MAPDEF_setHotwellTarget(percent)
     MAPDEF_hotwellTargetPercent = math.Clamp(tonumber(percent) or 0, 0, 100)
-    LUASQUARE_PUMP.SetRegulationTarget('condensate_pump_a1', MAPDEF_hotwellTargetPercent)
     LUASQUARE_PUMP.SetRegulationTarget('hotwell_makeup_pump', MAPDEF_hotwellTargetPercent)
 end
 
@@ -1352,7 +1456,7 @@ LUASQUARE_KEYPAD.RegisterKeypad('fwlevelctrl',
     }
 )
 
--- Condensate pump regulator target keypad, value is hotwell level percent.
+-- Hotwell make-up regulator target keypad, value is hotwell level percent.
 LUASQUARE_SEG7.RegisterDisplay('hotwellctrl', {
     'hotwellctrl_0',
     'hotwellctrl_1',
@@ -1494,6 +1598,33 @@ LUASQUARE_ANNUNCIATOR.RegisterAlarm('rbmk_integrity_low', {
         return false
     end
 })
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('recirculation_flow_low', {
+    label = 'RECIRC FLOW LOW',
+    soundWav = 'bms_objects/alarms/alarm6.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 100,
+    reAlarmDelay = 0,
+    getter = function()
+        local flow = RBMK.LastEffectiveCoreFlow or 0
+        local threshold = (RBMK.RecirculationRatedFlow or 16000) * 0.25
+        if flow < threshold and (RBMK.LastThermalMW or 0) > 10 then return true, string.format('%.0f / %.0f/s', flow, threshold) end
+        return false
+    end
+})
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('rbmk_dryout_risk', {
+    label = 'RBMK DRYOUT RISK',
+    soundWav = 'bms_objects/alarms/alarm1.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 120,
+    reAlarmDelay = 0,
+    getter = function()
+        local risk = RBMK.LastDryoutRisk or 0
+        if risk >= 0.65 then return true, string.format('%.0f%%', risk * 100) end
+        return false
+    end
+})
 LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('reactor_panel', {
     indicators = {
         rpv_pressure_high = 'ann_rpv_pressure_high',
@@ -1501,9 +1632,75 @@ LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('reactor_panel', {
         fuel_channel_leak = 'ann_fuel_channel_leak',
         control_rods_unpowered = 'ann_control_rods_unpowered',
         scram_rods_stuck = 'ann_scram_rods_stuck',
-        rbmk_integrity_low = 'ann_rbmk_integrity_low'
+        rbmk_integrity_low = 'ann_rbmk_integrity_low',
+        recirculation_flow_low = 'ann_recirculation_flow_low',
+        rbmk_dryout_risk = 'ann_rbmk_dryout_risk'
     }
 })
+
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('steam_separator_low_level', {
+    label = 'SEPARATOR LEVEL LOW',
+    soundWav = 'bms_objects/alarms/alarm6.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 105,
+    getter = function()
+        local separator = LUASQUARE_STEAMSEPARATOR.GetSteamSeparator('main_steam_separator')
+        if not separator then return false end
+        local level = LUASQUARE_STEAMSEPARATOR.GetLevelPercent('main_steam_separator')
+        if level <= 20 then return true, string.format('%.0f%%', level) end
+        return false
+    end
+})
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('steam_separator_high_level', {
+    label = 'SEPARATOR LEVEL HIGH',
+    soundWav = 'bms_objects/alarms/alarm6.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 95,
+    getter = function()
+        local separator = LUASQUARE_STEAMSEPARATOR.GetSteamSeparator('main_steam_separator')
+        if not separator then return false end
+        local level = LUASQUARE_STEAMSEPARATOR.GetLevelPercent('main_steam_separator')
+        if level >= 85 then return true, string.format('%.0f%%', level) end
+        return false
+    end
+})
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('steam_separator_high_pressure', {
+    label = 'SEPARATOR PRESS HIGH',
+    soundWav = 'bms_objects/alarms/alarm6.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 115,
+    getter = function()
+        local separator = LUASQUARE_STEAMSEPARATOR.GetSteamSeparator('main_steam_separator')
+        if not separator then return false end
+        if (separator.pressure or 0) >= 60 then return true, string.format('%.1f bar', separator.pressure or 0) end
+        return false
+    end
+})
+LUASQUARE_ANNUNCIATOR.RegisterAlarm('steam_wet_carryover', {
+    label = 'WET STEAM CARRYOVER',
+    soundWav = 'bms_objects/alarms/alarm1.wav',
+    soundDistance = 100,
+    soundVolume = 10,
+    soundPitch = 100,
+    getter = function()
+        local separator = LUASQUARE_STEAMSEPARATOR.GetSteamSeparator('main_steam_separator')
+        if not separator then return false end
+        if (separator.lastCarryover or 0) > 0.5 then return true, string.format('%.1f/s', separator.lastCarryover or 0) end
+        return false
+    end
+})
+LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('separator_panel', {
+    indicators = {
+        steam_separator_low_level = 'ann_steam_separator_low_level',
+        steam_separator_high_level = 'ann_steam_separator_high_level',
+        steam_separator_high_pressure = 'ann_steam_separator_high_pressure',
+        steam_wet_carryover = 'ann_steam_wet_carryover',
+    }
+})
+
 
 LUASQUARE_ANNUNCIATOR.RegisterAlarm('tg1_trip', {
     label = 'TURBINE A TRIP',
@@ -1684,6 +1881,7 @@ LUASQUARE_ANNUNCIATOR.Start()
 LUASQUARE_FLUID.Start()
 LUASQUARE_VALVE.Start()
 LUASQUARE_PUMP.Start()
+LUASQUARE_STEAMSEPARATOR.Start()
 LUASQUARE_TURBINE.Start()
 LUASQUARE_CONDENSER.Start()
 LUASQUARE_HEATEXCHANGER.Start()

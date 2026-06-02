@@ -1,0 +1,5 @@
+UnlitGeneric
+{
+    "$basetexture" "models/luasquare/ann/rpv_dry_out"
+    "$frame" "1"
+}

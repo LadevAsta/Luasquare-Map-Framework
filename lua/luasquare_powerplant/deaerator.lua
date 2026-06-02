@@ -50,6 +50,10 @@ function LUASQUARE_DEAERATOR.RegisterDeaerator(name, data)
         regulatorRate = tonumber(data.regulatorRate) or 0.2,
         steamValve = math.Clamp(tonumber(data.steamValve) or 0, 0, 1),
         reliefValve = math.Clamp(tonumber(data.reliefValve) or 0, 0, 1),
+        overflowValve = math.Clamp(tonumber(data.overflowValve) or (data.overflowEnabled and 1 or 0), 0, 1),
+        overflowTarget = data.overflowTarget,
+        overflowLevelFraction = math.Clamp(tonumber(data.overflowLevelFraction) or 0.99, 0, 1),
+        overflowRate = tonumber(data.overflowRate) or math.huge,
         maxSteamRate = tonumber(data.maxSteamRate) or 0,
         maxReliefRate = tonumber(data.maxReliefRate) or tonumber(data.reliefRate) or 500,
         floodedReliefFactor = math.Clamp(tonumber(data.floodedReliefFactor) or 0.2, 0, 1),
@@ -63,6 +67,7 @@ function LUASQUARE_DEAERATOR.RegisterDeaerator(name, data)
         lastSteamUsed = 0,
         lastWaterMade = 0,
         lastReliefFlow = 0,
+        lastOverflowFlow = 0,
         lastHeatMW = 0,
         tankTemperature = 0,
         tankAmount = 0,
@@ -185,6 +190,28 @@ end
 
 function LUASQUARE_DEAERATOR.AdjustReliefValvePercent(name, percentDelta)
     return LUASQUARE_DEAERATOR.AdjustReliefValve(name, (tonumber(percentDelta) or 0) / 100)
+end
+
+function LUASQUARE_DEAERATOR.SetOverflowValve(name, value)
+    local deaerator = LUASQUARE_DEAERATOR.GetDeaerator(name)
+    if not deaerator then return false end
+    deaerator.overflowValve = math.Clamp(tonumber(value) or 0, 0, 1)
+    if deaerator.overflowValve <= 0 then deaerator.lastOverflowFlow = 0 end
+    return true
+end
+
+function LUASQUARE_DEAERATOR.AdjustOverflowValve(name, delta)
+    local deaerator = LUASQUARE_DEAERATOR.GetDeaerator(name)
+    if not deaerator then return false end
+    return LUASQUARE_DEAERATOR.SetOverflowValve(name, deaerator.overflowValve + (tonumber(delta) or 0))
+end
+
+function LUASQUARE_DEAERATOR.SetOverflowValvePercent(name, percent)
+    return LUASQUARE_DEAERATOR.SetOverflowValve(name, (tonumber(percent) or 0) / 100)
+end
+
+function LUASQUARE_DEAERATOR.AdjustOverflowValvePercent(name, percentDelta)
+    return LUASQUARE_DEAERATOR.AdjustOverflowValve(name, (tonumber(percentDelta) or 0) / 100)
 end
 
 function LUASQUARE_DEAERATOR.SetAutoRegulator(name, enabled)
@@ -325,6 +352,37 @@ local function ventRelief(deaerator, dt)
     LUASQUARE_DEAERATOR.UpdatePressure(deaerator)
 end
 
+local function addToOverflowTarget(target, amount, temperature)
+    amount = math.max(tonumber(amount) or 0, 0)
+    if target == 'void' or target == nil then return amount end
+    if LUASQUARE_FLUID and LUASQUARE_FLUID.GetNetwork(target) then
+        return LUASQUARE_FLUID.AddFluid(target, amount, temperature)
+    end
+    if LUASQUARE_STEAMSEPARATOR and LUASQUARE_STEAMSEPARATOR.GetSteamSeparator(target) then
+        return LUASQUARE_STEAMSEPARATOR.AddWater(target, amount, temperature)
+    end
+    if LUASQUARE_DEAERATOR and LUASQUARE_DEAERATOR.GetDeaerator(target) then
+        return LUASQUARE_DEAERATOR.AddWater(target, amount, temperature)
+    end
+    return 0
+end
+
+local function applyOverflow(name, deaerator, dt)
+    deaerator.lastOverflowFlow = 0
+    if (deaerator.overflowValve or 0) <= 0 or not deaerator.overflowTarget then return end
+
+    local threshold = (deaerator.maxAmount or 0) * math.Clamp(deaerator.overflowLevelFraction or 0.99, 0, 1)
+    local excess = math.max((deaerator.amount or 0) - threshold, 0)
+    if excess <= 0 then return end
+
+    local requested = math.min(excess, math.max(deaerator.overflowRate or math.huge, 0) * (deaerator.overflowValve or 0) * dt)
+    local temperature = deaerator.temperature or 20
+    local removed = LUASQUARE_DEAERATOR.RemoveWater(name, requested)
+    local accepted = addToOverflowTarget(deaerator.overflowTarget, removed, temperature)
+    if accepted < removed then LUASQUARE_DEAERATOR.AddWater(name, removed - accepted, temperature) end
+    deaerator.lastOverflowFlow = accepted / math.max(dt, 0.0001)
+end
+
 local function applyThermalLoss(deaerator, dt)
     local rate = math.max(deaerator.thermalLossRate or 0, 0)
     if rate <= 0 then return end
@@ -345,12 +403,14 @@ function LUASQUARE_DEAERATOR.UpdateDeaerator(name, dt)
     deaerator.pendingWaterMade = 0
     deaerator.pendingHeatKJ = 0
     deaerator.lastReliefFlow = 0
+    deaerator.lastOverflowFlow = 0
     LUASQUARE_DEAERATOR.UpdatePressure(deaerator)
     if deaerator.ruptured then return end
 
     updateAutoRegulator(deaerator, dt)
     consumeLegacyHeatingSteam(name, deaerator, dt)
     ventRelief(deaerator, dt)
+    applyOverflow(name, deaerator, dt)
     applyThermalLoss(deaerator, dt)
     LUASQUARE_DEAERATOR.UpdatePressure(deaerator)
     if (deaerator.pressure or 0) >= (deaerator.hardMaxPressure or math.huge) then

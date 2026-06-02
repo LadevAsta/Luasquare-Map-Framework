@@ -6,7 +6,7 @@ RBMK.Debug.ClientState = {
     VesselInfo = {}
 }
 
-local DEBUG_WIRE_VERSION = 2
+local DEBUG_WIRE_VERSION = 3
 local DEBUG_PACKET_VESSEL = 1
 local DEBUG_PACKET_CELLS = 2
 local DEBUG_PACKET_FLUX = 3
@@ -158,6 +158,15 @@ function RBMK.Debug.BuildVesselInfo()
         integrityDamage = RBMK.IntegrityDamage or 0,
         integrityLastDamage = RBMK.IntegrityLastDamage or 0,
         integrityLastDamageReason = RBMK.IntegrityLastDamageReason,
+        steamSeparator = RBMK.SteamSeparator,
+        lastRecircFlow = RBMK.LastRecircFlow or 0,
+        lastNaturalCirculationFlow = RBMK.LastNaturalCirculationFlow or 0,
+        lastEffectiveCoreFlow = RBMK.LastEffectiveCoreFlow or 0,
+        lastSteamQuality = RBMK.LastSteamQuality or 0,
+        lastVoidFraction = RBMK.LastVoidFraction or 0,
+        lastWetSteamReturned = RBMK.LastWetSteamReturned or 0,
+        lastWetWaterReturned = RBMK.LastWetWaterReturned or 0,
+        lastDryoutRisk = RBMK.LastDryoutRisk or 0,
         waterTemperature = RBMK.WaterTemperature or 0,
         steamTemperature = RBMK.SteamTemperature or 0,
         boilingTemperature = RBMK.LastBoilingTemperature or RBMK.WaterBoilingTemperature or 0,
@@ -245,6 +254,15 @@ function RBMK.Debug.BroadcastVesselInfo(sequence, info)
     net.WriteFloat(info.integrityDamage or 0)
     net.WriteFloat(info.integrityLastDamage or 0)
     writeOptionalString(info.integrityLastDamageReason)
+    writeOptionalString(info.steamSeparator)
+    net.WriteFloat(info.lastRecircFlow or 0)
+    net.WriteFloat(info.lastNaturalCirculationFlow or 0)
+    net.WriteFloat(info.lastEffectiveCoreFlow or 0)
+    net.WriteFloat(info.lastSteamQuality or 0)
+    net.WriteFloat(info.lastVoidFraction or 0)
+    net.WriteFloat(info.lastWetSteamReturned or 0)
+    net.WriteFloat(info.lastWetWaterReturned or 0)
+    net.WriteFloat(info.lastDryoutRisk or 0)
     net.WriteFloat(info.waterTemperature or 0)
     net.WriteFloat(info.steamTemperature or 0)
     net.WriteFloat(info.boilingTemperature or 0)

@@ -54,6 +54,21 @@ RBMK.LastSteamExportFlow = 0
 RBMK.LastDrainFlow = 0
 RBMK.LastCoolingEfficiency = 1
 RBMK.LastBoilingTemperature = 100
+RBMK.SteamSeparator = RBMK.SteamSeparator or nil
+RBMK.PendingRecircWater = 0
+RBMK.PendingRecircTemperature = nil
+RBMK.RecirculationRatedFlow = RBMK.RecirculationRatedFlow or 16000
+RBMK.NaturalCirculationFraction = RBMK.NaturalCirculationFraction or 0.05
+RBMK.NaturalCirculationMinLevelFraction = RBMK.NaturalCirculationMinLevelFraction or 0.15
+RBMK.CoreHoldUpSeconds = RBMK.CoreHoldUpSeconds or 1.5
+RBMK.LastRecircFlow = 0
+RBMK.LastNaturalCirculationFlow = 0
+RBMK.LastEffectiveCoreFlow = 0
+RBMK.LastSteamQuality = 0
+RBMK.LastVoidFraction = 0
+RBMK.LastWetSteamReturned = 0
+RBMK.LastWetWaterReturned = 0
+RBMK.LastDryoutRisk = 0
 
 RBMK.AutoRegulatorEnabled = false
 RBMK.AutoRegulatorUsePID = true
@@ -139,9 +154,6 @@ RBMK.AverageHeat = 20
 RBMK.MaxHeat = 20
 
 RBMK.AverageXenon = 0
-
---TODO : Somehow Implement Megawatt Thermal (thermal transfer method). Which will be used by Auto control rod to stabilize the reactor for power production later (New Turbine Module in luasquare_powerplant).
--- Pressure is gameplay bar. Steam is stored as 1 bar steam-equivalent liters.
 
 -- =========================================
 -- MATRIX

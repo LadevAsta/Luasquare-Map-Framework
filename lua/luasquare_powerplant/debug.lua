@@ -7,6 +7,7 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     Condensers = {},
     HeatExchangers = {},
     Deaerators = {},
+    SteamSeparators = {},
     Turbines = {},
     CoolingTowers = {},
     Grids = {},
@@ -16,7 +17,7 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     DieselGenerators = {}
 }
 
-local DEBUG_WIRE_VERSION = 6
+local DEBUG_WIRE_VERSION = 8
 local DEBUG_PACKET_START = 1
 local DEBUG_PACKET_CATEGORY = 2
 local DEBUG_PACKET_END = 3
@@ -26,8 +27,10 @@ local DEBUG_CATEGORIES = {
         {'name', 'string'}, {'type', 'string'}, {'fluidType', 'string'},
         {'amount', 'number'}, {'maxAmount', 'number'}, {'hardMaxAmount', 'number'},
         {'volume', 'number'}, {'pressure', 'number'}, {'maxPressure', 'number'}, {'temperature', 'number'},
+        {'thermalEnergyKJ', 'number'}, {'lastThermalMW', 'number'}, {'steamQuality', 'number'}, {'wetCarryover', 'number'},
         {'coolingTower', 'string'}, {'lastCoolantFlow', 'number'}, {'lastCoolantHeatRemovedMW', 'number'},
         {'coolantCooling', 'bool'}, {'coolantHighTemperature', 'number'}, {'coolantOverheated', 'bool'},
+        {'overflowEnabled', 'bool'}, {'overflowTarget', 'string'}, {'overflowLevelFraction', 'number'}, {'lastOverflowFlow', 'number'},
         {'ruptured', 'bool'}, {'serviceEnabled', 'bool'}, {'pos', 'vector'}
     }},
     {name = 'Pumps', chunkSize = 32, schema = {
@@ -65,7 +68,18 @@ local DEBUG_CATEGORIES = {
         {'temperature', 'number'}, {'pressure', 'number'}, {'maxPressure', 'number'}, {'hardMaxPressure', 'number'},
         {'steamAmount', 'number'}, {'steamMaxAmount', 'number'}, {'steamPressure', 'number'}, {'steamTemperature', 'number'},
         {'nonCondensibleAmount', 'number'}, {'steamValve', 'number'}, {'reliefValve', 'number'}, {'lastSteamUsed', 'number'}, {'lastWaterMade', 'number'},
+        {'overflowValve', 'number'}, {'overflowTarget', 'string'}, {'overflowLevelFraction', 'number'}, {'lastOverflowFlow', 'number'},
         {'lastReliefFlow', 'number'}, {'lastHeatMW', 'number'}, {'ruptureReason', 'string'}, {'pos', 'vector'}
+    }},
+    {name = 'SteamSeparators', chunkSize = 32, schema = {
+        {'name', 'string'}, {'drySteamNetwork', 'string'}, {'enabled', 'bool'},
+        {'waterAmount', 'number'}, {'maxWaterAmount', 'number'}, {'waterTemperature', 'number'},
+        {'steamAmount', 'number'}, {'maxSteamAmount', 'number'}, {'steamTemperature', 'number'},
+        {'pressure', 'number'}, {'maxPressure', 'number'}, {'outletValve', 'number'},
+        {'separationEfficiency', 'number'}, {'lowLevel', 'bool'}, {'flooded', 'bool'},
+        {'lastWetWaterIn', 'number'}, {'lastWetSteamIn', 'number'}, {'lastDrySteamOut', 'number'},
+        {'lastCarryover', 'number'}, {'lastFeedwaterIn', 'number'}, {'lastRecircOut', 'number'},
+        {'lastPressureScale', 'number'}, {'lastThermalMW', 'number'}, {'lastSteamQuality', 'number'}, {'pos', 'vector'}
     }},
     {name = 'Turbines', chunkSize = 16, schema = {
         {'name', 'string'}, {'input', 'string'}, {'boiler', 'string'}, {'output', 'string'},
@@ -77,6 +91,8 @@ local DEBUG_CATEGORIES = {
         {'catastrophicFailed', 'bool'}, {'synced', 'bool'}, {'autoSync', 'bool'},
         {'valve', 'number'}, {'bypassValve', 'number'}, {'maxSteamRate', 'number'}, {'ratedSteamRate', 'number'},
         {'rpm', 'number'}, {'phase', 'number'}, {'vibration', 'number'}, {'cycleEfficiency', 'number'},
+        {'useSteamEnergy', 'bool'}, {'lastSteamThermalMW', 'number'}, {'lastBypassSteamThermalMW', 'number'},
+        {'lastSteamQuality', 'number'}, {'lastWetCarryover', 'number'},
         {'lastBoilerMW', 'number'}, {'lastSteamShare', 'number'}, {'lastTurbineSteamFraction', 'number'},
         {'lastInletSteam', 'number'}, {'lastInletPressureScale', 'number'}, {'lastSteamUsed', 'number'},
         {'lastBypassSteam', 'number'}, {'lastExhaustMade', 'number'}, {'lastCondensateMade', 'number'},
@@ -179,14 +195,59 @@ function LUASQUARE_POWERPLANT.Debug.BuildNetworks()
                 pressure = network.pressure or 0,
                 maxPressure = network.maxPressure or 0,
                 temperature = network.temperature or 0,
+                thermalEnergyKJ = network.thermalEnergyKJ or 0,
+                lastThermalMW = network.lastThermalMW or 0,
+                steamQuality = network.steamQuality or 1,
+                wetCarryover = network.wetCarryover or 0,
                 coolingTower = network.coolingTower,
                 lastCoolantFlow = network.lastCoolantFlow or 0,
                 lastCoolantHeatRemovedMW = network.lastCoolantHeatRemovedMW or 0,
                 coolantCooling = network.coolantCooling and true or false,
                 coolantHighTemperature = network.coolantHighTemperature or 0,
                 coolantOverheated = network.coolantOverheated and true or false,
+                overflowEnabled = network.overflowEnabled and true or false,
+                overflowTarget = network.overflowTarget,
+                overflowLevelFraction = network.overflowLevelFraction or 0,
+                lastOverflowFlow = network.lastOverflowFlow or 0,
                 ruptured = network.ruptured and true or false,
                 serviceEnabled = network.serviceEnabled and true or false,
+                pos = pos
+            })
+        end
+    end
+end
+
+function LUASQUARE_POWERPLANT.Debug.BuildSteamSeparators()
+    LUASQUARE_POWERPLANT.Debug.ClientState.SteamSeparators = {}
+    if not LUASQUARE_STEAMSEPARATOR then return end
+    for name, separator in pairs(LUASQUARE_STEAMSEPARATOR.Separators) do
+        local pos = copyMonitorPos(separator)
+        if pos then
+            table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.SteamSeparators, {
+                name = name,
+                drySteamNetwork = separator.drySteamNetwork,
+                enabled = separator.enabled and true or false,
+                waterAmount = separator.waterAmount or 0,
+                maxWaterAmount = separator.maxWaterAmount or 0,
+                waterTemperature = separator.waterTemperature or 0,
+                steamAmount = separator.steamAmount or 0,
+                maxSteamAmount = separator.maxSteamAmount or 0,
+                steamTemperature = separator.steamTemperature or 0,
+                pressure = separator.pressure or 0,
+                maxPressure = separator.maxPressure or 0,
+                outletValve = separator.outletValve or 0,
+                separationEfficiency = separator.separationEfficiency or 0,
+                lowLevel = separator.lowLevel and true or false,
+                flooded = separator.flooded and true or false,
+                lastWetWaterIn = separator.lastWetWaterIn or 0,
+                lastWetSteamIn = separator.lastWetSteamIn or 0,
+                lastDrySteamOut = separator.lastDrySteamOut or 0,
+                lastCarryover = separator.lastCarryover or 0,
+                lastFeedwaterIn = separator.lastFeedwaterIn or 0,
+                lastRecircOut = separator.lastRecircOut or 0,
+                lastPressureScale = separator.lastPressureScale or 0,
+                lastThermalMW = separator.lastThermalMW or 0,
+                lastSteamQuality = separator.lastSteamQuality or 1,
                 pos = pos
             })
         end
@@ -339,6 +400,10 @@ function LUASQUARE_POWERPLANT.Debug.BuildDeaerators()
                 reliefValve = deaerator.reliefValve or 0,
                 lastSteamUsed = deaerator.lastSteamUsed or 0,
                 lastWaterMade = deaerator.lastWaterMade or 0,
+                overflowValve = deaerator.overflowValve or 0,
+                overflowTarget = deaerator.overflowTarget,
+                overflowLevelFraction = deaerator.overflowLevelFraction or 0,
+                lastOverflowFlow = deaerator.lastOverflowFlow or 0,
                 lastReliefFlow = deaerator.lastReliefFlow or 0,
                 lastHeatMW = deaerator.lastHeatMW or 0,
                 ruptureReason = deaerator.ruptureReason,
@@ -384,6 +449,11 @@ function LUASQUARE_POWERPLANT.Debug.BuildTurbines()
                 phase = turbine.phase or 0,
                 vibration = turbine.vibration or 0,
                 cycleEfficiency = turbine.cycleEfficiency or turbine.efficiency or 0,
+                useSteamEnergy = turbine.useSteamEnergy and true or false,
+                lastSteamThermalMW = turbine.lastSteamThermalMW or 0,
+                lastBypassSteamThermalMW = turbine.lastBypassSteamThermalMW or 0,
+                lastSteamQuality = turbine.lastSteamQuality or 1,
+                lastWetCarryover = turbine.lastWetCarryover or 0,
                 lastBoilerMW = turbine.lastBoilerMW or 0,
                 lastSteamShare = turbine.lastSteamShare or 0,
                 lastTurbineSteamFraction = turbine.lastTurbineSteamFraction or 0,
@@ -596,6 +666,7 @@ function LUASQUARE_POWERPLANT.Debug.Tick()
     LUASQUARE_POWERPLANT.Debug.BuildCondensers()
     LUASQUARE_POWERPLANT.Debug.BuildHeatExchangers()
     LUASQUARE_POWERPLANT.Debug.BuildDeaerators()
+    LUASQUARE_POWERPLANT.Debug.BuildSteamSeparators()
     LUASQUARE_POWERPLANT.Debug.BuildTurbines()
     LUASQUARE_POWERPLANT.Debug.BuildCoolingTowers()
     LUASQUARE_POWERPLANT.Debug.BuildGrids()
