@@ -18,7 +18,7 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     DieselGenerators = {}
 }
 
-local DEBUG_WIRE_VERSION = 8
+local DEBUG_WIRE_VERSION = 10
 local DEBUG_PACKET_START = 1
 local DEBUG_PACKET_CATEGORY = 2
 local DEBUG_PACKET_END = 3
@@ -123,7 +123,8 @@ local DEBUG_CATEGORIES = {
     }},
     {name = 'Breakers', schema = {
         {'name', 'string'}, {'grid', 'string'}, {'owner', 'string'}, {'kind', 'string'},
-        {'closed', 'bool'}, {'tripped', 'bool'}, {'maxMW', 'number'}, {'lastMW', 'number'},
+        {'closed', 'bool'}, {'tripped', 'bool'}, {'maxMW', 'number'}, {'demandMW', 'number'}, {'lastDemandAcceptedMW', 'number'},
+        {'demandServed', 'bool'}, {'lastMW', 'number'},
         {'tripReason', 'string'}, {'pos', 'vector'}
     }},
     {name = 'Transformers', schema = {
@@ -466,7 +467,9 @@ function LUASQUARE_POWERPLANT.Debug.RenderBreaker(breaker)
         tostring(breaker.kind) .. ' ' .. tostring(breaker.owner or ''),
         'GRID ' .. tostring(breaker.grid),
         'CLOSED ' .. tostring(breaker.closed),
-        string.format('MW %.1f / %.1f', breaker.lastMW or 0, breaker.maxMW or 0)
+        string.format('MW %.1f / %.1f', breaker.lastMW or 0, breaker.maxMW or 0),
+        string.format('DEMAND %.1f ACCEPT %.1f', breaker.demandMW or 0, breaker.lastDemandAcceptedMW or 0),
+        'SERVED ' .. tostring(breaker.demandServed)
     }
     if breaker.tripped then table.insert(lines, 'TRIP ' .. tostring(breaker.tripReason or '')) end
     LUASQUARE_POWERPLANT.Debug.DrawWorldText(breaker.pos, table.concat(lines, '\n'), Color(255, 255, 160))

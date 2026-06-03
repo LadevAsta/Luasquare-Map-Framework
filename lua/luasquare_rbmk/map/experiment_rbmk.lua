@@ -248,23 +248,6 @@ LUASQUARE_POWERGRID.RegisterGrid('control_room_grid', {
     monitorOffset = Vector(0,0,160)
 })
 
-LUASQUARE_POWERGRID.RegisterGrid('emergency_lighting_grid', {
-    type = 'auxiliary',
-    nominalFrequency = 60,
-    voltage = 120,
-    baseLoadMW = 0.03,
-    enabled = true,
-    inertia = 1,
-    droopHz = 2.5,
-    batteryCapacityMWh = 0.08,
-    batteryMWh = 0.08,
-    batteryMaxDischargeMW = 0.08,
-    batteryMaxChargeMW = 0.02,
-    batteryTripOnEmpty = false,
-    monitorPos = 'tar_grid_station',
-    monitorOffset = Vector(0,0,224)
-})
-
 LUASQUARE_POWERGRID.RegisterTransformer('startup_station_transformer', {
     from = 'startup_grid',
     to = 'station_grid',
@@ -308,25 +291,27 @@ LUASQUARE_POWERGRID.RegisterTransformer('station_control_room_transformer', {
     monitorOffset = Vector(0,0,192)
 })
 
-LUASQUARE_POWERGRID.RegisterTransformer('station_emergency_lighting_transformer', {
-    from = 'station_grid',
-    to = 'emergency_lighting_grid',
-    maxMW = 0.2,
-    closed = true,
-    enabled = true,
-    bidirectional = false,
-    monitorPos = 'tar_transformer_offsite_station',
-    monitorOffset = Vector(0,0,256)
-})
-
 LUASQUARE_POWERGRID.RegisterBreaker('rbmk_control_rods_breaker', {
-    grid = 'control_room_grid',
+    grid = 'station_grid',
     owner = 'rbmk_control_rods',
     kind = 'rbmk_control_rods',
     closed = true,
-    maxMW = 2,
+    maxMW = 8,
     monitorPos = 'tar_grid_station',
     monitorOffset = Vector(0,0,288)
+})
+
+LUASQUARE_POWERGRID.RegisterBreaker('station_light_breaker', {
+    grid = 'station_grid',
+    owner = 'control_room_lighting',
+    kind = 'lighting',
+    closed = true,
+    maxMW = 0.2,
+    demandMW = 0.1,
+    monitorPos = 'tar_lightning_breaker',
+    demandMetRelay = 'lightning_on_relay',
+    demandUnmetRelay = 'lightning_off_relay',
+    tripRelay = 'lightning_off_relay'
 })
 
 -- Steam Turbine
@@ -407,7 +392,7 @@ LUASQUARE_DIESELGENERATOR.RegisterDieselGenerator('edg1', {
     refuelRate = 4,
     fuelConsumptionPerMWSecond = 0.02,
     idleFuelRate = 0.02,
-    enabled = true,
+    enabled = false,
     autoStart = true,
     breakerClosed = true,
     monitorPos = 'tar_diesel_generator_a',
@@ -603,7 +588,7 @@ LUASQUARE_PUMP.RegisterPump('feedwater_pump_a', {
     regulationGain = 0.3,
     regulationMinOutput = 0.1,
     speedLevels = {0, 0.25, 0.5, 1},
-    speedLevel = 3,
+    speedLevel = 1,
     enabled = true,
     grid = 'station_grid',
     peakMW = 30,
@@ -644,7 +629,7 @@ LUASQUARE_PUMP.RegisterPump('main_circulation_pump_a', {
     headPressure = 120,
     minFlowFraction = 0.25,
     speedLevels = {0, 0.25, 0.5, 1},
-    speedLevel = 4,
+    speedLevel = 2,
     enabled = true,
     grid = 'station_grid',
     peakMW = 12,
@@ -661,8 +646,8 @@ LUASQUARE_PUMP.RegisterPump('main_circulation_pump_b', {
     headPressure = 120,
     minFlowFraction = 0.25,
     speedLevels = {0, 0.25, 0.5, 1},
-    speedLevel = 4,
-    enabled = false,
+    speedLevel = 2,
+    enabled = true,
     grid = 'station_grid',
     peakMW = 12,
     breaker = 'main_circulation_pump_b_breaker',
@@ -678,7 +663,7 @@ LUASQUARE_PUMP.RegisterPump('condensate_pump_a1', {
     headPressure = 60,
     regulate = false,
     speedLevels = {0, 0.25, 0.5, 1},
-    speedLevel = 4,
+    speedLevel = 2,
     enabled = true,
     grid = 'station_grid',
     peakMW = 30,
@@ -702,7 +687,7 @@ LUASQUARE_PUMP.RegisterPump('hotwell_makeup_pump', {
     regulationMinOutput = 0.1,
     speedLevels = {0, 0.25, 0.5, 1},
     speedLevel = 4,
-    enabled = true,
+    enabled = false,
     grid = 'station_grid',
     peakMW = 2,
     breaker = 'hotwell_makeup_pump_breaker',
@@ -720,7 +705,7 @@ LUASQUARE_PUMP.RegisterPump('circulating_water_pump_a1', {
     headPressure = 25,
     minFlowFraction = 0.25,
     speedLevels = {0, 0.25, 0.5, 1},
-    speedLevel = 4,
+    speedLevel = 2,
     enabled = true,
     grid = 'station_grid',
     peakMW = 8,
@@ -746,7 +731,7 @@ LUASQUARE_PUMP.RegisterPump('cooling_water_makeup_pump', {
     regulationMinOutput = 0.1,
     speedLevels = {0, 0.25, 0.5, 1},
     speedLevel = 4,
-    enabled = true,
+    enabled = false,
     grid = 'station_grid',
     peakMW = 2,
     breaker = 'cooling_water_makeup_pump_breaker',
@@ -1399,8 +1384,7 @@ LUASQUARE_3D2D.BindDisplay('electrical_status_panel', function()
                 MAPDEF_transformerColumn('START XFMR', 'startup_station_transformer'),
                 MAPDEF_transformerColumn('GEN XFMR', 'station_generator_transformer'),
                 MAPDEF_transformerColumn('EXPORT XFMR', 'generator_export_transformer'),
-                MAPDEF_gridColumn('CTRL UPS', 'control_room_grid'),
-                MAPDEF_gridColumn('EMERG UPS', 'emergency_lighting_grid')
+                MAPDEF_gridColumn('CTRL UPS', 'control_room_grid')
             }
         },
         {

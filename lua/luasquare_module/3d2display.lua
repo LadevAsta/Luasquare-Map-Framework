@@ -558,37 +558,98 @@ if CLIENT then
         end
     end
 
+    function LUASQUARE_3D2D.GetRenderAngle(display, ply)
+        if display.facePlayer and IsValid(ply or LocalPlayer()) then
+            local player = ply or LocalPlayer()
+            return Angle(0, player:EyeAngles().y - 90, 90)
+        end
+
+        return display.ang or Angle(0, 0, 90)
+    end
+
+    function LUASQUARE_3D2D.GetDisplayCenterPos(display, ply)
+        if not display.pos then return nil end
+
+        local ang = LUASQUARE_3D2D.GetRenderAngle(display, ply)
+        local scale = display.scale or 0.1
+        local width = display.width or 256
+        local height = display.height or 128
+        local centerX = (0.5 - (display.anchorX or 0)) * width * scale
+        local centerY = (0.5 - (display.anchorY or 0)) * height * scale
+
+        return display.pos + ang:Right() * centerX - ang:Up() * centerY
+    end
+
+    function LUASQUARE_3D2D.GetDisplayCullRadius(display)
+        local scale = display.scale or 0.1
+        local width = (display.width or 256) * scale
+        local height = (display.height or 128) * scale
+        return math.sqrt(width * width + height * height) * 0.5
+    end
+
+    function LUASQUARE_3D2D.PointPassesDistance(eye, point, radius, maxDistance)
+        if not point then return false end
+        if maxDistance <= 0 then return true end
+        local allowed = maxDistance + math.max(radius or 0, 0)
+        return eye:DistToSqr(point) <= allowed * allowed
+    end
+
+    function LUASQUARE_3D2D.PointPassesFOV(eye, forward, point, radius, fov)
+        if not point then return false end
+        local toTarget = point - eye
+        local distanceSqr = toTarget:LengthSqr()
+        if distanceSqr <= 1 then return true end
+
+        local distance = math.sqrt(distanceSqr)
+        if distance <= math.max(radius or 0, 0) then return true end
+
+        toTarget:Normalize()
+        local angularRadius = math.deg(math.atan(math.max(radius or 0, 0) / distance))
+        local threshold = math.cos(math.rad(math.Clamp(fov * 0.5 + 20 + angularRadius, 1, 160)))
+        return forward:Dot(toTarget) >= threshold
+    end
+
     function LUASQUARE_3D2D.ShouldRenderDisplay(display)
         if not display.visible or not display.pos then return false end
         local ply = LocalPlayer()
         if not IsValid(ply) then return true end
 
         local eye = ply:EyePos()
+        local centerPos = LUASQUARE_3D2D.GetDisplayCenterPos(display, ply) or display.pos
+        local radius = LUASQUARE_3D2D.GetDisplayCullRadius(display)
+        local cullPoints = {
+            {pos = centerPos, radius = radius},
+            {pos = display.pos, radius = radius * 2}
+        }
         local maxDistance = tonumber(display.renderDistance)
         if not maxDistance then
             local cvar = GetConVar('luasquare_3d2d_maxdistance')
             maxDistance = cvar and cvar:GetFloat() or 2500
         end
-        if maxDistance > 0 and eye:DistToSqr(display.pos) > maxDistance * maxDistance then return false end
+        local distancePass = false
+        for _, point in ipairs(cullPoints) do
+            if LUASQUARE_3D2D.PointPassesDistance(eye, point.pos, point.radius, maxDistance) then
+                distancePass = true
+                break
+            end
+        end
+        if not distancePass then return false end
 
         local fovCvar = GetConVar('luasquare_3d2d_fovcheck')
         if not fovCvar or not fovCvar:GetBool() then return true end
 
-        local toTarget = display.pos - eye
-        if toTarget:LengthSqr() <= 1 then return true end
-        toTarget:Normalize()
         local fov = ply.GetFOV and ply:GetFOV() or 90
-        local threshold = math.cos(math.rad(math.Clamp(fov * 0.5 + 20, 1, 120)))
-        return ply:EyeAngles():Forward():Dot(toTarget) >= threshold
+        local forward = ply:EyeAngles():Forward()
+        for _, point in ipairs(cullPoints) do
+            if LUASQUARE_3D2D.PointPassesFOV(eye, forward, point.pos, point.radius, fov) then return true end
+        end
+        return false
     end
 
     function LUASQUARE_3D2D.RenderDisplay(display)
         if not LUASQUARE_3D2D.ShouldRenderDisplay(display) then return end
 
-        local ang = display.ang or Angle(0, 0, 90)
-        if display.facePlayer and IsValid(LocalPlayer()) then
-            ang = Angle(0, LocalPlayer():EyeAngles().y - 90, 90)
-        end
+        local ang = LUASQUARE_3D2D.GetRenderAngle(display, LocalPlayer())
 
         local width = display.width or 256
         local height = display.height or 128

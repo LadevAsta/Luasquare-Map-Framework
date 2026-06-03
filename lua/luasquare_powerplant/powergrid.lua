@@ -83,12 +83,17 @@ function LUASQUARE_POWERGRID.RegisterBreaker(name, data)
         closed = data.closed and true or false,
         tripped = data.tripped and true or false,
         maxMW = tonumber(data.maxMW) or DEFAULT_MAX_MW,
+        demandMW = math.max(tonumber(data.demandMW) or tonumber(data.loadMW) or 0, 0),
+        lastDemandAcceptedMW = 0,
+        demandServed = nil,
         pendingMW = 0,
         lastMW = 0,
         tripRelay = data.tripRelay,
         closeRelay = data.closeRelay,
         openRelay = data.openRelay,
         resetRelay = data.resetRelay,
+        demandMetRelay = data.demandMetRelay or data.poweredRelay or data.servedRelay or data.loadServedRelay,
+        demandUnmetRelay = data.demandUnmetRelay or data.unpoweredRelay or data.unservedRelay or data.loadUnservedRelay,
         monitorPos = data.monitorPos,
         monitorTarget = data.monitorTarget or data.monitorEntity or data.monitorName,
         monitorOffset = data.monitorOffset or Vector(0, 0, 0)
@@ -158,6 +163,18 @@ function LUASQUARE_POWERGRID.SetGridDemand(name, mw)
     return true
 end
 
+function LUASQUARE_POWERGRID.SetBreakerDemand(name, mw)
+    local breaker = LUASQUARE_POWERGRID.GetBreaker(name)
+    if not breaker then
+        print('[LUASQUARE_POWERGRID] Unknown breaker: ' .. tostring(name))
+        return false
+    end
+
+    breaker.demandMW = math.max(tonumber(mw) or 0, 0)
+    if breaker.demandMW <= 0 then breaker.lastDemandAcceptedMW = 0 end
+    return true
+end
+
 function LUASQUARE_POWERGRID.TripGrid(name, reason)
     local grid = LUASQUARE_POWERGRID.GetGrid(name)
     if not grid then
@@ -201,7 +218,11 @@ function LUASQUARE_POWERGRID.SetBreaker(name, closed)
     local wasClosed = breaker.closed
     breaker.closed = closed and true or false
     if breaker.closed and not wasClosed then LUASQUARE_POWERGRID.FireRelay(breaker.closeRelay) end
-    if not breaker.closed and wasClosed then LUASQUARE_POWERGRID.FireRelay(breaker.openRelay) end
+    if not breaker.closed and wasClosed then
+        breaker.pendingMW = 0
+        breaker.lastMW = 0
+        LUASQUARE_POWERGRID.FireRelay(breaker.openRelay)
+    end
     return true
 end
 
@@ -215,6 +236,8 @@ function LUASQUARE_POWERGRID.TripBreaker(name, reason)
     breaker.tripped = true
     breaker.closed = false
     breaker.tripReason = reason or 'TRIP'
+    breaker.pendingMW = 0
+    breaker.lastMW = 0
     LUASQUARE_POWERGRID.FireRelay(breaker.tripRelay)
     return true
 end
@@ -228,7 +251,13 @@ function LUASQUARE_POWERGRID.ResetBreaker(name, close)
 
     breaker.tripped = false
     breaker.tripReason = nil
-    if close ~= nil then breaker.closed = close and true or false end
+    if close ~= nil then
+        breaker.closed = close and true or false
+        if not breaker.closed then
+            breaker.pendingMW = 0
+            breaker.lastMW = 0
+        end
+    end
     LUASQUARE_POWERGRID.FireRelay(breaker.resetRelay)
     return true
 end
@@ -279,7 +308,10 @@ function LUASQUARE_POWERGRID.SubmitGeneration(gridName, sourceName, mw, breakerN
 
     local targetGrid = gridName or (breaker and breaker.grid)
     local grid = LUASQUARE_POWERGRID.GetGrid(targetGrid)
-    if not grid or not grid.enabled or grid.tripped then return 0 end
+    if not grid or not grid.enabled or grid.tripped then
+        if breaker then breaker.pendingMW = math.max((breaker.pendingMW or 0) - accepted, 0) end
+        return 0
+    end
 
     grid.pendingGenerationMW = (grid.pendingGenerationMW or 0) + accepted
     return accepted
@@ -291,7 +323,10 @@ function LUASQUARE_POWERGRID.SubmitLoad(gridName, sourceName, mw, breakerName)
 
     local targetGrid = gridName or (breaker and breaker.grid)
     local grid = LUASQUARE_POWERGRID.GetGrid(targetGrid)
-    if not grid or not grid.enabled or grid.tripped then return 0 end
+    if not grid or not grid.enabled or grid.tripped then
+        if breaker then breaker.pendingMW = math.max((breaker.pendingMW or 0) - accepted, 0) end
+        return 0
+    end
 
     grid.pendingLoadMW = (grid.pendingLoadMW or 0) + accepted
     return accepted
@@ -308,6 +343,35 @@ function LUASQUARE_POWERGRID.CanServeLoad(gridName, mw, breakerName)
     end
 
     return true
+end
+
+function LUASQUARE_POWERGRID.SubmitBreakerDemands(gridName)
+    for name, breaker in pairs(LUASQUARE_POWERGRID.Breakers) do
+        if breaker.grid == gridName and (breaker.demandMW or 0) > 0 then
+            breaker.lastDemandAcceptedMW = LUASQUARE_POWERGRID.SubmitLoad(gridName, breaker.owner or name, breaker.demandMW, name)
+        elseif breaker.grid == gridName then
+            breaker.lastDemandAcceptedMW = 0
+        end
+    end
+end
+
+function LUASQUARE_POWERGRID.UpdateBreakerDemandRelays()
+    for _, breaker in pairs(LUASQUARE_POWERGRID.Breakers) do
+        local demand = math.max(breaker.demandMW or 0, 0)
+        local grid = LUASQUARE_POWERGRID.GetGrid(breaker.grid)
+        local served = demand > 0 and breaker.closed and not breaker.tripped and grid and grid.enabled and not grid.tripped and grid.energized and
+            (breaker.lastDemandAcceptedMW or 0) >= demand * 0.999
+
+        if served and not breaker.demandServed then
+            LUASQUARE_POWERGRID.FireRelay(breaker.demandMetRelay)
+        elseif not served and breaker.demandServed then
+            LUASQUARE_POWERGRID.FireRelay(breaker.demandUnmetRelay)
+        elseif demand > 0 and breaker.demandServed == nil and not served then
+            LUASQUARE_POWERGRID.FireRelay(breaker.demandUnmetRelay)
+        end
+
+        breaker.demandServed = served and true or false
+    end
 end
 
 local function allocateTransformerFlow(grid, importMW, exportMW)
@@ -335,6 +399,8 @@ end
 function LUASQUARE_POWERGRID.UpdateGrid(name, dt)
     local grid = LUASQUARE_POWERGRID.GetGrid(name)
     if not grid then return end
+
+    LUASQUARE_POWERGRID.SubmitBreakerDemands(name)
 
     local demandTarget = math.Clamp(grid.demandMW or 0, grid.minDemandMW or 0, grid.maxDemandMW or DEFAULT_MAX_MW)
     local demandStep = math.max(grid.demandRampMWPerSecond or DEFAULT_MAX_MW, 0) * dt
@@ -451,6 +517,8 @@ function LUASQUARE_POWERGRID.UpdateAll()
     for name, _ in pairs(LUASQUARE_POWERGRID.Grids) do
         LUASQUARE_POWERGRID.UpdateGrid(name, dt)
     end
+
+    LUASQUARE_POWERGRID.UpdateBreakerDemandRelays()
 end
 
 function LUASQUARE_POWERGRID.Start()

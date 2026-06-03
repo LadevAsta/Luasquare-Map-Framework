@@ -2,4 +2,4 @@ In the future, Expand Luasquare to support gm_darkfusion and
 overhaul it's Annihilation-Catalyzied Dark Fusion Reactor system to use lua-based simulation instead of 
 the current pure Source I/O Chaos.
 
-RBMK should be considered finished and stable first.
+Powerplant and Luasquare Module should be considered finished and stable first.

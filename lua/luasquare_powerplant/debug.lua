@@ -17,7 +17,7 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     DieselGenerators = {}
 }
 
-local DEBUG_WIRE_VERSION = 8
+local DEBUG_WIRE_VERSION = 10
 local DEBUG_PACKET_START = 1
 local DEBUG_PACKET_CATEGORY = 2
 local DEBUG_PACKET_END = 3
@@ -122,7 +122,8 @@ local DEBUG_CATEGORIES = {
     }},
     {name = 'Breakers', chunkSize = 32, schema = {
         {'name', 'string'}, {'grid', 'string'}, {'owner', 'string'}, {'kind', 'string'},
-        {'closed', 'bool'}, {'tripped', 'bool'}, {'maxMW', 'number'}, {'lastMW', 'number'},
+        {'closed', 'bool'}, {'tripped', 'bool'}, {'maxMW', 'number'}, {'demandMW', 'number'}, {'lastDemandAcceptedMW', 'number'},
+        {'demandServed', 'bool'}, {'lastMW', 'number'},
         {'tripReason', 'string'}, {'pos', 'vector'}
     }},
     {name = 'Transformers', chunkSize = 32, schema = {
@@ -568,6 +569,9 @@ function LUASQUARE_POWERPLANT.Debug.BuildBreakers()
                 closed = breaker.closed and true or false,
                 tripped = breaker.tripped and true or false,
                 maxMW = breaker.maxMW or 0,
+                demandMW = breaker.demandMW or 0,
+                lastDemandAcceptedMW = breaker.lastDemandAcceptedMW or 0,
+                demandServed = breaker.demandServed and true or false,
                 lastMW = breaker.lastMW or 0,
                 tripReason = breaker.tripReason,
                 pos = pos
