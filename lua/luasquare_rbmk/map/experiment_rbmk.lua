@@ -1188,10 +1188,15 @@ LUASQUARE_3D2D.RegisterDisplay('fw_flow_panel', MAPDEF_panelBase({
     title = 'FEEDWATER',
     target = 'tar_display_feedwater',
     width = 58,
-    height = 33
+    height = 43
 }
 ))
 LUASQUARE_3D2D.BindDisplay('fw_flow_panel', function()
+    local separator = LUASQUARE_STEAMSEPARATOR.GetSteamSeparator('main_steam_separator') or {}
+    local feedwaterFlow = (LUASQUARE_PUMP.GetPump('feedwater_pump_a') or {}).lastFlow or 0
+    feedwaterFlow = feedwaterFlow + ((LUASQUARE_PUMP.GetPump('feedwater_pump_b') or {}).lastFlow or 0)
+    local separatorLevel = LUASQUARE_STEAMSEPARATOR.GetLevelPercent('main_steam_separator')
+    local steamOutput = separator.lastDrySteamOut or 0
     return {
         {
             type = 'columns',
@@ -1205,8 +1210,26 @@ LUASQUARE_3D2D.BindDisplay('fw_flow_panel', function()
             type = 'columns',
             height = 64,
             columns = {
-                MAPDEF_levelTargetColumn('SEP TARGET', LUASQUARE_STEAMSEPARATOR.GetLevelPercent('main_steam_separator'), MAPDEF_feedwaterTargetPercent),
+                MAPDEF_levelTargetColumn('SEP TARGET', separatorLevel, MAPDEF_feedwaterTargetPercent),
                 MAPDEF_separatorColumn('SEPARATOR', 'main_steam_separator')
+            }
+        },
+        {
+            type = 'graph',
+            id = 'feedwater_trend',
+            label = 'SEP / FW / STM',
+            min = 0,
+            max = 100,
+            seconds = 60,
+            height = 54,
+            legend = true,
+            grid = true,
+            decimals = 0,
+            unit = '%',
+            series = {
+                { id = 'sep_level', label = 'SEP', value = separatorLevel, color = Color(80, 180, 255) },
+                { id = 'fw_flow', label = 'FW', value = math.Clamp(feedwaterFlow / 10, 0, 100), color = Color(110, 255, 150) },
+                { id = 'steam_out', label = 'STM', value = math.Clamp(steamOutput / 5000, 0, 100), color = Color(255, 220, 90) }
             }
         },
         {
@@ -1299,7 +1322,7 @@ LUASQUARE_3D2D.RegisterDisplay('rpv_status_panel', MAPDEF_panelBase({
     title = 'RPV STATUS',
     pos = 'tar_display_rpv',
     width = 34,
-    height = 53,
+    height = 64,
 }))
 LUASQUARE_3D2D.BindDisplay('rpv_status_panel', function()
     local waterFraction = 0
@@ -1310,6 +1333,25 @@ LUASQUARE_3D2D.BindDisplay('rpv_status_panel', function()
     return {
         { type = 'value', label = 'MWth', value = RBMK.LastThermalMW or 0, decimals = 0 },
         { type = 'value', label = 'RPV Pressure', value = RBMK.RPVPressure or 0, decimals = 1, unit = 'bar', warn = pressureFraction > 0.85 },
+        {
+            type = 'graph',
+            id = 'rpv_pressure',
+            label = 'RPV PRESS TREND',
+            value = RBMK.RPVPressure or 0,
+            min = 0,
+            max = RBMK.CatastrophicPressure or 140,
+            seconds = 60,
+            height = 72,
+            decimals = 0,
+            unit = 'bar',
+            color = Color(120, 220, 255),
+            fill = true,
+            thresholds = {
+                { value = RBMK.RPVMaxPressure or 70, label = 'MAX', color = Color(255, 210, 70) },
+                { value = RBMK.BlowoutPressure or 85, label = 'VENT', color = Color(255, 130, 80) },
+                { value = RBMK.CatastrophicPressure or 140, label = 'FAIL', color = Color(255, 90, 90) }
+            }
+        },
         { type = 'bar', fraction = pressureFraction, height = 5 },
         { type = 'bar', label = 'Core Hold-up', fraction = waterFraction, height = 5 },
         { type = 'value', label = 'Core Flow', value = RBMK.LastEffectiveCoreFlow or 0, decimals = 0, unit = '/s', warn = (RBMK.LastDryoutRisk or 0) > 0.6 },
@@ -1324,25 +1366,49 @@ LUASQUARE_3D2D.RegisterDisplay('tg1_status_panel', MAPDEF_panelBase({
     title = 'TURBINE A',
     target = 'tar_display_tg1',
     width = 44,
-    height = 33
+    height = 44
 }))
 LUASQUARE_3D2D.BindDisplay('tg1_status_panel', function()
-    local data = LUASQUARE_TURBINE.GetTurbine('tg1')
+    local data = LUASQUARE_TURBINE.GetTurbine('tg1') or {}
     local generator = LUASQUARE_POWERGENERATOR.GetGenerator('tg1_generator') or {}
     local grid = LUASQUARE_POWERGRID.GetGrid('generator_grid') or {}
+    local valve = data.valve or 0
+    local bypassValve = data.bypassValve or 0
+    local vibration = data.vibration or 0
+    local tripVibration = math.max(data.tripVibration or 1, 0.0001)
     return {
         { type = 'value', label = 'RPM', value = data.rpm or 0, decimals = 2 , unit = 'RPM'},
         { type = 'value', label = 'Grid Frequency', value = grid.frequency or 0, decimals = 2, unit = 'Hz' },
+        {
+            type = 'graph',
+            id = 'tg1_power_trend',
+            label = 'GEN POWER',
+            min = -10,
+            max = generator.maxMW or 480,
+            seconds = 60,
+            height = 56,
+            legend = true,
+            decimals = 0,
+            unit = 'MW',
+            thresholds = {
+                { value = 0, label = 'ZERO', color = Color(160, 180, 190) },
+                { value = generator.ratedMW or 160, label = 'RATED', color = Color(255, 210, 70) }
+            },
+            series = {
+                { id = 'mw', label = 'MW', value = generator.lastAcceptedMW or data.lastMW or 0, color = Color(110, 255, 150), fill = true },
+                { id = 'reverse', label = 'REV', value = -(generator.lastReverseMW or 0), color = Color(255, 130, 80), mode = 'step' }
+            }
+        },
         { type = 'value', label = 'Sync Error', value = generator.lastPhaseError or 0, decimals = 1, unit = 'deg' },
-        { type = 'value', label = 'Turbine Valve', value = data.valve * 100 or 0, decimals = 1 },
-        { type = 'bar', fraction = data.valve, height = 5 },
-        { type = 'value', label = 'Bypass Valve', value = data.bypassValve * 100 or 0, decimals = 1 },
-        { type = 'bar', fraction = data.bypassValve, height = 5 },
+        { type = 'value', label = 'Turbine Valve', value = valve * 100, decimals = 1 },
+        { type = 'bar', fraction = valve, height = 5 },
+        { type = 'value', label = 'Bypass Valve', value = bypassValve * 100, decimals = 1 },
+        { type = 'bar', fraction = bypassValve, height = 5 },
         { type = 'value', label = 'Exhaust Pressure', value = data.exhaustPressure or 0, decimals = 2, unit = 'bar', warn = (data.exhaustPressure or 0) >= (data.exhaustTripPressure or 0) },
         { type = 'bar', fraction = (data.exhaustPressure or 0) / math.max(data.exhaustHardMaxPressure or 1, 0.0001), height = 5 },
         { type = 'value', label = 'LPS To Deaerator', value = data.lastExhaustExtracted or 0, decimals = 0, unit = '/s' },
-        { type = 'value', label = 'Vibration', value = (data.vibration / data.tripVibration) * 100 or 0, decimals = 2, unit = '%'},
-        { type = 'bar', fraction = data.vibration / data.tripVibration, height = 5 },
+        { type = 'value', label = 'Vibration', value = (vibration / tripVibration) * 100, decimals = 2, unit = '%'},
+        { type = 'bar', fraction = vibration / tripVibration, height = 5 },
         { type = 'value', label = 'Generator Output', value = generator.lastAcceptedMW or data.lastMW or 0, decimals = 2, unit = 'MW', warn = (generator.lastAcceptedMW or 0) < 0 },
         { type = 'value', label = 'Reverse Power', value = generator.lastReverseMW or 0, decimals = 2, unit = 'MW', warn = (generator.lastReverseMW or 0) > (generator.reversePowerTripMW or 0) },
     }

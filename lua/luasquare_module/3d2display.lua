@@ -5,6 +5,7 @@ LUASQUARE_3D2D.Displays = LUASQUARE_3D2D.Displays or {}
 LUASQUARE_3D2D.Bindings = LUASQUARE_3D2D.Bindings or {}
 LUASQUARE_3D2D.EntityCache = LUASQUARE_3D2D.EntityCache or {}
 LUASQUARE_3D2D.ClientState = LUASQUARE_3D2D.ClientState or { Displays = {} }
+LUASQUARE_3D2D.GraphHistory = LUASQUARE_3D2D.GraphHistory or {}
 
 LUASQUARE_3D2D.TickInterval = LUASQUARE_3D2D.TickInterval or 0.1
 LUASQUARE_3D2D.NetMessage = 'LUASQUARE_3D2D_State'
@@ -160,8 +161,69 @@ end
 local lineKeys = {
     'type', 'text', 'label', 'value', 'unit', 'decimals', 'min', 'max', 'fraction',
     'width', 'height', 'font', 'color', 'valueColor', 'barColor', 'backgroundColor',
-    'warn', 'warnColor', 'critical', 'criticalColor', 'columns', 'sub', 'columnsGap'
+    'warn', 'warnColor', 'critical', 'criticalColor', 'columns', 'sub', 'columnsGap',
+    'id', 'series', 'seconds', 'sampleInterval', 'mode', 'legend', 'grid', 'thresholds',
+    'fill', 'fillColor', 'lineColor', 'borderColor'
 }
+
+local function normalizeGraphSeries(series, fallbackId, fallbackLabel)
+    series = series or {}
+    local out = shallowCopyAllowed(series, {
+        'id', 'label', 'value', 'unit', 'decimals', 'color', 'lineColor', 'fillColor',
+        'min', 'max', 'mode', 'fill'
+    })
+    out.id = out.id or fallbackId
+    out.label = out.label or fallbackLabel or out.id
+    out.color = copyColor(out.color, nil)
+    out.lineColor = copyColor(out.lineColor, out.color)
+    out.fillColor = copyColor(out.fillColor, nil)
+    return out
+end
+
+local function normalizeGraphSeriesList(line)
+    if istable(line.series) then
+        local seriesList = {}
+        for index, series in ipairs(line.series) do
+            table.insert(seriesList, normalizeGraphSeries(series, tostring(index), series.label))
+        end
+        return seriesList
+    end
+
+    return {
+        normalizeGraphSeries({
+            id = 'value',
+            label = line.label or 'VALUE',
+            value = line.value,
+            unit = line.unit,
+            decimals = line.decimals,
+            color = line.color or line.lineColor,
+            lineColor = line.lineColor,
+            fillColor = line.fillColor,
+            min = line.min,
+            max = line.max,
+            mode = line.mode,
+            fill = line.fill
+        }, 'value', line.label or 'VALUE')
+    }
+end
+
+local function normalizeGraphThresholds(thresholds)
+    local out = {}
+    if not istable(thresholds) then return out end
+    for _, threshold in ipairs(thresholds) do
+        if istable(threshold) then
+            table.insert(out, {
+                value = tonumber(threshold.value),
+                label = threshold.label,
+                color = copyColor(threshold.color, Color(255, 210, 70)),
+                fillColor = copyColor(threshold.fillColor, nil),
+                fill = threshold.fill and true or false
+            })
+        end
+    end
+
+    return out
+end
 
 local function normalizeLine(line)
     if istable(line) then
@@ -173,6 +235,13 @@ local function normalizeLine(line)
         out.backgroundColor = copyColor(out.backgroundColor, nil)
         out.warnColor = copyColor(out.warnColor, nil)
         out.criticalColor = copyColor(out.criticalColor, nil)
+        out.lineColor = copyColor(out.lineColor, nil)
+        out.fillColor = copyColor(out.fillColor, nil)
+        out.borderColor = copyColor(out.borderColor, nil)
+        if out.type == 'graph' then
+            out.series = normalizeGraphSeriesList(line)
+            out.thresholds = normalizeGraphThresholds(line.thresholds)
+        end
         return out
     end
 
@@ -356,6 +425,103 @@ if SERVER then
         return nil
     end
 
+    function LUASQUARE_3D2D.GetTime()
+        if CurTime then return CurTime() end
+        return os.clock()
+    end
+
+    function LUASQUARE_3D2D.GetGraphSeriesHistory(displayName, graphId, seriesId)
+        local displayHistory = LUASQUARE_3D2D.GraphHistory[displayName]
+        if not displayHistory then
+            displayHistory = {}
+            LUASQUARE_3D2D.GraphHistory[displayName] = displayHistory
+        end
+
+        local graphHistory = displayHistory[graphId]
+        if not graphHistory then
+            graphHistory = {}
+            displayHistory[graphId] = graphHistory
+        end
+
+        local seriesHistory = graphHistory[seriesId]
+        if not seriesHistory then
+            seriesHistory = { samples = {}, lastSampleTime = nil }
+            graphHistory[seriesId] = seriesHistory
+        end
+
+        return seriesHistory
+    end
+
+    function LUASQUARE_3D2D.TrimGraphSamples(samples, cutoff)
+        while samples[1] and (samples[1].t or 0) < cutoff do
+            table.remove(samples, 1)
+        end
+    end
+
+    function LUASQUARE_3D2D.CopyGraphSamples(samples)
+        local out = {}
+        for _, sample in ipairs(samples or {}) do
+            table.insert(out, {t = sample.t or 0, v = sample.v or 0})
+        end
+        return out
+    end
+
+    function LUASQUARE_3D2D.ApplyGraphHistory(displayName, lines)
+        local now = LUASQUARE_3D2D.GetTime()
+
+        for lineIndex, line in ipairs(lines or {}) do
+            if line.type == 'graph' then
+                local graphId = tostring(line.id or ('line_' .. lineIndex))
+                local seconds = math.max(tonumber(line.seconds) or 60, LUASQUARE_3D2D.TickInterval or 0.1)
+                local sampleInterval = math.max(tonumber(line.sampleInterval) or LUASQUARE_3D2D.TickInterval or 0.1, 0.01)
+                local cutoff = now - seconds
+                local autoMin = nil
+                local autoMax = nil
+
+                line.id = graphId
+                line.seconds = seconds
+                line.sampleInterval = sampleInterval
+                line.now = now
+
+                for seriesIndex, series in ipairs(line.series or {}) do
+                    local seriesId = tostring(series.id or (seriesIndex == 1 and 'value' or seriesIndex))
+                    local history = LUASQUARE_3D2D.GetGraphSeriesHistory(displayName, graphId, seriesId)
+                    local value = tonumber(series.value)
+
+                    if value ~= nil and (not history.lastSampleTime or now >= history.lastSampleTime + sampleInterval) then
+                        table.insert(history.samples, {t = now, v = value})
+                        history.lastSampleTime = now
+                    end
+
+                    LUASQUARE_3D2D.TrimGraphSamples(history.samples, cutoff)
+                    series.id = seriesId
+                    series.points = LUASQUARE_3D2D.CopyGraphSamples(history.samples)
+
+                    for _, point in ipairs(series.points) do
+                        if autoMin == nil or point.v < autoMin then autoMin = point.v end
+                        if autoMax == nil or point.v > autoMax then autoMax = point.v end
+                    end
+                end
+
+                if line.min == nil or line.max == nil then
+                    autoMin = autoMin or 0
+                    autoMax = autoMax or 1
+                    if autoMin == autoMax then
+                        autoMin = autoMin - 1
+                        autoMax = autoMax + 1
+                    else
+                        local padding = (autoMax - autoMin) * 0.08
+                        autoMin = autoMin - padding
+                        autoMax = autoMax + padding
+                    end
+
+                    if line.min == nil then line.min = autoMin end
+                    if line.max == nil then line.max = autoMax end
+                end
+            end
+        end
+    end
+
     function LUASQUARE_3D2D.BuildClientState()
         local state = { Displays = {} }
 
@@ -365,7 +531,9 @@ if SERVER then
                 if pos then
                     display.resolvedPos = pos
                     display.resolvedAng = LUASQUARE_3D2D.ResolveAngle(display)
-                    table.insert(state.Displays, sanitizeDisplay(name, display))
+                    local sanitized = sanitizeDisplay(name, display)
+                    LUASQUARE_3D2D.ApplyGraphHistory(name, sanitized.lines)
+                    table.insert(state.Displays, sanitized)
                     display.resolvedPos = nil
                     display.resolvedAng = nil
                 elseif not display.warnedMissingPosition then
@@ -543,6 +711,144 @@ if CLIENT then
         end
     end
 
+    local function graphChartHeight(line)
+        return tonumber(line.height) or 64
+    end
+
+    local function graphTotalHeight(line, lineHeight)
+        local total = graphChartHeight(line) + 6
+        if line.label or line.text then total = total + lineHeight end
+        if line.legend then total = total + lineHeight end
+        return total
+    end
+
+    local function graphValueFraction(line, value)
+        local minValue = tonumber(line.min) or 0
+        local maxValue = tonumber(line.max) or 1
+        local range = maxValue - minValue
+        if range == 0 then return 0 end
+        return math.Clamp(((tonumber(value) or minValue) - minValue) / range, 0, 1)
+    end
+
+    local function graphPointToScreen(line, point, now, seconds, x, y, width, height)
+        local age = math.Clamp((now - (point.t or now)) / math.max(seconds, 0.0001), 0, 1)
+        local px = x + width * (1 - age)
+        local py = y + height * (1 - graphValueFraction(line, point.v))
+        return math.floor(px + 0.5), math.floor(py + 0.5)
+    end
+
+    local function drawGraphGrid(line, x, y, width, height)
+        if line.grid == false then return end
+        surface.SetDrawColor(Color(80, 130, 145, 55))
+        for i = 1, 3 do
+            local gx = x + math.floor(width * i / 4)
+            local gy = y + math.floor(height * i / 4)
+            surface.DrawRect(gx, y, 1, height)
+            surface.DrawRect(x, gy, width, 1)
+        end
+    end
+
+    local function drawGraphThresholds(display, line, x, y, width, height)
+        for _, threshold in ipairs(line.thresholds or {}) do
+            local value = tonumber(threshold.value)
+            if value then
+                local ty = y + height * (1 - graphValueFraction(line, value))
+                local color = threshold.color or Color(255, 210, 70)
+                if threshold.fill then
+                    surface.SetDrawColor(threshold.fillColor or Color(color.r or 255, color.g or 210, color.b or 70, 22))
+                    surface.DrawRect(x, y, width, math.Clamp(ty - y, 0, height))
+                end
+
+                surface.SetDrawColor(color)
+                surface.DrawRect(x, math.floor(ty + 0.5), width, 1)
+                if threshold.label then
+                    draw.SimpleText(tostring(threshold.label), 'Luasquare3D2D_Small', x + width - 2, ty - 2, color, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM)
+                end
+            end
+        end
+    end
+
+    local function drawGraphSeries(line, series, x, y, width, height, now, seconds)
+        local points = series.points or {}
+        if #points <= 0 then return end
+
+        local color = series.lineColor or series.color or line.lineColor or line.color or Color(80, 220, 150)
+        local fillColor = series.fillColor or line.fillColor or Color(color.r or 80, color.g or 220, color.b or 150, 38)
+        local mode = series.mode or line.mode or 'line'
+        local fill = line.fill or series.fill or mode == 'fill'
+        local lastX, lastY
+
+        surface.SetDrawColor(fillColor)
+        if fill then
+            for _, point in ipairs(points) do
+                local px, py = graphPointToScreen(line, point, now, seconds, x, y, width, height)
+                surface.DrawRect(px, py, 1, math.max(y + height - py, 0))
+            end
+        end
+
+        surface.SetDrawColor(color)
+        for _, point in ipairs(points) do
+            local px, py = graphPointToScreen(line, point, now, seconds, x, y, width, height)
+            if lastX then
+                if mode == 'step' then
+                    surface.DrawLine(lastX, lastY, px, lastY)
+                    surface.DrawLine(px, lastY, px, py)
+                else
+                    surface.DrawLine(lastX, lastY, px, py)
+                end
+            else
+                surface.DrawRect(px, py, 2, 2)
+            end
+
+            lastX = px
+            lastY = py
+        end
+    end
+
+    local function drawGraphLegend(display, line, x, y, width)
+        if not line.legend then return end
+        local cursorX = x
+        for _, series in ipairs(line.series or {}) do
+            local color = series.lineColor or series.color or line.lineColor or line.color or display.barColor
+            surface.SetDrawColor(color or Color(80, 220, 150))
+            surface.DrawRect(cursorX, y + 5, 10, 3)
+            draw.SimpleText(tostring(series.label or series.id or ''), 'Luasquare3D2D_Small', cursorX + 14, y, color or display.textColor, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+            cursorX = cursorX + math.min(width, 14 + string.len(tostring(series.label or series.id or '')) * 8 + 12)
+            if cursorX > x + width - 24 then break end
+        end
+    end
+
+    local function drawGraphLine(display, line, x, y, width, lineHeight)
+        local chartHeight = graphChartHeight(line)
+        local chartY = y
+        if line.label or line.text then
+            draw.SimpleText(tostring(line.label or line.text), line.font or display.font, x, y, getLineColor(display, line), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+            local firstSeries = (line.series or {})[1] or {}
+            local currentValue = firstSeries.value or line.value
+            if currentValue ~= nil then
+                draw.SimpleText(formatValue(currentValue, line.decimals or firstSeries.decimals, line.unit or firstSeries.unit), line.font or display.font, x + width, y, firstSeries.lineColor or firstSeries.color or line.valueColor or display.textColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
+            end
+            chartY = y + lineHeight
+        end
+
+        surface.SetDrawColor(line.backgroundColor or display.barBackgroundColor or Color(18, 32, 36, 240))
+        surface.DrawRect(x, chartY, width, chartHeight)
+        drawGraphGrid(line, x, chartY, width, chartHeight)
+        drawGraphThresholds(display, line, x, chartY, width, chartHeight)
+
+        local now = tonumber(line.now) or 0
+        local seconds = tonumber(line.seconds) or 60
+        for _, series in ipairs(line.series or {}) do
+            drawGraphSeries(line, series, x, chartY, width, chartHeight, now, seconds)
+        end
+
+        surface.SetDrawColor(line.borderColor or display.borderColor or Color(80, 190, 220, 220))
+        surface.DrawOutlinedRect(x, chartY, width, chartHeight, 1)
+        draw.SimpleText(formatValue(line.min or 0, line.decimals, line.unit), 'Luasquare3D2D_Small', x + 2, chartY + chartHeight - 1, display.textColor or color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
+        draw.SimpleText(formatValue(line.max or 1, line.decimals, line.unit), 'Luasquare3D2D_Small', x + 2, chartY + 1, display.textColor or color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+        drawGraphLegend(display, line, x, chartY + chartHeight + 2, width)
+    end
+
 
     function LUASQUARE_3D2D.RenderLine(display, line, x, y, width, lineHeight)
         if line.type == 'value' then
@@ -551,6 +857,8 @@ if CLIENT then
             drawColumnsLine(display, line, x, y, width, lineHeight)
         elseif line.type == 'bar' then
             drawBarLine(display, line, x, y, width, lineHeight)
+        elseif line.type == 'graph' then
+            drawGraphLine(display, line, x, y, width, lineHeight)
         elseif line.type == 'phase' then
             drawPhaseLine(display, line, x, y, width, lineHeight)
         else
@@ -683,6 +991,8 @@ if CLIENT then
                 end
                 if line.type == 'columns' then
                     y = y + (tonumber(line.height) or math.max(lineHeight * 3, 56)) + 6
+                elseif line.type == 'graph' then
+                    y = y + graphTotalHeight(line, lineHeight)
                 elseif line.type == 'bar' or line.type == 'phase' then
                     y = y + lineHeight + (tonumber(line.height) or 8) + 4
                 else
@@ -729,6 +1039,22 @@ end
 --     return {
 --         { type = 'value', label = 'Power', value = RBMK.LastThermalMW or 0, decimals = 0, unit = 'MWt' },
 --         { type = 'value', label = 'Pressure', value = RBMK.RPVPressure or 0, decimals = 1, unit = 'bar' },
+--         {
+--             type = 'graph',
+--             id = 'rpv_pressure',
+--             label = 'Pressure Trend',
+--             value = RBMK.RPVPressure or 0,
+--             min = 0,
+--             max = 140,
+--             seconds = 60,
+--             height = 64,
+--             unit = 'bar',
+--             color = Color(120, 220, 255),
+--             thresholds = {
+--                 { value = 70, label = 'MAX', color = Color(255, 210, 70) },
+--                 { value = 85, label = 'VENT', color = Color(255, 130, 80) }
+--             }
+--         },
 --         { type = 'bar', label = 'Water', value = RBMK.Water or 0, min = 0, max = RBMK.MaxWater or 1 },
 --         { type = 'value', label = 'Steam T', value = RBMK.SteamTemperature or 0, decimals = 1, unit = 'C' }
 --     }
