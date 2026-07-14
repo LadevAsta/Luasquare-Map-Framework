@@ -54,7 +54,8 @@ function DFR.GetSnapshot()
         lastTransition = DFR.State and DFR.State.lastTransition or nil,
         resources = DFR.Resources or {},
         startup = DFR.Startup or {},
-        machinery = DFR.Machinery or {},
+        machinery = DFR.GetMachinerySnapshot and DFR.GetMachinerySnapshot() or DFR.Machinery or {},
+        coreVisuals = DFR.CoreVisual or {},
         startupLevers = DFR.StartupLevers or {},
         missingBindings = missingBindings,
         controls = controls
@@ -75,4 +76,154 @@ function DFR.PrintSnapshot()
         tostring(resources.decaosOnline and true or false),
         tonumber(resources.superstructureIntegrityPercent) or 0
     ))
+
+    local machineryCount = 0
+    local movingCount = 0
+    for _, machine in pairs(snapshot.machinery or {}) do
+        machineryCount = machineryCount + 1
+        if machine.state == 'moving' or machine.state == 'deploying' or machine.state == 'retracting' then
+            movingCount = movingCount + 1
+        end
+    end
+
+    local missingCount = 0
+    for _ in pairs(snapshot.missingBindings or {}) do missingCount = missingCount + 1 end
+    DFR.Log('BindingsMissing=' .. tostring(missingCount) .. ' Machinery=' .. tostring(machineryCount) .. ' Moving=' .. tostring(movingCount))
 end
+
+function DFR.DebugCanRun(ply)
+    if not ply then return true end
+    if IsValid and not IsValid(ply) then return true end
+    if game and game.SinglePlayer and game.SinglePlayer() then return true end
+    if ply.IsAdmin and ply:IsAdmin() then return true end
+    return false
+end
+
+local function debugCommand(name, callback)
+    if not SERVER or not concommand or not concommand.Add then return end
+
+    concommand.Add(name, function(ply, cmd, args)
+        if not DFR.DebugCanRun(ply) then
+            DFR.Log('Rejected debug command ' .. tostring(name) .. ' from non-admin player')
+            return
+        end
+
+        local ok, err = pcall(callback, ply, args or {})
+        if not ok then DFR.Halt('Debug command ' .. tostring(name) .. ' failed: ' .. tostring(err)) end
+    end)
+end
+
+local function arg(args, index)
+    if not args then return nil end
+    local value = args[index]
+    if value == nil or value == '' then return nil end
+    return value
+end
+
+local function boolArg(value)
+    value = tostring(value or ''):lower()
+    return value == '1' or value == 'true' or value == 'yes' or value == 'on'
+end
+
+debugCommand('luasquare_dfr_start', function()
+    DFR.Start()
+end)
+
+debugCommand('luasquare_dfr_stop', function(ply, args)
+    DFR.Stop(arg(args, 1) or 'debug command')
+end)
+
+debugCommand('luasquare_dfr_snapshot', function()
+    DFR.PrintSnapshot()
+end)
+
+debugCommand('luasquare_dfr_halt', function(ply, args)
+    DFR.Halt(arg(args, 1) or 'debug halt')
+end)
+
+debugCommand('luasquare_dfr_transition', function(ply, args)
+    DFR.RequestTransition(arg(args, 1), arg(args, 2) or 'debug transition', ply)
+end)
+
+debugCommand('luasquare_dfr_use_control', function(ply, args)
+    DFR.UseControl(arg(args, 1), ply, arg(args, 2))
+end)
+
+debugCommand('luasquare_dfr_register_v2_defaults', function()
+    if DFR.RegisterDefaultReactorMachineLayout then DFR.RegisterDefaultReactorMachineLayout() end
+    if DFR.RegisterDefaultCoreVisuals then DFR.RegisterDefaultCoreVisuals() end
+end)
+
+debugCommand('luasquare_dfr_validate_bindings', function()
+    DFR.ValidateBindings()
+end)
+
+debugCommand('luasquare_dfr_clear_binding_cache', function()
+    if DFR.SourceBindings and DFR.SourceBindings.ClearCache then DFR.SourceBindings:ClearCache() end
+    DFR.Log('Binding cache cleared')
+end)
+
+debugCommand('luasquare_dfr_machine_move', function(ply, args)
+    DFR.MoveTrackTrainTo(arg(args, 1), arg(args, 2))
+end)
+
+debugCommand('luasquare_dfr_machine_command', function(ply, args)
+    DFR.CommandMachinery(arg(args, 1), arg(args, 2), arg(args, 3))
+end)
+
+debugCommand('luasquare_dfr_machine_start', function(ply, args)
+    DFR.StartMachinery(arg(args, 1))
+end)
+
+debugCommand('luasquare_dfr_machine_stop', function(ply, args)
+    DFR.StopMachinery(arg(args, 1))
+end)
+
+debugCommand('luasquare_dfr_machine_open', function(ply, args)
+    DFR.OpenMachinery(arg(args, 1))
+end)
+
+debugCommand('luasquare_dfr_machine_close', function(ply, args)
+    DFR.CloseMachinery(arg(args, 1))
+end)
+
+debugCommand('luasquare_dfr_machine_deploy', function(ply, args)
+    if arg(args, 1) then
+        DFR.DeployMachinery(arg(args, 1))
+    else
+        DFR.DeployStartupMachinery()
+    end
+end)
+
+debugCommand('luasquare_dfr_machine_retract', function(ply, args)
+    if arg(args, 1) then
+        DFR.RetractMachinery(arg(args, 1))
+    else
+        DFR.RetractStartupMachinery()
+    end
+end)
+
+debugCommand('luasquare_dfr_stabilizer_machine', function(ply, args)
+    if boolArg(arg(args, 1)) then
+        DFR.ActivateStabilizerMachinery()
+    else
+        DFR.DeactivateStabilizerMachinery()
+    end
+end)
+
+debugCommand('luasquare_dfr_path_pass', function(ply, args)
+    DFR.OnPathTrackPassed(arg(args, 1), arg(args, 2))
+end)
+
+debugCommand('luasquare_dfr_visual_enable', function(ply, args)
+    DFR.SetCoreVisualEnabled(arg(args, 1), boolArg(arg(args, 2)))
+end)
+
+debugCommand('luasquare_dfr_visual_scale', function(ply, args)
+    DFR.SetCoreVisualScale(arg(args, 1), tonumber(arg(args, 2)) or 1, tonumber(arg(args, 3)) or 0)
+end)
+
+debugCommand('luasquare_dfr_visual_sync', function()
+    if DFR.CoreVisual then DFR.CoreVisual.LastSyncedState = nil end
+    if DFR.SyncCoreVisuals then DFR.SyncCoreVisuals() end
+end)

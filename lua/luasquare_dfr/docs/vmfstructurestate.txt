@@ -1,0 +1,85 @@
+This file describes "armature" or targetnames of component in VMF 'gm_darkfusion_v2' It may be standardized.
+
+internalname entityclass 'targetname'(s) [notes]
+
+for path_track, ('path_track' [direction as <>, > , <] 'another path_track') 
+If path_track mentioned in the middle of the chain and is bi-directional left-and-right, 'next stop' is left, 'branch path' is right.
+example: ('dfr_pt_stab_1' <> 'dfr_pt_stab_2' <> 'dfr_pt_stab_3')
+    means   dfr_pt_stab_1 next stop is dfr_pt_stab_2.
+            dfr_pt_stab_2 next stop is dfr_pt_stab_1, branch path is dfr_pt_stab_3.
+            dfr_pt_stab_3 next stop is dfr_pt_stab_2.
+
+The code should drive the tracktrain to destination node path_track while path_track send update whenever the tracktrain pass on it to lua and lua would stop the train when destination path track is reached.
+
+ReactorMachine mechanicals hierarchy:
+    UpperShaft path_track: ('dfr_pt_upper_1' <> 'dfr_pt_upper_2') [nearest to core to farthest from core]
+        UpperShaftTrain func_tracktrain 'dfr_train_upper' (first stop 'dfr_pt_upper_2')
+            StabilizerShaft path_track: ('dfr_pt_stab_1' <> 'dfr_pt_stab_2' <> 'dfr_pt_stab_3') [nearest to core to farthest from core]
+                StabTrain func_tracktrain 'dfr_train_stab' (first stop 'dfr_pt_stab_3')
+                    StabRotator func_rotating 'dfr_rot_stab'
+                        StabArm1 func_door_rotating 'dfr_rot_stab_arm_1' [limited rotation, Y axis]
+                        StabArm2 func_door_rotating 'dfr_rot_stab_arm_2' [limited rotation, Y axis, reverse dir flag]
+                        StabArm3 func_door_rotating 'dfr_rot_stab_arm_3' [limited rotation, X axis]
+                        StabArm4 func_door_rotating 'dfr_rot_stab_arm_4' [limited rotation, X axis, reverse dir flag]
+            UpperDirectorLenRotator1 func_rotating 'dfr_rot_shaft_upper_1'
+            UpperDirectorLenRotator2 func_rotating 'dfr_rot_shaft_upper_2' [reverse dir flag]
+    LowerShaft path_track: ('dfr_pt_lower_1' <> 'dfr_pt_lower_2') [nearest to core to farthest from core]
+        LowerShaftTrain func_tracktrain 'dfr_train_lower' (first stop 'dfr_pt_lower_2')
+            LowerDirectorLenRotator1 func_rotating 'dfr_rot_shaft_lower_1'
+            LowerDirectorLenRotator2 func_rotating 'dfr_rot_shaft_lower_2' [reverse dir flag]
+
+ReactorMachine effects:
+    Core [no longer using prop_coreball because it is inferior]
+        CoreSphere prop_scalable 'dfr_prop_coresphere' [This is the main appearance, (combine coreball)]
+        CoreStellar prop_scalable 'dfr_prop_corestellar' [This is a sphere to represent a micro star in annihilation stage]
+        CoreBlackhole prop_scalable 'dfr_prop_coreblackhole' [This is a sphere to represent a singularity]
+        CoreShield prop_scalable 'dfr_prop_coreshield' [This is a sphere to represent]
+        [other effects to be added such as accretion disk if we figure out the lua effect or shader and modeling...]
+        [Each prop_scalable should have a 'basis' size since the model used are not of the same size. At basis, all sphere model should appear equal in size]
+        [We also need to figure out the base radius at basis when we convert them into meter unit]
+    ShaftBeams [Set of long vertical beams, one targetname may point toward many env_beams]
+        DirectorBeam env_beam 'beam_core_director'
+        AnnihilationBeam env_beam 'beam_core_annihilation'
+        DarkFusionBeam env_beam 'beam_core_darkfusion'
+        UnstableBeam env_beam 'beam_core_unstable' [Visible at high energysaturation]
+        CatalyzeBeam env_beam 'beam_core_catalyze' [Visible during powerful startup darkfusion catalyzing process]
+        [More effects probably lua effects for extra effect on beams or when fired]
+    Lightning
+        CoreChamberLight light 'light_corechamber' [This light turns on when reactor is in startup prepration and off when shutdown]
+
+Catalyzer mechanicals hierarchy (for each catalyzer unit. targetname will differ.):
+    Hull [Large cannon structure outside core chamber]
+        CatalyzerHullMdl prop_dynamic 'catalyzer_1_hull_mdl' [animated, (open,idle,close)]
+        CatalyzerHullSprite env_sprite 'catalyzer_1_hull_sprite'
+        CatalyzerHullBeam1 env_beam 'catalyzer_1_hull_beam_1' [Lowpower]
+        CatalyzerHullBeam2 env_beam 'catalyzer_1_hull_beam_2' [Highpower]
+        CatalyzerHullIndicatorSprite env_sprite 'catalyzer_1_hull_sprite_indicator' [Shared targetname, use FireUser1 to have them run a sequential pulse. They can change color with shared targetname.]
+    Tip [Small cannon barrel inside core chamber]
+        CatalyzerTipMdl prop_dynamic 'catalyzer_1_tip_mdl' [animated, (open,idle,close)]
+        CatalyzerTipMdlLen prop_dynamic 'catalyzer_1_tip_mdl_len' [Change skins]
+        CatalyzerTipRotor1 func_rotating 'catalyzer_1_tip_rot_1'
+        CatalyzerTipRotor2 func_rotating 'catalyzer_1_tip_rot_2'
+        CatalyzerTipBeamLight env_beam 'catalyzer_1_tip_beam_L'
+        CatalyzerTipBeamDark env_beam 'catalyzer_1_tip_beam_D'
+        CatalyzerTipSprite env_sprite 'catalyzer_1_tip_sprite' [Shared glowing sprites upon charging and fires]
+        CatalyzerTipShake env_shake 'catalyzer_1_tip_shake'
+
+fuelcellreceptors require redesign
+    - use a proper animated model instead of complex tracktrain animation contraption with triggers.
+    - have the lua code detect fuel cell and handle fuel cell.
+
+FuelEnrichmentTower require redesign
+    - No more source I/O.
+    - More in-depth fuel cell and creation.
+    - Discuss later.
+
+TrainDeliverySystem
+    - Currently use one button to travel and spawn inactive fuel cells (fuel cell that requires enrichment)
+    - New direction is to use a 3D2D to show a screen that you can choose what to acquire at the cost of operation point (money).
+    - Then 'train' appear and once it passes a certain path_track, it trigger a spawn logic in lua system.
+    - Existing Source I/O is compact and can handle the train animation on their own.
+
+MultiFloorElevator
+    - Currently run with Source I/O contraption, which is complicated to maintain and display janky result.
+    - It is func_tracktrain with path_track. The path track have intermediate nodes that slows down before it hit the target floor to prevent overshots.
+    - Also have func_door on each floor and on cabin itself.

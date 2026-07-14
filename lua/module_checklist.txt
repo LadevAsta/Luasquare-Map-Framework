@@ -1,0 +1,215 @@
+This is written in hierarchy.
+module name (description) [progress / owner]
+
+Architecture rule:
+    luasquare_module = reusable Garry's Mod map-simulation infrastructure.
+    luasquare_powerplant = reusable power/thermal/fluid plant systems.
+    luasquare_dfr = Dark Fusion Reactor simulation and gameplay systems.
+    bootstrapper scripts = map-repository owned; they know VMF targetnames.
+
+
+luasquare_module
+    +existing modules.
+        3d2display.lua (3D2D operator displays, graph renderer, DISPLAYWxH_ target auto-dimensions) [existing / expanded]
+        gaugedisplay.lua (Source entity gauge display driver) [existing]
+        keypad_controller.lua (numeric keypad state and callbacks) [existing]
+        seg7display.lua (skin-based pseudo 7-segment displays) [existing]
+        annunciator/annunciator.lua (alarm annunciator lifecycle) [existing]
+        rod_selector.lua (RBMK-specific enough to eventually move or rename) [existing / review later]
+
+    logging.lua (shared logging, log history, module prefix, severity, developer print policy) [needed]
+        - Should replace ad-hoc DFR.Log style later.
+        - Should support loud critical errors and softer presentation warnings.
+
+    runtime.lua (module lifecycle, central safe tick helpers, halt/error policy) [needed]
+        - Owns safe pcall wrappers, critical halt behavior, timer start/stop helpers.
+        - DFR, RBMK, and future map sims should not each reinvent this.
+
+    statemachine.lua (generic named states and validated transitions) [needed]
+        - DFR statecontroller should use this.
+        - Useful for future startup timelines, disaster stages, and other maps.
+
+    signalbus.lua (light event/value dispatch between modules) [needed later]
+        - Named events, value updates, and optional metadata without becoming a visual node editor.
+        - Useful for alarms, trips, display updates, DECAOS triggers, and debug history.
+        - Typed ports can remain deferred, but the event vocabulary should become less ad-hoc.
+
+    variables.lua (registered value definitions with units, limits, and display metadata) [needed later]
+        - Documents type, unit, min/max, normal range, network/display precision, and failure behavior.
+        - Helps DFR avoid hidden magic variables and helps displays show unavailable/stale data clearly.
+
+    mapbinding.lua / sourcebinding.lua (logical map binding registry) [prototype implemented in luasquare_module/sourcebinding.lua]
+        - Stores logical id, targetname, expected class, required level, notes.
+        - Validates missing map entities and reports clear developer errors.
+        - Later should support listening to Source outputs as well as firing Source inputs.
+        - Current prototype supports first/all entity resolution for shared targetnames and Source input firing.
+
+    controlbinding.lua (Lua-authoritative Hammer control model) [prototype implemented in luasquare_module/controlbinding.lua]
+        - Defines controls, allowed states, cooldown/lock, callbacks, logical state.
+        - Can fire Source inputs to lock/unlock, force press, reset, animate, or reject controls.
+        - Should stay generic; DFR only registers control instances.
+
+    machinery.lua (Hammer movable entity controller) [prototype implemented in luasquare_module/machinery.lua]
+        - Controls func_tracktrain, func_rotating, func_door_rotating, func_movelinear, doors, relays.
+        - Provides deploy/retract/open/close/start/stop/set speed/set position helpers.
+        - Should not contain DFR-specific shaft or stabilizer names.
+        - Current prototype adds path registration, destination-aware tracktrain movement, and path_track pass callbacks.
+
+    timeline.lua (reactive timeline and sequence engine) [needed]
+        - Timed events, waits, branches, cancellation, control locks, state handoff.
+        - Should coordinate presentation with simulation but not replace simulation.
+        - Needed later for automatic startup, DECAOS sequences, disasters, music sections.
+
+    audiosystem.lua (map sound and music controller) [needed]
+        - Plays map-wide sounds, localized sounds at targetnames, music sections, and soundscape toggles.
+        - Should avoid requiring huge ambient_generic chains.
+        - Should expose current music/sound state for late join sync where practical.
+
+    subtitle.lua (networked subtitle/display text channel) [needed]
+        - Generic speaker label, text, duration, priority, optional sound id.
+        - DECAOS uses this, but the subtitle transport should be reusable.
+
+    netstate.lua (small replicated state snapshots for late join and UI) [needed]
+        - 3D2D already broadcasts display state, but DFR also needs subtitles, music state, timeline phase, etc.
+        - Should support rate-limited server-owned state.
+
+    cleanup.lua (cleanup/reset hooks for spawned runtime objects and temporary effects) [needed later]
+        - Tracks objects created by Lua and stops dangling timers/effects when a session ends.
+        - Full in-session reset can remain deferred, but cleanup ownership should be explicit.
+
+    sourcefx.lua (generic Source presentation/effect helpers) [needed later]
+        - Relays, sprites, lights, skins, bodygroups, particles/effects if practical.
+        - Possible future place for prop_coreball helpers.
+
+    profiler.lua (developer performance counters for ticks, networking, and expensive callbacks) [deferred]
+        - Requirements do not need a full UI yet, but instrumentation will help once graphs, timelines, and disasters stack up.
+
+
+luasquare_powerplant
+    +existing modules.
+        fluidnetwork.lua [existing]
+        fluidvalve.lua [existing]
+        fluidpump.lua [existing]
+        heatexchanger.lua [existing]
+        condenser.lua [existing]
+        deaerator.lua [existing]
+        steamseparator.lua [existing]
+        turbine.lua [existing]
+        powergenerator.lua [existing]
+        powergrid.lua [existing]
+        dieselgenerator.lua [existing]
+        coolingtower.lua [existing]
+        debug.lua [existing]
+
+    Notes:
+        - DFR may wrap these through facility/thermalplant.lua rather than exposing all plant machinery directly.
+        - No immediate architecture change required unless DFR needs a generic feature.
+
+
+luasquare_dfr
+    init.lua (loads DFR package modules, not map-specific targetnames) [prototype exists]
+    config.lua (DFR constants and development-tunable values) [prototype exists]
+
+    statecontroller.lua (DFR top-level state progression) [needed]
+        - OFFLINE, STARTUP_PREP, MANUAL_STARTUP, ANNIHILATION_STAGE, DARK_FUSION_STAGE, shutdown, disaster, ending.
+        - Should use generic luasquare_module/statemachine.lua once available.
+        - Current state.lua prototype should move toward this.
+
+    procedure.lua (manual/automatic startup and shutdown procedure coordinator) [needed]
+        - Operator workflow logic belongs here, not in reactor physics.
+        - Automatic startup should eventually perform the same steps manual startup uses.
+        - Current startup.lua prototype should split: procedure logic here, subsystem logic elsewhere.
+
+    telemetry.lua (operator-facing data builders for 3D2D displays) [prototype exists]
+        - Keep separate from debug.
+        - Should read subsystem state and produce display lines only.
+
+    debug.lua (developer/admin inspection and forced test commands) [prototype exists / expanded]
+        - Snapshots, force state, force values, validation reports, test helpers.
+        - Not the same thing as operator telemetry.
+        - Current prototype adds admin/server console commands used by the DFR spawnmenu debug panel.
+
+    autorun/client/luasquare_dfr_spawnmenu.lua (spawnmenu-accessed DFR debug and test controls) [prototype exists]
+        - Avoids recompiling the VMF just to place temporary debug buttons.
+        - Calls server-side debug concommands with admin/single-player checks.
+
+    decaos.lua (DFR announcer/assistant brain) [needed]
+        - Chooses DECAOS lines, warnings, authorization flavor, event narration.
+        - Uses generic audiosystem.lua and subtitle.lua.
+
+    alarm.lua (DFR logical alarms, trips, warnings, and notification priority) [needed]
+        - Owns alarm active/latched/acknowledged state.
+        - Feeds annunciators, telemetry, DECAOS, and timeline interruption.
+        - Separate from the reusable annunciator display renderer.
+
+    faults.lua (recoverable malfunctions, trips, degraded modes, and fault propagation) [needed later]
+        - Should describe what failed, why it failed, what modules are affected, and how/if it can recover.
+        - Disasters are terminal/high-level outcomes; faults are normal operating problems.
+
+    quota.lua (power quota requests and fulfillment tracking) [needed later]
+    powerexport.lua (credited export, internal consumption, export limits, and market value feed into quota/scoring) [needed later]
+    scoring.lua (operator score, penalties, exported energy accounting) [needed later]
+    emergency.lua (Antimatter Termination and emergency operator actions) [needed later]
+    disaster.lua (Runaway Fusion stages, purge trigger, singularity breach trigger) [needed later]
+    ending.lua (terminal ending state and post-ending behavior) [needed later]
+    hazard.lua (player/NPC/environment hazard zones and damage policy) [needed later]
+        - Core radiation, director beam, combine balls, high temperature, explosions, disaster effects.
+        - Should connect to alarms and presentation, not silently punish players.
+    devreset.lua (developer-only soft reset/test reset support) [deferred]
+        - Normal public reset remains map reload.
+        - Useful for long iteration once more subsystems exist.
+
+    superstructure
+        superstructure.lua (waste heat, global integrity, subsystem effectiveness, damage) [needed]
+        catalyzer.lua (six catalyzers, fuel receptors, modes, readiness, malfunction) [needed later]
+
+    reactor
+        core.lua (shared core state, containment sphere, event horizon, radiation, output aggregation) [needed]
+        corevisual.lua (core props, beam groups, scalable visual basis, chamber light control) [prototype exists]
+        reactormachine.lua (DFR shaft/stabilizer/director lens machinery wrapper for gm_darkfusion_v2 armature) [prototype exists]
+        annihilation.lua (matter/antimatter injection, equilibrium, fuel saturation, annihilation power GW) [needed next]
+        darkfusion.lua (influx/outflux, stored flux GWh, energy saturation, final export TW) [needed later]
+        energysaturation.lua (thresholds, hysteresis, warning/damage/runaway events) [needed later]
+        stabilizer.lua (containment field strength/stability, power draw, malfunction) [needed]
+        directorbeam.lua (beam active state, lens offsets, precision/imprecision, damage gates) [needed]
+
+    facility
+        facilitypower.lua (facility/internal power routing and consumption) [needed later]
+        cooling.lua (DFR-level coolant availability and remote response delays) [needed later]
+        thermalplant.lua (DFR wrapper around luasquare_powerplant heat/power systems) [needed later]
+        resourcestorage.lua (matter, antimatter, fuel cells, stasis cells, storage hazards) [needed]
+        darkfusionparticleenricher.lua (annihilation fuel and dark-fusion fuel production mechanics) [needed later]
+        remoteplant.lua (slow Citadel-scale remote machinery response model) [needed later]
+            - Lets coolant, enrichment, and secondary plant delays feel intentionally huge rather than laggy.
+
+    entity
+        fuelcellreceptor.lua (attached to enricher and catalyzer) [needed later]
+        resourcecell.lua (actual spawnable scripted entity; discuss later) [deferred]
+        stasiscell.lua (emergency purge cell entity/logic; may be a resourcecell type but should be explicit) [deferred]
+
+
+Map repository bootstrapper scripts
+    DarkEnergyConstruct-Reactor-Map/lua/luasquare_dfr/bootstrapper/gm_darkfusion_v2.lua [map-owned]
+        - VMF targetnames, display anchors, machinery bindings, sound names, relays, map-specific rigging.
+        - Should not live in Luasquare framework long-term.
+
+    Luasquare-RBMK-Map-Framework/lua/luasquare_rbmk/bootstrapper/experiment_rbmk.lua [framework example map-owned here]
+        - Current RBMK experiment bootstrap.
+        - Do not refactor unless shared luasquare_module APIs change.
+
+
+Migration notes
+    - Move generic DFR prototypes into luasquare_module:
+        mapbinding.lua -> luasquare_module/mapbinding.lua or sourcebinding.lua
+        control.lua -> luasquare_module/controlbinding.lua
+        machinery.lua -> luasquare_module/machinery.lua
+        DFR.Log parts -> luasquare_module/logging.lua
+        DFR.Halt/tick safety parts -> luasquare_module/runtime.lua
+
+    - Then shrink luasquare_dfr to actual reactor/facility/procedure code.
+    - Avoid putting VMF targetnames inside reusable DFR modules.
+    - Keep telemetry separate from debug.
+    - Keep DECAOS-specific behavior in DFR, but subtitles/audio transport generic.
+
+
+No need to touch luasquare_rbmk yet unless there has been a change in shared luasquare_module APIs.

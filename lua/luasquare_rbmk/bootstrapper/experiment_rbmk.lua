@@ -4,7 +4,7 @@
 
 -- This is orchestration script to set up map integration.
 -- Deploy THIS SCRIPT using a lua_run in the map :
--- include('luasquare_rbmk/map/experiment_rbmk.lua')
+-- include('luasquare_rbmk/bootstrapper/experiment_rbmk.lua')
 
 local MAPNAME = 'experiment_rbmk'
 

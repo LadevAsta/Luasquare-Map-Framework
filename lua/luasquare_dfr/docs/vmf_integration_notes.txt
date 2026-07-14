@@ -1,0 +1,92 @@
+DFR VMF integration notes
+
+Purpose:
+    This file records the Lua calls expected by the current DFR machinery/control architecture.
+    It is for gm_darkfusion_v2 VMF/bootstrap testing, not final player-facing documentation.
+
+Bootstrap calls:
+    include('luasquare_dfr/init.lua')
+
+    -- Optional but recommended for testing the current gm_darkfusion_v2 armature targetnames.
+    DFR.RegisterDefaultReactorMachineLayout()
+    DFR.RegisterDefaultCoreVisuals()
+
+    -- Existing control and telemetry registration can remain map-owned.
+    DFR.Start()
+
+Path track callbacks:
+    Each important path_track should call Lua when a train passes it.
+
+    Preferred call:
+        DFR.OnPathTrackPassed('dfr_pt_upper_1')
+
+    Aliases:
+        DFR.PathTrackPassed('dfr_pt_upper_1')
+        DFR.TrackPassed('dfr_pt_upper_1')
+
+    If two logical trains ever share a node name, pass the machine id:
+        DFR.OnPathTrackPassed('dfr_pt_upper_1', 'upper_shaft_train')
+
+Registered tracktrain machine ids:
+    upper_shaft_train
+        targetname: dfr_train_upper
+        path: dfr_pt_upper_1 <-> dfr_pt_upper_2
+        deployed: dfr_pt_upper_1
+        retracted: dfr_pt_upper_2
+
+    lower_shaft_train
+        targetname: dfr_train_lower
+        path: dfr_pt_lower_1 <-> dfr_pt_lower_2
+        deployed: dfr_pt_lower_1
+        retracted: dfr_pt_lower_2
+
+    stabilizer_shaft_train
+        targetname: dfr_train_stab
+        path: dfr_pt_stab_1 <-> dfr_pt_stab_2 <-> dfr_pt_stab_3
+        deployed: dfr_pt_stab_1
+        service: dfr_pt_stab_2
+        retracted: dfr_pt_stab_3
+
+Registered moving machinery:
+    stabilizer_rotator -> dfr_rot_stab
+    stabilizer_arm_1 -> dfr_rot_stab_arm_1
+    stabilizer_arm_2 -> dfr_rot_stab_arm_2
+    stabilizer_arm_3 -> dfr_rot_stab_arm_3
+    stabilizer_arm_4 -> dfr_rot_stab_arm_4
+    upper_director_lens_rotator_1 -> dfr_rot_shaft_upper_1
+    upper_director_lens_rotator_2 -> dfr_rot_shaft_upper_2
+    lower_director_lens_rotator_1 -> dfr_rot_shaft_lower_1
+    lower_director_lens_rotator_2 -> dfr_rot_shaft_lower_2
+
+Registered core visuals:
+    core_sphere -> dfr_prop_coresphere
+    core_stellar -> dfr_prop_corestellar
+    core_blackhole -> dfr_prop_coreblackhole
+    core_shield -> dfr_prop_coreshield
+    beam_director -> beam_core_director
+    beam_annihilation -> beam_core_annihilation
+    beam_darkfusion -> beam_core_darkfusion
+    beam_unstable -> beam_core_unstable
+    beam_catalyze -> beam_core_catalyze
+    core_chamber_light -> light_corechamber
+
+Spawnmenu testing:
+    Options -> Luasquare -> Dark Fusion Reactor
+
+    Useful first sequence:
+        1. Register V2 Default Bindings
+        2. Validate Bindings
+        3. Deploy Startup Machinery
+        4. Simulate path_track Pass for each destination if testing without Hammer outputs
+        5. Activate Stabilizer Machinery
+        6. Enable Director Beam
+
+3D2D display auto dimensions:
+    The 3D2D module now reads targetnames shaped like:
+        DISPLAY34x19_dfr_status_panel
+        DISPLAY512x256_dfr_status_panel
+
+    The numbers are always Hammer-unit panel dimensions.
+    DISPLAY512x256_ means a 512x256 Hammer-unit surface.
+    Canvas size is derived from scale, so the default 0.1 scale makes that a 5120x2560 canvas.
+    Explicit bootstrap dimensions or scale fields still override/refine the targetname metadata.

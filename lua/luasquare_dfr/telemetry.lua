@@ -80,8 +80,8 @@ function DFR.RegisterTelemetryDisplay(name, data, getter)
         posTarget = data.posTarget,
         angleTarget = data.angleTarget,
         useTargetAngle = data.useTargetAngle ~= false,
-        width = data.width or 42,
-        height = data.height or 24,
+        width = data.width,
+        height = data.height,
         scale = data.scale or 0.1,
         title = data.title or name,
         padding = data.padding or 6,
@@ -122,4 +122,3 @@ function DFR.RegisterDefaultTelemetryDisplays()
     DFR.Log('Default telemetry displays registered')
     return true
 end
-

@@ -56,6 +56,57 @@ local function firstNumber(source, keys)
     return nil
 end
 
+local function hasAnyValue(source, keys)
+    for _, key in ipairs(keys) do
+        if source[key] ~= nil then return true end
+    end
+    return false
+end
+
+local function copyTable(source)
+    local out = {}
+    for key, value in pairs(source or {}) do out[key] = value end
+    return out
+end
+
+local function parseDisplayTargetMetadata(targetName)
+    if not targetName then return nil end
+    targetName = tostring(targetName)
+    local width, height = string.match(targetName, '^DISPLAY([%d%.]+)[xX]([%d%.]+)_')
+    if not width then
+        width, height = string.match(targetName, '^DISPLAY([%d%.]+)[xX]([%d%.]+)$')
+    end
+
+    width = tonumber(width)
+    height = tonumber(height)
+    if not width or not height or width <= 0 or height <= 0 then return nil end
+
+    return {
+        unitWidth = width,
+        unitHeight = height,
+        mode = 'hammer'
+    }
+end
+
+local function applyDisplayTargetMetadata(data)
+    local targetName = data.entity or data.target or data.infoTarget or data.posTarget or data.positionTarget
+    local metadata = parseDisplayTargetMetadata(targetName)
+    if not metadata then return data end
+
+    local out = copyTable(data)
+    if metadata.unitWidth and not hasAnyValue(out, {'unitWidth', 'hammerWidth', 'panelWidth', 'worldWidth', 'width'}) then
+        out.unitWidth = metadata.unitWidth
+    end
+
+    if metadata.unitHeight and not hasAnyValue(out, {'unitHeight', 'hammerHeight', 'panelHeight', 'worldHeight', 'height'}) then
+        out.unitHeight = metadata.unitHeight
+    end
+
+    out.autoDimensions = true
+    out.autoDimensionsMode = metadata.mode
+    return out
+end
+
 local function resolveDisplayMetrics(data)
     local unitWidth = firstNumber(data, {'unitWidth', 'hammerWidth', 'panelWidth', 'worldWidth', 'width'}) or 25.6
     local unitHeight = firstNumber(data, {'unitHeight', 'hammerHeight', 'panelHeight', 'worldHeight', 'height'}) or 12.8
@@ -334,6 +385,7 @@ if SERVER then
             return
         end
 
+        data = applyDisplayTargetMetadata(data)
         local metrics = resolveDisplayMetrics(data)
         if metrics.adjustedResolution then
             print('[LUASQUARE_3D2D] Adjusted resolution height for ' .. tostring(name) .. ' to preserve Hammer-unit panel size.')
@@ -356,6 +408,8 @@ if SERVER then
             unitHeight = metrics.unitHeight,
             width = metrics.width,
             height = metrics.height,
+            autoDimensions = data.autoDimensions,
+            autoDimensionsMode = data.autoDimensionsMode,
             padding = data.padding,
             lineHeight = data.lineHeight,
             titleHeight = data.titleHeight,

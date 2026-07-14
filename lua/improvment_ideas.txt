@@ -1,0 +1,11 @@
+Put idea here.
+
+Improve 3d2display placement experience. [prototype implemented]
+    Mapper could name their info_target something like 'DISPLAY512x256_dfr_status_panel', and place and orient the info_target correctly so that it resides on canva's upper left corner(already a feature) and the local z gizmo point upward from display's normal and local x gizmo point along the display width.
+    the code will then be aware of the targetname as it includes the resolution (In hammer units) and place display there with the set the resolution without manually setting the resolution in map bootstrapper unless overridden for some reason.
+    Implemented behavior:
+        - The 3D2D module parses DISPLAY<width>x<height>_ prefixes from target/info_target names.
+        - Parsed numbers are always treated as Hammer-unit panel dimensions.
+        - DISPLAY512x256_ means a 512x256 Hammer-unit surface.
+        - Canvas size is derived from the scale factor, so DISPLAY512x256_ at default scale 0.1 becomes 5120x2560 canvas pixels.
+        - Explicit bootstrap width/height/unitWidth/unitHeight/scale values still override or refine the targetname metadata.

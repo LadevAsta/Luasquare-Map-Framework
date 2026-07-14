@@ -1,76 +1,33 @@
 DFR = DFR or {}
-DFR.Controls = DFR.Controls or {}
+if not LUASQUARE_CONTROLBINDING then include('luasquare_module/controlbinding.lua') end
 DFR.StartupLevers = DFR.StartupLevers or {}
 
+DFR.ControlRegistry = LUASQUARE_CONTROLBINDING.CreateRegistry('DFR', {
+    time = function() return DFR.GetTime() end,
+    getState = function() return DFR.GetState() end,
+    isHalted = function() return DFR.Halted and true or false end,
+    log = function(message) DFR.Log(message) end,
+    halt = function(reason) DFR.Halt(reason) end,
+    actorName = function(actor) return DFR.GetActorName(actor) end,
+    defaultLockSeconds = DFR.Config.DefaultControlLockSeconds
+})
+
+DFR.Controls = DFR.ControlRegistry.Controls
+
 function DFR.RegisterControl(id, data)
-    data = data or {}
-    if not id or id == '' then
-        DFR.Log('Rejected control with missing id')
-        return false
-    end
-
-    DFR.Controls[id] = {
-        id = id,
-        label = data.label or id,
-        allowedStates = data.allowedStates or {},
-        lockSeconds = tonumber(data.lockSeconds) or DFR.Config.DefaultControlLockSeconds,
-        callback = data.callback or data.onUse,
-        lockedUntil = 0,
-        lastUseTime = nil,
-        lastActor = nil
-    }
-
-    return true
-end
-
-local function stateAllowed(control)
-    if not control.allowedStates or next(control.allowedStates) == nil then return true end
-    return control.allowedStates[DFR.GetState()] and true or false
+    return DFR.ControlRegistry:Register(id, data)
 end
 
 function DFR.IsControlAvailable(id)
-    local control = DFR.Controls[id]
-    if not control then return false end
-    if DFR.Halted then return false end
-    if not stateAllowed(control) then return false end
-    return DFR.GetTime() >= (control.lockedUntil or 0)
+    return DFR.ControlRegistry:IsAvailable(id)
 end
 
 function DFR.UseControl(id, activator, value)
-    local control = DFR.Controls[id]
-    if not control then
-        DFR.Log('Unknown control: ' .. tostring(id))
-        return false
-    end
+    return DFR.ControlRegistry:Use(id, activator, value)
+end
 
-    local now = DFR.GetTime()
-    if DFR.Halted then
-        DFR.Log('Rejected control ' .. tostring(id) .. ': simulation halted')
-        return false
-    end
-
-    if now < (control.lockedUntil or 0) then
-        return false
-    end
-
-    if not stateAllowed(control) then
-        DFR.Log('Rejected control ' .. tostring(id) .. ' in state ' .. tostring(DFR.GetState()))
-        return false
-    end
-
-    if control.callback then
-        local ok, result = pcall(control.callback, activator, value, control)
-        if not ok then
-            DFR.Halt('Control ' .. tostring(id) .. ' failed: ' .. tostring(result))
-            return false
-        end
-        if result == false then return false end
-    end
-
-    control.lockedUntil = now + (tonumber(control.lockSeconds) or DFR.Config.DefaultControlLockSeconds)
-    control.lastUseTime = now
-    control.lastActor = DFR.GetActorName(activator)
-    return true
+function DFR.GetControlSnapshot()
+    return DFR.ControlRegistry:GetSnapshot()
 end
 
 function DFR.ClearStartupLevers()

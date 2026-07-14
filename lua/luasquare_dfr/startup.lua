@@ -92,6 +92,10 @@ function DFR.SetDirectorBeamActive(active)
 
     DFR.Startup.directorBeamActive = active and true or false
     DFR.UpdateDirectorBeamPrecision()
+    if DFR.CoreVisual and DFR.CoreVisual.beam_director and DFR.SetCoreBeamActive then
+        DFR.SetCoreBeamActive('director', DFR.Startup.directorBeamActive)
+    end
+    if DFR.SetDirectorLensMachineryActive then DFR.SetDirectorLensMachineryActive(DFR.Startup.directorBeamActive) end
     DFR.Log('Director beam ' .. (DFR.Startup.directorBeamActive and 'active' or 'offline'))
     return true
 end

@@ -1,123 +1,75 @@
 DFR = DFR or {}
-DFR.Machinery = DFR.Machinery or {}
+if not LUASQUARE_MACHINERY then include('luasquare_module/machinery.lua') end
 
-local function asString(value)
-    if value == nil then return nil end
-    return tostring(value)
-end
+DFR.MachineryRegistry = LUASQUARE_MACHINERY.CreateRegistry('DFR', {
+    source = DFR.SourceBindings,
+    log = function(message) DFR.Log(message) end,
+    time = function() return DFR.GetTime() end
+})
+
+DFR.Machinery = DFR.MachineryRegistry.Machines
 
 function DFR.RegisterMachinery(id, data)
-    data = data or {}
-    if not id or id == '' then
-        DFR.Log('Rejected machinery with missing id')
-        return false
-    end
+    return DFR.MachineryRegistry:RegisterMachine(id, data)
+end
 
-    DFR.Machinery[id] = {
-        id = id,
-        binding = data.binding or id,
-        label = data.label or id,
-        class = data.class,
-        deployInput = data.deployInput or data.forwardInput or 'StartForward',
-        retractInput = data.retractInput or data.backwardInput or 'StartBackward',
-        stopInput = data.stopInput or 'Stop',
-        openInput = data.openInput or 'Open',
-        closeInput = data.closeInput or 'Close',
-        startInput = data.startInput or 'Start',
-        setSpeedInput = data.setSpeedInput or 'SetSpeed',
-        setPositionInput = data.setPositionInput or 'SetPosition',
-        deploySpeed = data.deploySpeed,
-        retractSpeed = data.retractSpeed,
-        spinSpeed = data.spinSpeed,
-        state = 'idle',
-        lastCommand = nil,
-        lastCommandTime = nil
-    }
-
-    return true
+function DFR.RegisterMachineryPath(id, data)
+    return DFR.MachineryRegistry:RegisterPath(id, data)
 end
 
 function DFR.GetMachinery(id)
-    return DFR.Machinery[id]
+    return DFR.MachineryRegistry:GetMachine(id)
 end
 
 function DFR.CommandMachinery(id, inputName, value)
-    local machine = DFR.GetMachinery(id)
-    if not machine then
-        DFR.Log('Unknown machinery: ' .. tostring(id))
-        return false
-    end
-
-    local ok = DFR.FireBinding(machine.binding, inputName, asString(value))
-    if ok then
-        machine.lastCommand = inputName
-        machine.lastCommandTime = DFR.GetTime()
-    end
-
-    return ok
+    return DFR.MachineryRegistry:Command(id, inputName, value)
 end
 
 function DFR.SetMachinerySpeed(id, speed)
-    local machine = DFR.GetMachinery(id)
-    if not machine then return false end
-    return DFR.CommandMachinery(id, machine.setSpeedInput, speed)
+    return DFR.MachineryRegistry:SetSpeed(id, speed)
 end
 
 function DFR.SetMachineryPosition(id, position)
-    local machine = DFR.GetMachinery(id)
-    if not machine then return false end
-    return DFR.CommandMachinery(id, machine.setPositionInput, position)
+    return DFR.MachineryRegistry:SetPosition(id, position)
 end
 
 function DFR.DeployMachinery(id)
-    local machine = DFR.GetMachinery(id)
-    if not machine then return false end
-    if machine.deploySpeed ~= nil then DFR.SetMachinerySpeed(id, machine.deploySpeed) end
-    local ok = DFR.CommandMachinery(id, machine.deployInput)
-    if ok then machine.state = 'deploying' end
-    return ok
+    return DFR.MachineryRegistry:Deploy(id)
 end
 
 function DFR.RetractMachinery(id)
-    local machine = DFR.GetMachinery(id)
-    if not machine then return false end
-    if machine.retractSpeed ~= nil then DFR.SetMachinerySpeed(id, machine.retractSpeed) end
-    local ok = DFR.CommandMachinery(id, machine.retractInput)
-    if ok then machine.state = 'retracting' end
-    return ok
+    return DFR.MachineryRegistry:Retract(id)
 end
 
 function DFR.StopMachinery(id)
-    local machine = DFR.GetMachinery(id)
-    if not machine then return false end
-    local ok = DFR.CommandMachinery(id, machine.stopInput)
-    if ok then machine.state = 'stopped' end
-    return ok
+    return DFR.MachineryRegistry:Stop(id)
 end
 
 function DFR.StartMachinery(id)
-    local machine = DFR.GetMachinery(id)
-    if not machine then return false end
-    if machine.spinSpeed ~= nil then DFR.SetMachinerySpeed(id, machine.spinSpeed) end
-    local ok = DFR.CommandMachinery(id, machine.startInput)
-    if ok then machine.state = 'running' end
-    return ok
+    return DFR.MachineryRegistry:Start(id)
 end
 
 function DFR.OpenMachinery(id)
-    local machine = DFR.GetMachinery(id)
-    if not machine then return false end
-    local ok = DFR.CommandMachinery(id, machine.openInput)
-    if ok then machine.state = 'open' end
-    return ok
+    return DFR.MachineryRegistry:Open(id)
 end
 
 function DFR.CloseMachinery(id)
-    local machine = DFR.GetMachinery(id)
-    if not machine then return false end
-    local ok = DFR.CommandMachinery(id, machine.closeInput)
-    if ok then machine.state = 'closed' end
-    return ok
+    return DFR.MachineryRegistry:Close(id)
+end
+
+function DFR.MoveTrackTrainTo(id, destinationNode)
+    return DFR.MachineryRegistry:MoveTrackTrainTo(id, destinationNode)
+end
+
+function DFR.OnPathTrackPassed(nodeName, machineId)
+    return DFR.MachineryRegistry:OnPathTrackPassed(nodeName, machineId)
+end
+
+DFR.PathTrackPassed = DFR.OnPathTrackPassed
+DFR.TrackPassed = DFR.OnPathTrackPassed
+
+function DFR.GetMachinerySnapshot()
+    return DFR.MachineryRegistry:GetSnapshot()
 end
 
 local function runOptional(ids, fn)
@@ -132,6 +84,10 @@ local function runOptional(ids, fn)
 end
 
 function DFR.DeployStartupMachinery()
+    if DFR.ReactorMachine and DFR.ReactorMachine.Registered and DFR.DeployReactorMachine then
+        return DFR.DeployReactorMachine()
+    end
+
     return runOptional({
         'reactor_shaft_train',
         'stabilizer_base_train'
@@ -139,6 +95,10 @@ function DFR.DeployStartupMachinery()
 end
 
 function DFR.RetractStartupMachinery()
+    if DFR.ReactorMachine and DFR.ReactorMachine.Registered and DFR.RetractReactorMachine then
+        return DFR.RetractReactorMachine()
+    end
+
     runOptional({
         'stabilizer_arm_1',
         'stabilizer_arm_2',
@@ -157,6 +117,10 @@ function DFR.RetractStartupMachinery()
 end
 
 function DFR.ActivateStabilizerMachinery()
+    if DFR.ReactorMachine and DFR.ReactorMachine.Registered and DFR.ActivateReactorStabilizerMachine then
+        return DFR.ActivateReactorStabilizerMachine()
+    end
+
     runOptional({
         'stabilizer_base_rotor'
     }, DFR.StartMachinery)
@@ -170,6 +134,10 @@ function DFR.ActivateStabilizerMachinery()
 end
 
 function DFR.DeactivateStabilizerMachinery()
+    if DFR.ReactorMachine and DFR.ReactorMachine.Registered and DFR.DeactivateReactorStabilizerMachine then
+        return DFR.DeactivateReactorStabilizerMachine()
+    end
+
     runOptional({
         'stabilizer_arm_1',
         'stabilizer_arm_2',
@@ -181,4 +149,3 @@ function DFR.DeactivateStabilizerMachinery()
         'stabilizer_base_rotor'
     }, DFR.StopMachinery)
 end
-

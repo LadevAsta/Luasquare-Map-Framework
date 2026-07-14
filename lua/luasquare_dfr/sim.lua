@@ -65,6 +65,7 @@ function DFR.Tick(dt)
     DFR.LastDeltaTime = dt
 
     local state = DFR.GetState()
+    if DFR.SyncCoreVisuals then DFR.SyncCoreVisuals() end
     if state == DFR.STATE_OFFLINE then
         DFR.TickOffline(dt)
     elseif state == DFR.STATE_STARTUP_PREP then

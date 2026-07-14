@@ -1,92 +1,53 @@
 DFR = DFR or {}
-DFR.Bindings = DFR.Bindings or {}
-DFR.EntityCache = DFR.EntityCache or {}
+if not LUASQUARE_SOURCEBINDING then include('luasquare_module/sourcebinding.lua') end
+
+DFR.SourceBindings = LUASQUARE_SOURCEBINDING.CreateRegistry('DFR', {
+    log = function(message) DFR.Log(message) end,
+    time = function() return DFR.GetTime() end
+})
+
+DFR.Bindings = DFR.SourceBindings.Bindings
+DFR.EntityCache = DFR.SourceBindings.EntityCache
 
 function DFR.RegisterBinding(id, data)
-    data = data or {}
-    if not id or id == '' then
-        DFR.Log('Rejected binding with missing id')
-        return false
-    end
-
-    DFR.Bindings[id] = {
-        id = id,
-        targetName = data.targetName or data.target or data.entity,
-        class = data.class or data.entityClass,
-        required = data.required and true or false,
-        notes = data.notes,
-        missing = false,
-        entity = nil
-    }
-
-    return true
+    return DFR.SourceBindings:Register(id, data)
 end
 
 function DFR.GetBinding(id)
-    return DFR.Bindings[id]
+    return DFR.SourceBindings:Get(id)
 end
 
 function DFR.GetEntByName(targetName)
-    if not targetName or targetName == '' then return nil end
-    local cached = DFR.EntityCache[targetName]
-    if IsValid and IsValid(cached) then return cached end
-    if not ents or not ents.FindByName then return nil end
+    local entities = DFR.SourceBindings:GetEntitiesByName(targetName)
+    return entities[1]
+end
 
-    local ent = ents.FindByName(targetName)[1]
-    if IsValid and IsValid(ent) then
-        DFR.EntityCache[targetName] = ent
-        return ent
-    end
-
-    return nil
+function DFR.GetEntsByName(targetName)
+    return DFR.SourceBindings:GetEntitiesByName(targetName)
 end
 
 function DFR.ResolveBinding(id)
-    local binding = DFR.GetBinding(id)
-    if not binding then return nil end
-    local ent = DFR.GetEntByName(binding.targetName)
-    binding.entity = ent
-    binding.missing = not (IsValid and IsValid(ent))
-    return ent
+    return DFR.SourceBindings:ResolveFirst(id)
+end
+
+function DFR.ResolveBindingAll(id)
+    return DFR.SourceBindings:ResolveAll(id)
 end
 
 function DFR.ValidateBindings()
-    local ok = true
-    local missingRequired = 0
-    local missingOptional = 0
-
-    for id, binding in pairs(DFR.Bindings) do
-        DFR.ResolveBinding(id)
-        if binding.missing then
-            if binding.required then
-                ok = false
-                missingRequired = missingRequired + 1
-                DFR.Log('Missing required binding ' .. tostring(id) .. ' target=' .. tostring(binding.targetName) .. ' class=' .. tostring(binding.class))
-            else
-                missingOptional = missingOptional + 1
-                DFR.Log('Missing optional binding ' .. tostring(id) .. ' target=' .. tostring(binding.targetName) .. ' class=' .. tostring(binding.class))
-            end
-        end
-    end
-
-    DFR.LastBindingValidation = {
-        ok = ok,
-        missingRequired = missingRequired,
-        missingOptional = missingOptional,
-        time = DFR.GetTime()
-    }
-
+    local ok = DFR.SourceBindings:Validate()
+    DFR.LastBindingValidation = DFR.SourceBindings.LastValidation
     return ok
 end
 
 function DFR.FireBinding(id, inputName, value)
-    local ent = DFR.ResolveBinding(id)
-    if not (IsValid and IsValid(ent)) then
-        DFR.Log('Cannot fire missing binding ' .. tostring(id))
-        return false
-    end
-
-    ent:Fire(inputName or 'Trigger', value)
-    return true
+    return DFR.SourceBindings:Fire(id, inputName, value, { all = false })
 end
 
+function DFR.FireBindingAll(id, inputName, value)
+    return DFR.SourceBindings:Fire(id, inputName, value, { all = true })
+end
+
+function DFR.EachBinding(id, callback, all)
+    return DFR.SourceBindings:Each(id, callback, { all = all ~= false })
+end
