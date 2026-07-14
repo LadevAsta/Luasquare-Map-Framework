@@ -1180,6 +1180,25 @@ local function MAPDEF_pumpLoadMW(...)
     return total
 end
 
+local function MAPDEF_graphChartHeight(screenHeight)
+    local compact = screenHeight <= 16
+    local padding = compact and 6 or 10
+    local lineHeight = compact and 13 or 18
+    return math.max(math.floor(screenHeight / MAPDEF_panelScale - padding * 2 - lineHeight - 6), 32)
+end
+
+local function MAPDEF_registerGraphScreen(name, target, width, height, getter)
+    LUASQUARE_3D2D.RegisterDisplay(name, MAPDEF_panelBase({
+        target = target,
+        width = width,
+        height = height
+    }))
+
+    LUASQUARE_3D2D.BindDisplay(name, function()
+        return {getter(MAPDEF_graphChartHeight(height))}
+    end)
+end
+
 -- =========================================
 -- 3D2D PANEL DISPLAYS REGISTER
 -- =========================================
@@ -1188,15 +1207,11 @@ LUASQUARE_3D2D.RegisterDisplay('fw_flow_panel', MAPDEF_panelBase({
     title = 'FEEDWATER',
     target = 'tar_display_feedwater',
     width = 58,
-    height = 43
+    height = 33
 }
 ))
 LUASQUARE_3D2D.BindDisplay('fw_flow_panel', function()
-    local separator = LUASQUARE_STEAMSEPARATOR.GetSteamSeparator('main_steam_separator') or {}
-    local feedwaterFlow = (LUASQUARE_PUMP.GetPump('feedwater_pump_a') or {}).lastFlow or 0
-    feedwaterFlow = feedwaterFlow + ((LUASQUARE_PUMP.GetPump('feedwater_pump_b') or {}).lastFlow or 0)
     local separatorLevel = LUASQUARE_STEAMSEPARATOR.GetLevelPercent('main_steam_separator')
-    local steamOutput = separator.lastDrySteamOut or 0
     return {
         {
             type = 'columns',
@@ -1212,24 +1227,6 @@ LUASQUARE_3D2D.BindDisplay('fw_flow_panel', function()
             columns = {
                 MAPDEF_levelTargetColumn('SEP TARGET', separatorLevel, MAPDEF_feedwaterTargetPercent),
                 MAPDEF_separatorColumn('SEPARATOR', 'main_steam_separator')
-            }
-        },
-        {
-            type = 'graph',
-            id = 'feedwater_trend',
-            label = 'SEP / FW / STM',
-            min = 0,
-            max = 100,
-            seconds = 60,
-            height = 54,
-            legend = true,
-            grid = true,
-            decimals = 0,
-            unit = '%',
-            series = {
-                { id = 'sep_level', label = 'SEP', value = separatorLevel, color = Color(80, 180, 255) },
-                { id = 'fw_flow', label = 'FW', value = math.Clamp(feedwaterFlow / 10, 0, 100), color = Color(110, 255, 150) },
-                { id = 'steam_out', label = 'STM', value = math.Clamp(steamOutput / 5000, 0, 100), color = Color(255, 220, 90) }
             }
         },
         {
@@ -1322,7 +1319,7 @@ LUASQUARE_3D2D.RegisterDisplay('rpv_status_panel', MAPDEF_panelBase({
     title = 'RPV STATUS',
     pos = 'tar_display_rpv',
     width = 34,
-    height = 64,
+    height = 53,
 }))
 LUASQUARE_3D2D.BindDisplay('rpv_status_panel', function()
     local waterFraction = 0
@@ -1333,25 +1330,6 @@ LUASQUARE_3D2D.BindDisplay('rpv_status_panel', function()
     return {
         { type = 'value', label = 'MWth', value = RBMK.LastThermalMW or 0, decimals = 0 },
         { type = 'value', label = 'RPV Pressure', value = RBMK.RPVPressure or 0, decimals = 1, unit = 'bar', warn = pressureFraction > 0.85 },
-        {
-            type = 'graph',
-            id = 'rpv_pressure',
-            label = 'RPV PRESS TREND',
-            value = RBMK.RPVPressure or 0,
-            min = 0,
-            max = RBMK.CatastrophicPressure or 140,
-            seconds = 60,
-            height = 72,
-            decimals = 0,
-            unit = 'bar',
-            color = Color(120, 220, 255),
-            fill = true,
-            thresholds = {
-                { value = RBMK.RPVMaxPressure or 70, label = 'MAX', color = Color(255, 210, 70) },
-                { value = RBMK.BlowoutPressure or 85, label = 'VENT', color = Color(255, 130, 80) },
-                { value = RBMK.CatastrophicPressure or 140, label = 'FAIL', color = Color(255, 90, 90) }
-            }
-        },
         { type = 'bar', fraction = pressureFraction, height = 5 },
         { type = 'bar', label = 'Core Hold-up', fraction = waterFraction, height = 5 },
         { type = 'value', label = 'Core Flow', value = RBMK.LastEffectiveCoreFlow or 0, decimals = 0, unit = '/s', warn = (RBMK.LastDryoutRisk or 0) > 0.6 },
@@ -1366,7 +1344,7 @@ LUASQUARE_3D2D.RegisterDisplay('tg1_status_panel', MAPDEF_panelBase({
     title = 'TURBINE A',
     target = 'tar_display_tg1',
     width = 44,
-    height = 44
+    height = 33
 }))
 LUASQUARE_3D2D.BindDisplay('tg1_status_panel', function()
     local data = LUASQUARE_TURBINE.GetTurbine('tg1') or {}
@@ -1379,26 +1357,6 @@ LUASQUARE_3D2D.BindDisplay('tg1_status_panel', function()
     return {
         { type = 'value', label = 'RPM', value = data.rpm or 0, decimals = 2 , unit = 'RPM'},
         { type = 'value', label = 'Grid Frequency', value = grid.frequency or 0, decimals = 2, unit = 'Hz' },
-        {
-            type = 'graph',
-            id = 'tg1_power_trend',
-            label = 'GEN POWER',
-            min = -10,
-            max = generator.maxMW or 480,
-            seconds = 60,
-            height = 56,
-            legend = true,
-            decimals = 0,
-            unit = 'MW',
-            thresholds = {
-                { value = 0, label = 'ZERO', color = Color(160, 180, 190) },
-                { value = generator.ratedMW or 160, label = 'RATED', color = Color(255, 210, 70) }
-            },
-            series = {
-                { id = 'mw', label = 'MW', value = generator.lastAcceptedMW or data.lastMW or 0, color = Color(110, 255, 150), fill = true },
-                { id = 'reverse', label = 'REV', value = -(generator.lastReverseMW or 0), color = Color(255, 130, 80), mode = 'step' }
-            }
-        },
         { type = 'value', label = 'Sync Error', value = generator.lastPhaseError or 0, decimals = 1, unit = 'deg' },
         { type = 'value', label = 'Turbine Valve', value = valve * 100, decimals = 1 },
         { type = 'bar', fraction = valve, height = 5 },
@@ -1411,6 +1369,107 @@ LUASQUARE_3D2D.BindDisplay('tg1_status_panel', function()
         { type = 'bar', fraction = vibration / tripVibration, height = 5 },
         { type = 'value', label = 'Generator Output', value = generator.lastAcceptedMW or data.lastMW or 0, decimals = 2, unit = 'MW', warn = (generator.lastAcceptedMW or 0) < 0 },
         { type = 'value', label = 'Reverse Power', value = generator.lastReverseMW or 0, decimals = 2, unit = 'MW', warn = (generator.lastReverseMW or 0) > (generator.reversePowerTripMW or 0) },
+    }
+end)
+
+MAPDEF_registerGraphScreen('graph_rpv_pres', 'tar_display_graph_rpv_pres', 34, 19, function(graphHeight)
+    return {
+        type = 'graph',
+        id = 'rpv_pressure',
+        label = 'RPV PRESS',
+        value = RBMK.RPVPressure or 0,
+        min = 0,
+        max = RBMK.CatastrophicPressure or 140,
+        seconds = 60,
+        height = graphHeight,
+        decimals = 0,
+        unit = 'bar',
+        color = Color(120, 220, 255),
+        thresholds = {
+            { value = RBMK.RPVMaxPressure or 70, label = 'MAX', color = Color(255, 210, 70) },
+            { value = RBMK.BlowoutPressure or 85, label = 'VENT', color = Color(255, 130, 80) },
+            { value = RBMK.CatastrophicPressure or 140, label = 'FAIL', color = Color(255, 90, 90) }
+        }
+    }
+end)
+
+MAPDEF_registerGraphScreen('graph_rpv_waterlevel', 'tar_display_graph_rpv_waterlevel', 34, 19, function(graphHeight)
+    local waterPercent = 0
+    if RBMK.MaxWater and RBMK.MaxWater > 0 then waterPercent = math.Clamp((RBMK.Water or 0) / RBMK.MaxWater, 0, 1) * 100 end
+    return {
+        type = 'graph',
+        id = 'rpv_waterlevel',
+        label = 'RPV WATER',
+        value = waterPercent,
+        min = 0,
+        max = 100,
+        seconds = 60,
+        height = graphHeight,
+        decimals = 0,
+        unit = '%',
+        color = Color(80, 180, 255),
+        thresholds = {
+            { value = 10, label = 'LOW', color = Color(255, 95, 95) },
+            { value = 80, label = 'NOM', color = Color(110, 255, 150) }
+        }
+    }
+end)
+
+MAPDEF_registerGraphScreen('graph_steamlinepres', 'tar_display_graph_steamlinepres', 34, 19, function(graphHeight)
+    local steamline = LUASQUARE_FLUID.GetNetwork('main_steam') or {}
+    return {
+        type = 'graph',
+        id = 'steamline_pressure',
+        label = 'STEAMLINE PRESS',
+        value = steamline.pressure or 0,
+        min = 0,
+        max = steamline.maxPressure or 150,
+        seconds = 60,
+        height = graphHeight,
+        decimals = 0,
+        unit = 'bar',
+        color = Color(255, 220, 90)
+    }
+end)
+
+MAPDEF_registerGraphScreen('graph_deaeratorlevel', 'tar_display_graph_deaeratorlevel', 34, 19, function(graphHeight)
+    local deaerator = LUASQUARE_DEAERATOR.GetDeaerator('main_deaerator') or {}
+    local level = 0
+    if (deaerator.maxAmount or 0) > 0 then level = math.Clamp((deaerator.amount or 0) / deaerator.maxAmount, 0, 1) * 100 end
+    return {
+        type = 'graph',
+        id = 'deaerator_level',
+        label = 'DEAERATOR LEVEL',
+        value = level,
+        min = 0,
+        max = 100,
+        seconds = 60,
+        height = graphHeight,
+        decimals = 0,
+        unit = '%',
+        color = Color(110, 255, 150),
+        thresholds = {
+            { value = 20, label = 'LOW', color = Color(255, 210, 70) },
+            { value = 70, label = 'OVF', color = Color(255, 130, 80) }
+        }
+    }
+end)
+
+MAPDEF_registerGraphScreen('graph_avgxenon', 'tar_display_graph_avgxenon', 19, 12, function(graphHeight)
+    return {
+        type = 'graph',
+        id = 'average_xenon',
+        label = 'AVG XENON',
+        value = RBMK.AverageXenon or 0,
+        min = 0,
+        max = 100,
+        seconds = 60,
+        height = graphHeight,
+        decimals = 0,
+        unit = '%',
+        color = Color(190, 130, 255),
+        yTicks = 2,
+        xTicks = 2
     }
 end)
 

@@ -163,14 +163,16 @@ local lineKeys = {
     'width', 'height', 'font', 'color', 'valueColor', 'barColor', 'backgroundColor',
     'warn', 'warnColor', 'critical', 'criticalColor', 'columns', 'sub', 'columnsGap',
     'id', 'series', 'seconds', 'sampleInterval', 'mode', 'legend', 'grid', 'thresholds',
-    'fill', 'fillColor', 'lineColor', 'borderColor'
+    'fill', 'fillColor', 'lineColor', 'borderColor', 'lineWidth', 'graphFont', 'axisFont',
+    'legendFont', 'yTicks', 'xTicks', 'showScale', 'showXAxis', 'showYAxis', 'axisColor',
+    'axisLabelColor'
 }
 
 local function normalizeGraphSeries(series, fallbackId, fallbackLabel)
     series = series or {}
     local out = shallowCopyAllowed(series, {
         'id', 'label', 'value', 'unit', 'decimals', 'color', 'lineColor', 'fillColor',
-        'min', 'max', 'mode', 'fill'
+        'min', 'max', 'mode', 'fill', 'lineWidth'
     })
     out.id = out.id or fallbackId
     out.label = out.label or fallbackLabel or out.id
@@ -238,6 +240,8 @@ local function normalizeLine(line)
         out.lineColor = copyColor(out.lineColor, nil)
         out.fillColor = copyColor(out.fillColor, nil)
         out.borderColor = copyColor(out.borderColor, nil)
+        out.axisColor = copyColor(out.axisColor, nil)
+        out.axisLabelColor = copyColor(out.axisLabelColor, nil)
         if out.type == 'graph' then
             out.series = normalizeGraphSeriesList(line)
             out.thresholds = normalizeGraphThresholds(line.thresholds)
@@ -610,6 +614,27 @@ if CLIENT then
         antialias = true
     })
 
+    surface.CreateFont('Luasquare3D2D_GraphLabel', {
+        font = 'Roboto Mono',
+        size = 10,
+        weight = 500,
+        antialias = true
+    })
+
+    surface.CreateFont('Luasquare3D2D_GraphLabelTiny', {
+        font = 'Roboto Mono',
+        size = 8,
+        weight = 500,
+        antialias = true
+    })
+
+    surface.CreateFont('Luasquare3D2D_GraphLabelLarge', {
+        font = 'Roboto Mono',
+        size = 12,
+        weight = 500,
+        antialias = true
+    })
+
     local function formatValue(value, decimals, unit)
         if isnumber(value) then
             decimals = tonumber(decimals)
@@ -715,11 +740,65 @@ if CLIENT then
         return tonumber(line.height) or 64
     end
 
+    local function graphAutoFont(display, line)
+        local displayHeight = tonumber(display and display.height) or 128
+        local chartHeight = graphChartHeight(line)
+        if displayHeight <= 140 or chartHeight <= 96 then return 'Luasquare3D2D_GraphLabelTiny' end
+        if displayHeight >= 260 and chartHeight >= 160 then return 'Luasquare3D2D_GraphLabelLarge' end
+        return 'Luasquare3D2D_GraphLabel'
+    end
+
+    local function graphFont(display, line)
+        return line.graphFont or graphAutoFont(display, line)
+    end
+
+    local function graphAxisFont(display, line)
+        return line.axisFont or line.graphFont or graphAutoFont(display, line)
+    end
+
+    local function graphLegendFont(display, line)
+        return line.legendFont or line.graphFont or graphAutoFont(display, line)
+    end
+
+    local function graphShowYAxis(line)
+        if line.showScale == false then return false end
+        return line.showYAxis ~= false
+    end
+
+    local function graphShowXAxis(line)
+        if line.showScale == false then return false end
+        return line.showXAxis ~= false
+    end
+
     local function graphTotalHeight(line, lineHeight)
         local total = graphChartHeight(line) + 6
         if line.label or line.text then total = total + lineHeight end
-        if line.legend then total = total + lineHeight end
+        if line.legend then total = total + math.max(lineHeight, 12) end
         return total
+    end
+
+    local function graphAxisColor(display, line)
+        return line.axisColor or Color(80, 130, 145, 80)
+    end
+
+    local function graphAxisLabelColor(display, line)
+        return line.axisLabelColor or display.textColor or color_white
+    end
+
+    local function graphTickCount(value)
+        return math.Clamp(math.floor(tonumber(value) or 4), 2, 12)
+    end
+
+    local function graphPlotRect(line, x, y, width, height)
+        local leftMargin = graphShowYAxis(line) and 34 or 3
+        local bottomMargin = graphShowXAxis(line) and 13 or 3
+        local topMargin = 3
+        local rightMargin = 4
+        local plotX = x + leftMargin
+        local plotY = y + topMargin
+        local plotW = math.max(width - leftMargin - rightMargin, 8)
+        local plotH = math.max(height - topMargin - bottomMargin, 8)
+        return plotX, plotY, plotW, plotH, leftMargin, bottomMargin
     end
 
     local function graphValueFraction(line, value)
@@ -737,32 +816,56 @@ if CLIENT then
         return math.floor(px + 0.5), math.floor(py + 0.5)
     end
 
-    local function drawGraphGrid(line, x, y, width, height)
+    local function drawThickGraphLine(x1, y1, x2, y2, width)
+        width = math.Clamp(math.floor(tonumber(width) or 1), 1, 8)
+        if width <= 1 then
+            surface.DrawLine(x1, y1, x2, y2)
+            return
+        end
+
+        if width == 2 then
+            surface.DrawLine(x1, y1, x2, y2)
+            surface.DrawLine(x1 + 1, y1, x2 + 1, y2)
+            surface.DrawLine(x1, y1 + 1, x2, y2 + 1)
+            return
+        end
+
+        local radius = math.floor(width / 2)
+        for offset = -radius, radius do
+            surface.DrawLine(x1 + offset, y1, x2 + offset, y2)
+            surface.DrawLine(x1, y1 + offset, x2, y2 + offset)
+        end
+    end
+
+    local function drawGraphGrid(display, line, x, y, width, height)
         if line.grid == false then return end
-        surface.SetDrawColor(Color(80, 130, 145, 55))
-        for i = 1, 3 do
-            local gx = x + math.floor(width * i / 4)
-            local gy = y + math.floor(height * i / 4)
+        surface.SetDrawColor(graphAxisColor(display, line))
+
+        local xTicks = graphTickCount(line.xTicks)
+        for i = 0, xTicks do
+            local gx = x + math.floor(width * i / xTicks)
             surface.DrawRect(gx, y, 1, height)
+        end
+
+        local yTicks = graphTickCount(line.yTicks)
+        for i = 0, yTicks do
+            local gy = y + math.floor(height * i / yTicks)
             surface.DrawRect(x, gy, width, 1)
         end
     end
 
     local function drawGraphThresholds(display, line, x, y, width, height)
+        local labelFont = graphFont(display, line)
         for _, threshold in ipairs(line.thresholds or {}) do
             local value = tonumber(threshold.value)
             if value then
                 local ty = y + height * (1 - graphValueFraction(line, value))
                 local color = threshold.color or Color(255, 210, 70)
-                if threshold.fill then
-                    surface.SetDrawColor(threshold.fillColor or Color(color.r or 255, color.g or 210, color.b or 70, 22))
-                    surface.DrawRect(x, y, width, math.Clamp(ty - y, 0, height))
-                end
 
                 surface.SetDrawColor(color)
                 surface.DrawRect(x, math.floor(ty + 0.5), width, 1)
                 if threshold.label then
-                    draw.SimpleText(tostring(threshold.label), 'Luasquare3D2D_Small', x + width - 2, ty - 2, color, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM)
+                    draw.SimpleText(tostring(threshold.label), labelFont, x + width - 2, ty - 2, color, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM)
                 end
             end
         end
@@ -773,31 +876,23 @@ if CLIENT then
         if #points <= 0 then return end
 
         local color = series.lineColor or series.color or line.lineColor or line.color or Color(80, 220, 150)
-        local fillColor = series.fillColor or line.fillColor or Color(color.r or 80, color.g or 220, color.b or 150, 38)
         local mode = series.mode or line.mode or 'line'
-        local fill = line.fill or series.fill or mode == 'fill'
+        local lineWidth = series.lineWidth or line.lineWidth or 2
         local lastX, lastY
-
-        surface.SetDrawColor(fillColor)
-        if fill then
-            for _, point in ipairs(points) do
-                local px, py = graphPointToScreen(line, point, now, seconds, x, y, width, height)
-                surface.DrawRect(px, py, 1, math.max(y + height - py, 0))
-            end
-        end
 
         surface.SetDrawColor(color)
         for _, point in ipairs(points) do
             local px, py = graphPointToScreen(line, point, now, seconds, x, y, width, height)
             if lastX then
                 if mode == 'step' then
-                    surface.DrawLine(lastX, lastY, px, lastY)
-                    surface.DrawLine(px, lastY, px, py)
+                    drawThickGraphLine(lastX, lastY, px, lastY, lineWidth)
+                    drawThickGraphLine(px, lastY, px, py, lineWidth)
                 else
-                    surface.DrawLine(lastX, lastY, px, py)
+                    drawThickGraphLine(lastX, lastY, px, py, lineWidth)
                 end
             else
-                surface.DrawRect(px, py, 2, 2)
+                local dotSize = math.max(math.floor(tonumber(lineWidth) or 2), 2)
+                surface.DrawRect(px - math.floor(dotSize / 2), py - math.floor(dotSize / 2), dotSize, dotSize)
             end
 
             lastX = px
@@ -808,13 +903,47 @@ if CLIENT then
     local function drawGraphLegend(display, line, x, y, width)
         if not line.legend then return end
         local cursorX = x
+        local font = graphLegendFont(display, line)
         for _, series in ipairs(line.series or {}) do
             local color = series.lineColor or series.color or line.lineColor or line.color or display.barColor
             surface.SetDrawColor(color or Color(80, 220, 150))
             surface.DrawRect(cursorX, y + 5, 10, 3)
-            draw.SimpleText(tostring(series.label or series.id or ''), 'Luasquare3D2D_Small', cursorX + 14, y, color or display.textColor, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-            cursorX = cursorX + math.min(width, 14 + string.len(tostring(series.label or series.id or '')) * 8 + 12)
+            draw.SimpleText(tostring(series.label or series.id or ''), font, cursorX + 14, y, color or display.textColor, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+            cursorX = cursorX + math.min(width, 14 + string.len(tostring(series.label or series.id or '')) * 6 + 12)
             if cursorX > x + width - 24 then break end
+        end
+    end
+
+    local function drawGraphAxes(display, line, x, y, width, height, plotX, plotY, plotW, plotH)
+        local font = graphAxisFont(display, line)
+        local color = graphAxisLabelColor(display, line)
+        local axisColor = graphAxisColor(display, line)
+
+        surface.SetDrawColor(axisColor)
+        surface.DrawRect(plotX, plotY, 1, plotH)
+        surface.DrawRect(plotX, plotY + plotH, plotW, 1)
+
+        if graphShowYAxis(line) then
+            local yTicks = graphTickCount(line.yTicks)
+            local minValue = tonumber(line.min) or 0
+            local maxValue = tonumber(line.max) or 1
+            for i = 0, yTicks do
+                local fraction = i / yTicks
+                local value = maxValue - (maxValue - minValue) * fraction
+                local ty = plotY + plotH * fraction
+                draw.SimpleText(formatValue(value, line.decimals, line.unit), font, plotX - 3, ty, color, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+            end
+        end
+
+        if graphShowXAxis(line) then
+            local xTicks = graphTickCount(line.xTicks)
+            local seconds = tonumber(line.seconds) or 60
+            for i = 0, xTicks do
+                local fraction = i / xTicks
+                local remaining = -math.floor(seconds * (1 - fraction) + 0.5)
+                local tx = plotX + plotW * fraction
+                draw.SimpleText(tostring(remaining) .. 's', font, tx, plotY + plotH + 2, color, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+            end
         end
     end
 
@@ -822,30 +951,31 @@ if CLIENT then
         local chartHeight = graphChartHeight(line)
         local chartY = y
         if line.label or line.text then
-            draw.SimpleText(tostring(line.label or line.text), line.font or display.font, x, y, getLineColor(display, line), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+            local labelFont = line.font or graphFont(display, line)
+            draw.SimpleText(tostring(line.label or line.text), labelFont, x, y, getLineColor(display, line), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
             local firstSeries = (line.series or {})[1] or {}
             local currentValue = firstSeries.value or line.value
             if currentValue ~= nil then
-                draw.SimpleText(formatValue(currentValue, line.decimals or firstSeries.decimals, line.unit or firstSeries.unit), line.font or display.font, x + width, y, firstSeries.lineColor or firstSeries.color or line.valueColor or display.textColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
+                draw.SimpleText(formatValue(currentValue, line.decimals or firstSeries.decimals, line.unit or firstSeries.unit), labelFont, x + width, y, firstSeries.lineColor or firstSeries.color or line.valueColor or display.textColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
             end
             chartY = y + lineHeight
         end
 
         surface.SetDrawColor(line.backgroundColor or display.barBackgroundColor or Color(18, 32, 36, 240))
         surface.DrawRect(x, chartY, width, chartHeight)
-        drawGraphGrid(line, x, chartY, width, chartHeight)
-        drawGraphThresholds(display, line, x, chartY, width, chartHeight)
+        local plotX, plotY, plotW, plotH = graphPlotRect(line, x, chartY, width, chartHeight)
+        drawGraphGrid(display, line, plotX, plotY, plotW, plotH)
+        drawGraphThresholds(display, line, plotX, plotY, plotW, plotH)
 
         local now = tonumber(line.now) or 0
         local seconds = tonumber(line.seconds) or 60
         for _, series in ipairs(line.series or {}) do
-            drawGraphSeries(line, series, x, chartY, width, chartHeight, now, seconds)
+            drawGraphSeries(line, series, plotX, plotY, plotW, plotH, now, seconds)
         end
 
         surface.SetDrawColor(line.borderColor or display.borderColor or Color(80, 190, 220, 220))
         surface.DrawOutlinedRect(x, chartY, width, chartHeight, 1)
-        draw.SimpleText(formatValue(line.min or 0, line.decimals, line.unit), 'Luasquare3D2D_Small', x + 2, chartY + chartHeight - 1, display.textColor or color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
-        draw.SimpleText(formatValue(line.max or 1, line.decimals, line.unit), 'Luasquare3D2D_Small', x + 2, chartY + 1, display.textColor or color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+        drawGraphAxes(display, line, x, chartY, width, chartHeight, plotX, plotY, plotW, plotH)
         drawGraphLegend(display, line, x, chartY + chartHeight + 2, width)
     end
 

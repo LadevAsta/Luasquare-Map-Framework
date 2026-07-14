@@ -1,0 +1,298 @@
+Dark Fusion Reactor requirements definition
+=========================================
+
+Purpose
+-------
+Build a finished, showable fictional reactor operation experience using the
+existing Luasquare framework, 3D2D instrumentation, and powerplant modules.
+The system should feel internally consistent, operator-driven, and complex
+enough to demonstrate real-time simulation, map integration, and AI-assisted
+engineering coordination.
+
+
+1. State of the map
+----------------
+Map name: gm_darkfusion 
+Steam Workshop state : Published
+    Name = Dark Energy Construct : Dark Fusion Reactor(Reactor Sandbox Map)
+    Author = LadevAsta (Me)
+    Rating = 2,339 (Average 5 Star displayed by steam)
+    Current Subscribers = 41,328
+
+VMF file state : Present.
+
+Things we will be changing:
+    We will replace the current source I/O in the map with actual Lua system that is the Luasquare Framework. And build upon it.
+
+    Existing Source I/O to replace with Lua:
+        - Reactor Simulation (Core)
+        - Reactor subsystems (DFCatalyzers)
+        - Industrial machine (Dark Fusion Fuel Enrichment Towers)
+        - Prop_coreball control.
+        - 'DECAOS' Announcer.
+        - Cinematic Event Sequence
+        - Background Music Controller
+    
+    Existing Source I/O to keep:
+        - Minor Scene Environment controller (passing trains and small ships)
+        - Secret triggers
+
+    Adding New feature that was impossible before:
+        - DECAOS subtitler (Due to comments about DECAOS being hard to hear during events)
+        - In-depth reactor management.
+        - Actual sequence timelines.
+
+    Side-goal:
+        - Minimize amount of Logic entity in the final map.
+
+Important targetnames:
+    - Main reactor entity / visual:
+    - Control room display targets:
+    - Graph display targets:
+    - Buttons / levers:
+    - Relays / effects:
+    - Alarm lights / sounds:
+
+Discuss : Update this workshop and create new workshop item for the legacy version of gm_darkfusion. Or Make a new workshop item entirely. Whichever is better for Steam workshop exposure algorithm.
+
+
+2. Old reactor model
+------------------------
+
+Everything are controlled by Source logic I/O.
+There are some form of state machine going on behind the scenes.
+
+Reactor Core Variables:
+    - Energy Saturation (0-100) [Meltdown citeria at >80] [abb. = ES]
+    - Dark Fusion Fuel
+    - Annihilation Fuel (Hydrogen/Antihydrogen) [abb. = AN-Fuel]
+    - Superstructure Integrity
+
+Reactor Behahvior during Offline:
+    - Reactor logic clock keep ticking for updates. This clock is shared all across the map.
+    - Static. Everything is Dark
+
+Reactor Behavior during startup:
+    - Each of the moving parts move accordingly to logics relay scripting.
+    - At the end of startup, it enters Annihilation Stage burning AN-Fuel.
+    - reactor checks immediately if it is primed for dark fusion. if it is, proceed to ignition.
+
+Reactor Behahvior during ignition:
+    - Same as startup but with different set of logic Relays
+    - at the end of ignition, ES logic start to run. Actual simulation starts here.
+
+Reactor Behavior at high ES:
+    - alarm start to sound
+    - Above Max ES, alarm intensfies, Integrity start dropping at fixed rate, a bgm start playing at certain point.
+    - as Integrity drops, it hit triggers where the map progressively start spawning debris and change fog color.
+    - Once Integrity reach a certain point of no return, bgm changes as DECAOS say a line according whats programmed in one of many logic_relay.
+    - Once Integrity reach the final point of trigger, Meltdown Sequence occurs.
+    - Meltdown progress at fixed rate. It is an entirely scripted event featuring many stuff that happen at once until the end.
+
+Reactor Behahvior at low ES:
+    - Alarm warn first
+    - After 60 seconds if ES doesnt rise, reactor fall back to Annihilation stage.
+
+Reactor behavior at low AN-Fuel
+    - Alarm warn first
+    - After 60 seconds if AN-Fuel doesnt rise, force initiate shutdown.
+
+What is controllable:
+    - Influx (increase ES gain rate)
+    - Stabilizer (decrease ES gain rate)
+    - Toggle Annihilation Fuel Core Feed
+    - Toggle Auto AN-Fuel feed.
+    - Other minor map entity control buttons.
+
+What is dangerous physically:
+    - Core
+    - Core Chamber
+    - point_beam Lasers
+    - Combine balls
+
+What is dangerous mentally:
+    - Reactor Meltdown (Players are intended to avoid this event. It never really kill the player or npcs at the end)
+
+What recovers slowly over time:
+    - Superstructure Integrity
+
+What reactor checks before it start up (roughly)
+    - Annihilation Fuel level is at high.
+
+What reactor checks when it should be able to be primed for Dark Fusion Ignition.
+    - 3 Fuel receptacles are loaded and Annihilation Fuel level has hit maximum recently.
+
+
+Operator workflow
+--------------------
+Startup sequence:
+    1. Flick 3 Startup levers.
+    2. Wait out and watch the logic_relay scripted event.
+    3. Done
+
+Normal operation:
+    - Reactor is stable at the start unless operator touch either Influx or Stabilizer buttons.
+
+Power increase sequence:
+    - Add Influx or Subtract Stabilizer. Effects the ES.
+
+Shutdown sequence:
+    1. Flick 3 Startup levers DURING Annihilation stage.
+    2. Wait out and watch the logic_relay scripted event.
+    3. Done
+
+3. New Reactor Model
+-----------------------------
+
+Everything related to dark fusion reactor AND other complex system such as Fuel Enrichment Towers or even elevators are controlled by Luasquare Frameworks modules.
+20 TW Reactor.
+6 Catalyzers.
+
+Reactor CORE general Variables:
+    - containmentFieldRadius
+    - containmentFieldStrength
+    - containmentFieldStability
+    - planetOrbitalInfluenceSuppression
+    - radiation
+
+Reactor CORE Variables for Annihilation Stage:
+    - annihilationPowerGW
+    - antimatterPercent (AN-Fuel can mean two things, Antimatter and Matter)
+    - fuelSaturation
+    - matterPercent
+    - antimatterDorminace [True/False]
+    - matterDorminance [True/False]
+    - stellaRadius
+    - singularity [True/False] (singularity is dangerous during Annihilation Stage but normal during Dark Fusion)
+
+Reactor CORE Variables for Dark Fusion Stage:
+    - influxTW
+    - outfluxTW
+    - storedFluxGWh
+    - energySaturation
+    - expellingEnergyGW
+    - CatalyzersPower
+    - annihilationFusionFactor
+    - nucleogenesisRate (Produces equal amount of AN-Fuel inside the core)
+    - eventHorizonRadius
+    - planetOrbitalInfluence (Affects alarms and orbital consequences. does not TRIP since DFR cannot trip during Dark Fusion Stage)
+
+Reactor SUPERSTRUCTURE (and Stabilizer) Variables:
+    - temperature (high temperature harms SubsystemEffectiveness)
+    - integrity (Health% of entire system, recovers only during shutdown)
+    - wasteHeatMW
+    - coolantCirculationRate
+    - subsystemEffectiveness (Catalyzer, Stabilizer, LUASQUARE_HEATEXCHANGER)
+    - stabilizerPower
+    - stabilizerConsumptionGW
+    - stabilizerMalfunctionPercent (caused by low SubsystemEffectiveness, increase consumption at first then lower stability, slowly recovers)
+    - directorBeamPrecision [50-100%] (>10% imprecision cause small integrity damage but very serious during high power generation)
+    - directorBeamDirection [3dVector] (This normal 3d vector get its components move around very slightly at random.)
+    - lensxOffset
+    - lensyOffset
+    - lenszOffset (the 3 lens value is between 0 and 1. The goal is to offset that vector to points directly upward at all times.)
+    - directorBeamAutoAlign [true/false] (This auto align become weaker as subsystemEffectiveness drop, disable self if imprecision exceed 6%)
+    - finalEnergyExportTW
+
+DARK FUSION CATALYZER Variables:
+    - mode [Active/Passive/Catalyze/Annihilate/Offline]
+    - throttle (used for Passive mode)
+    - fuelcellPercent
+    - powerSubmit
+    - malfunction [True/False] (caused by low SubsystemEffectiveness)
+
+Secondary Thermal Plant (purely logic, no physical part such as sound or map entity moving parts):
+    Waste Heat Around 9000 MWth to 80 GWth
+    wasteHeatMW > coolant(primordial coolant loop) > Steam generator HeatEX > Hyperdense Steam(water loop) > VERY LARGE Turbines > condenser.
+    OR wasteHeatMW > coolant(primordial coolant loop) > primordial sea. (lose primordial coolant back to their source while heating up the sea slowly)
+
+    primordial coolant is fictional coolant that can carry a lot of heat and almost never vaporize available locally on this world circulating underneath. produced from distilling extracted primordial seawater from under the planet (which takes power).
+
+
+
+
+Operation workflow
+--------------------
+Startup sequence (Auto-Startup case):
+    1.Check AN-Fuel, Fuel cell in 3 receptacles and DECAOS mainframe status.
+    2.Call 7472 through facility phone and select reactor startup.
+    3.Flick 3 Startup-lever
+    4.Wait for authorization from higher-ups 20% chance it will be denied with random external reason.
+    5.If granted, start an reactive-timeline for startup sequence. it will react to only major defined failures. such as not enough inserted fuel cells.
+    6.This timeline will override some reactor logics and directly set those values so that the sequence can be in sync with bgm.
+    7.If failure detected, controls unlock immediately and DECAOS request operator further manual action as it resume reactor logic at the correct current state.
+    8.If no failure AND Dark Fusion Key is Primed, it will proceed through until the end of Dark Fusion Stage. then, control unlocks.
+
+Startup sequence (Manual case)
+    1.Check AN-Fuel and Fuel cell in 3 receptacles.
+    2.Call 7472 through facility phone and select reactor manual startup.
+    3.Wait for authorization from higher-ups 30% chance it will be denied with random external reason.
+    4.Once granted, dynamic bgm starts as all control are unlocked immediately.
+    5.Deploy reactor machine (appears as two shafts powered by func_tracktrain)
+    6.Activate Stabilizer
+    7.Generate Containment Field at low strength.
+    8.Fire Photonic Director Beam. Beam fails at high containment field strength at this time, this will TRIP the stabilizer and deal small damage to integrity.
+    9.Handle Director imprecision with lens and enable auto align once imprecision is under 5%
+    10.Throttle up containment field once imprecision is under 1%
+    11.Increase MAIN Annihilation Fuel injection (controls both Antimatter and Matter in unison). Watch the Matter-Antimatter equilibrium.
+    12.Set AN-Fuel FINE control (each control Antimatter and Matter separately) accordingly to equilibrium status.
+    13.Low equilibrium score of 20% causes a dorminance which will reduce total annihilation power.
+    14.Once equilibrium score is higher than 90%. Enable auto AN-Fuel injection. Then set fuelSaturation target.
+    15.Once Saturation target is set, Activate Dark Fusion Catalyzers at Annihilate Mode where it will kick start the large-scale annihilation reaction*.
+    *Containment failure after this time with high antimatter percentage can cause catastrophic failure and roll end screen.
+    16.Once fuel Saturation has exceeded 80% and annihilationPowerGW is above 500GW. Make sure Dark Fusion Key is primed then proceed to Dark Fusion Stage.
+    17.Initiate Dark Fusion Stage button will unlock if dark fusion key is turned and all the condition earlier are met, press this button.
+    18.Facility electrical, divert district power to reactor system this will turn off all lights.
+    19.Activate Dark Fusion Catalyzers at Catalyze mode. Wait until they fire and kickstart Dark Fusion Reaction.
+    20.Once power production is above 10 TW, divert power back to the district. Dark Fusion Reactor is now online. Continue normal operation.
+
+
+Normal operation:
+    During normal operation the core will take in influx and output outflux. Influx are run through a function that is influenced by various variables.
+    Operator must watch the energySaturation and adjust stabilizer power and influx.
+    There will be power quota coming in intervals once they call 7472 and confirmed online.
+    Keeping the production above power quota will count score but power production exceeding safe limits deducts final credited score.
+    Operator must also produce new fuel cell and Annihilation fuel using the 4 Fuel Enrichment Towers. Which will have their own mechanics.
+
+    Stabilizer containment field will be allowed to strengthen much more at dark fusion stage and it will have power ceiling when no dark fusion reaction is taking place.
+    high containment field power also cause it to draw more power from the grid as well.
+
+
+Power increase sequence:
+    - Add Influx or Subtract StabilizerPower. Influences many variables that will eventually affect the final ES.
+
+Shutdown sequence from Dark Fusion Stage:
+    1. Lower energySaturation below stall threshold. This will alert DECAOS for stalling reactor.
+    2. When dark fusion is let stalled by its own. The auto annihilation fuel injector will suddenly throttle up to keep the reactor in annihilation stage afterward.
+Shutdown sequence from Annihilation Stage (Automatic Shutdown available with the triple lever and active DECAOS mainframe):
+    1. Disable auto annihilation fuel injector.
+    2. If Antimatter Dorminace occurs, resolve it before weakening containment field by slowly increasing matter injection. Once it is a matter dorminace, proceed.
+    3. Vent hydrogen out of the core, then shutdown director Beam when its power production hit negative.
+    4. weaken containment field and turn off stabilizer.
+    5. Retract reactor machine. Shutdown complete.
+
+Emergency shutdown : Antimatter Termination
+    cut off the Antimatter injection and max-out matter injection which immediately cause matter dorminance but guarantreed to cause hydrogen explosion and containment field overload in Annihilation Stage. Dealing damage to superstructure. This is recoverable.
+    Not possible during Dark Fusion Stage due to ongoing nucleogenesis.
+
+Emergency shutdown : Reactor Purge Sequence
+    Automatically performed in Stage 2 Meltdown. former operators are tasked to retrieve Stasis Cells and insert them into 6 receptacles of each Catalyzers prior to the scheduled firing of stasis laser.
+    Stops every reaction inside the reactor and fry the entire citadel spinal superstructure, roll ending due to major asset damages.
+    Failure of purge sequence will lead to Stage 3 Meltdown.
+
+Damage : Superstructure Integrity drops
+    Superstructure integrity start dropping when: 
+        energySaturation exceeded safe limits.
+        temperature is too high.
+        a damage event caused it.
+    The less integrity means more debris being spawned, more shake, more distant explosion sound and worse reactor performance.
+
+Disaster : Runaway Fusion (Meltdown)
+    Has 3 stages. Each stage has its own bgm and effects on the map.
+    It is started from Superstructure integrity reaching 0% in Dark Fusion Stage.
+
+Disaster : Singularity containment breach
+    Caused by Event Horizon expanding too much due to prolonged operation at low power or formation of singularity in ultra-high power Annihilation Stage.
+    Formed black hole consumes the containment field and stabilizer arm while rapidly weakening planetOrbitalInfluenceSuppression down to zero. Triggering commotion in the outside world and the star system as told by DECAOS before mainframe dies.
+    The black hole then sinks into the planet core.
+    There is no countermeasure.

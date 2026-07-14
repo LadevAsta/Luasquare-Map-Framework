@@ -1,0 +1,1641 @@
+Dark Fusion Reactor
+System Requirements Definition
+Project: Dark Fusion Reactor
+Map: gm_darkfusion
+Platform: Garry’s Mod
+Primary Framework: Luasquare
+Document Status: Draft
+Document Version: 0.1
+Author: LadevAsta
+Last Updated: [2026-07-14]
+________________________________________
+1. Document Purpose
+This document defines the functional, simulation, gameplay, integration, interface, reliability, and presentation requirements for the redesigned Dark Fusion Reactor system in gm_darkfusion.
+The project will replace the map’s major Source Engine entity I/O systems with Lua-based systems built on the Luasquare framework. The redesigned reactor shall provide a finished, showable, operator-driven simulation experience that is internally consistent, sufficiently complex to reward learning, and suitable for demonstrating real-time simulation, map integration, interface design, and AI-assisted engineering coordination.
+This document is intended to:
+•	establish the required behavior of the reactor and its supporting systems;
+•	separate mandatory requirements from optional ideas;
+•	define the boundaries between Lua systems and retained Source Engine logic;
+•	document reactor states, variables, workflows, and failure conditions;
+•	provide a stable foundation for implementation, testing, and future documentation;
+•	identify unresolved design decisions that require further discussion.
+________________________________________
+ 2. Project Overview
+2.1 Existing Product
+The current version of gm_darkfusion is published on the Steam Workshop as:
+Dark Energy Construct: Dark Fusion Reactor — Reactor Sandbox Map
+Current published information:
+•	Author: LadevAsta
+•	Steam Workshop status: Published
+•	Current rating display: Approximately five stars
+•	Current subscribers: Approximately 41,328
+•	Existing VMF source file: Available
+The published map currently uses Source Engine entity I/O, logic relays, timers, counters, and scripted sequences to control most reactor behavior.
+2.2 Proposed Product
+The proposed version will retain the existing map and major visual assets while replacing central scripted logic with modular Lua systems.
+The new system will simulate:
+•	reactor startup and shutdown;
+•	annihilation-stage operation;
+•	dark-fusion-stage operation;
+•	energy production and export;
+•	containment and stabilization;
+•	reactor thermal behavior;
+•	component degradation;
+•	fuel consumption and production;
+•	operator-controlled recovery;
+•	dynamic alarms and announcements;
+•	failures, emergencies, and disasters;
+•	synchronized event timelines;
+•	scoring and power-delivery objectives.
+ 2.3 Product Vision
+The reactor should feel like a fictional industrial machine rather than a collection of unrelated buttons and scripted effects.
+The player should be required to:
+•	understand the reactor’s current state;
+•	identify whether the reactor is ready for an action;
+•	manipulate multiple interacting controls;
+•	respond to degraded or unsafe conditions;
+•	balance power output against safety and system health;
+•	operate supporting machinery to maintain reactor resources;
+•	recover from some failures while accepting that other failures are irreversible.
+The system should remain fictional and entertaining while maintaining consistent internal rules.
+________________________________________
+3. Definitions and Terminology
+3.1 Core Terms
+AN-Fuel
+Collective term for the matter and antimatter consumed during the annihilation stage. Where necessary, requirements shall refer separately to matter fuel and antimatter fuel.
+Annihilation Stage
+The reactor stage in which matter-antimatter reactions generate power and prepare the core for dark-fusion ignition.
+Dark Fusion Stage
+The reactor’s primary high-output operating stage.
+Energy Saturation
+A measure of accumulated reactor energy relative to the core’s current ability to expel, convert, or contain that energy.
+Influx
+Energy or reaction input entering the dark-fusion process.
+Outflux
+Energy leaving the active reaction through export, expulsion, stabilization, waste heat, or other modeled processes.
+Catalyzer
+One of six reactor subsystems capable of operating in several modes, including supporting annihilation reactions and catalyzing dark fusion.
+Stabilizer
+The system responsible for maintaining the containment field, suppressing orbital influence, and controlling reactor stability.
+Director Beam
+A photonic beam used during reactor startup and annihilation-stage operation.
+DECAOS
+The facility’s automated announcer, operator-assistance, authorization, subtitle, warning, and event-coordination system.
+Reactive Timeline
+A timed sequence that can synchronize reactor actions, music, announcements, effects, and state changes while responding to predefined failure conditions.
+Trip
+An automatic protective shutdown or interruption of a subsystem after an unsafe condition is detected.
+Superstructure Integrity
+The overall structural and operational health of the reactor, stabilizer, supporting machinery, and surrounding installation.
+Ending State
+A terminal gameplay condition that concludes the current reactor session or scenario.
+3.2 Requirement Keywords
+The words shall, should, and may have the following meanings:
+•	Shall: mandatory requirement;
+•	Should: preferred behavior that may be changed with justification;
+•	May: optional behavior or implementation choice.
+________________________________________
+ 4. Project Goals
+4.1 Primary Goals
+The project shall:
+1.	replace major Source Engine reactor logic with Luasquare-controlled Lua modules;
+2.	create a complete reactor lifecycle from offline state through startup, operation, shutdown, failure, and disaster;
+3.	provide meaningful operator interaction during all major operating stages;
+4.	make reactor behavior understandable through instruments, alarms, subtitles, visual feedback, and DECAOS announcements;
+5.	allow reactor systems to interact through defined variables rather than isolated scripted events;
+6.	support both guided automatic startup and fully interactive manual startup;
+7.	preserve the visual identity and major environmental features of the existing map;
+8.	provide enough depth to support repeated play and operator mastery;
+9.	minimize unnecessary logic entities in the final compiled map;
+10.	create a system architecture that can be documented, extended, tested, and maintained.
+4.2 Secondary Goals
+The project should:
+•	demonstrate the capabilities of the Luasquare framework;
+•	serve as a portfolio-quality software and game-systems project;
+•	support cinematic events without making normal operation entirely scripted;
+•	provide clear separation between simulation logic, map integration, audiovisual presentation, and operator interfaces;
+•	retain compatibility with important legacy map elements where practical.
+ 4.3 Non-Goals
+The initial release is not required to:
+•	accurately simulate real-world nuclear physics;
+•	reproduce an existing real reactor design;
+•	support competitive multiplayer balancing;
+•	simulate every pipe, electrical circuit, or mechanical component individually;
+•	guarantee that every catastrophic event can be prevented after its irreversible threshold;
+•	replace minor environmental systems that already function correctly through Source I/O;
+•	provide a physically realistic planetary or orbital simulation.
+________________________________________
+5. Scope
+5.1 Systems Included in Scope
+The redesign shall include:
+•	reactor core simulation;
+•	reactor state management;
+•	annihilation-stage simulation;
+•	dark-fusion-stage simulation;
+•	containment-field simulation;
+•	stabilizer simulation;
+•	director-beam alignment;
+•	six Dark Fusion Catalyzers;
+•	superstructure integrity;
+•	thermal and waste-heat simulation;
+•	secondary thermal plant logic;
+•	fuel-cell handling;
+•	matter and antimatter management;
+•	fuel enrichment towers;
+•	reactor startup and shutdown;
+•	automatic and manual operation;
+•	failure and disaster handling;
+•	DECAOS announcements;
+•	DECAOS subtitles;
+•	alarms and warning states;
+•	dynamic background music;
+•	reactive event timelines;
+•	map effects and cinematic sequences;
+•	control-room displays;
+•	power quotas and scoring;
+•	ending conditions;
+•	save, reset, or round-restart behavior, if required by the final gameplay format.
+5.2 Existing Systems to Replace
+The following Source I/O systems shall be replaced or substantially controlled by Lua:
+•	reactor core simulation;
+•	reactor subsystem logic;
+•	Dark Fusion Catalyzers;
+•	Dark Fusion Fuel Enrichment Towers;
+•	prop_coreball control;
+•	DECAOS announcement logic;
+•	cinematic event sequences;
+•	background music control.
+5.3 Existing Systems to Retain
+The following systems may remain controlled by Source I/O unless later integration becomes necessary:
+•	passing trains;
+•	small ship sequences;
+•	minor environmental scene controllers;
+•	secret triggers;
+•	unrelated ambient events.
+5.4 Scope Boundary
+Lua shall be treated as the authoritative source for reactor state.
+Map entities may display, animate, emit effects, or receive commands, but shall not independently determine the authoritative reactor state unless explicitly documented as a retained legacy system.
+________________________________________
+6. Stakeholders and Intended Users
+6.1 Primary User
+The primary user is a Garry’s Mod player acting or roleplaying as a reactor operator.
+The operator is expected to:
+•	inspect control-room displays;
+•	understand warnings and announcements;
+•	manipulate physical controls;
+•	perform startup and shutdown procedures;
+•	maintain power output;
+•	respond to faults;
+•	supply fuel;
+•	decide when to continue, reduce, or terminate operation.
+6.2 Secondary Users
+Secondary users may include:
+•	spectators observing operation;
+•	multiplayer crew members operating separate subsystems;
+•	map creators or developers reviewing the Luasquare implementation;
+•	content creators recording demonstrations;
+•	players exploring the map without completing the full operating procedure.
+6.3 Developer Stakeholders
+Developer stakeholders include:
+•	map author;
+•	Lua system developer;
+•	Luasquare framework maintainer;
+•	UI and 3D2D display designer;
+•	sound and music designer;
+•	playtesters;
+•	documentation contributors.
+________________________________________
+7. Assumptions and Constraints
+7.1 Technical Constraints
+The system shall operate within Garry’s Mod and Source Engine limitations.
+The implementation shall account for:
+•	server and client Lua separation;
+•	networked-variable bandwidth;
+•	entity limits;
+•	map entity naming;
+•	Source Engine animation and I/O behavior;
+•	multiplayer synchronization;
+•	late-joining clients;
+•	Lua errors and invalid entity references;
+•	variable frame rates and server tick rates;
+•	Workshop distribution limitations;
+•	compatibility with the compiled map and available VMF entities.
+7.2 Design Constraints
+The reactor shall remain understandable enough that a player can learn it through displays, feedback, subtitles, experimentation, and documentation.
+The reactor shall not rely exclusively on hidden variables.
+Important unsafe conditions shall have at least one observable indication before they become irreversible, unless the condition is intentionally designed as a hidden event.
+7.3 Fictional-Physics Constraint
+The simulation may use fictional physics, but each modeled variable shall have:
+•	a defined meaning;
+•	a defined unit or normalized range;
+•	one or more sources;
+•	one or more effects;
+•	valid minimum and maximum values;
+•	behavior when outside the intended operating range.
+________________________________________
+8. System Architecture
+8.1 High-Level Modules
+The system should be separated into the following modules:
+1.	Reactor State Controller
+2.	Reactor Core Simulation
+3.	Annihilation System
+4.	Dark Fusion System
+5.	Stabilizer and Containment System
+6.	Director Beam System
+7.	Catalyzer Controller
+8.	Superstructure and Damage System
+9.	Thermal Plant System
+10.	Fuel and Enrichment System
+11.	Power Export and Quota System
+12.	DECAOS Controller
+13.	Alarm and Notification System
+14.	Timeline and Sequence Controller
+15.	Music Controller
+16.	Map Entity Integration Layer
+17.	Instrumentation and 3D2D Display Layer
+18.	Scoring and Ending Controller
+19.	Debugging and Administration Interface
+8.2 Authoritative State
+SYS-ARCH-001
+The server shall own the authoritative reactor simulation state.
+SYS-ARCH-002
+Clients shall receive only the reactor data required for displays, effects, sound, and interaction feedback.
+SYS-ARCH-003
+A client shall not be able to directly assign authoritative reactor values.
+SYS-ARCH-004
+All control interactions shall be validated by the server before changing reactor state.
+SYS-ARCH-005
+The system shall provide a defined update interval for simulation calculations.
+SYS-ARCH-006
+Simulation behavior shall not materially change with graphical frame rate.
+8.3 Module Communication
+Modules should communicate using documented Luasquare inputs, outputs, events, or shared interfaces.
+Direct modification of another module’s internal variables should be avoided unless the variable is explicitly defined as shared state.
+Each module shall document:
+•	inputs;
+•	outputs;
+•	internal state;
+•	update frequency;
+•	generated events;
+•	accepted commands;
+•	fault states;
+•	reset behavior.
+________________________________________
+9. Reactor State Model
+9.1 Required Top-Level States
+The reactor shall support at least the following top-level states:
+•	OFFLINE
+•	STARTUP_AUTHORIZATION
+•	STARTUP_DEPLOYMENT
+•	ANNIHILATION_STAGE
+•	DARK_FUSION_IGNITION
+•	DARK_FUSION_STAGE
+•	STALLING
+•	NORMAL_SHUTDOWN
+•	EMERGENCY_SHUTDOWN
+•	MELTDOWN_STAGE_1
+•	MELTDOWN_STAGE_2
+•	MELTDOWN_STAGE_3
+•	PURGE_SEQUENCE
+•	SINGULARITY_BREACH
+•	ENDING
+•	RESETTING
+Additional substates may be added where required.
+9.2 State Transition Requirements
+STATE-001
+Every top-level state shall define its valid entry conditions.
+STATE-002
+Every top-level state shall define its valid exit conditions.
+STATE-003
+Every top-level state shall define which operator controls are available.
+STATE-004
+Every top-level state shall define which simulation modules continue updating.
+STATE-005
+Every state transition shall generate a named event.
+STATE-006
+Invalid state transitions shall be rejected and recorded in the debug log.
+STATE-007
+Terminal disaster states shall prevent normal operation from resuming unless a specific recovery path is defined.
+9.3 Offline State
+While offline:
+•	the active reaction shall not produce power;
+•	the reactor chamber should appear dark or inactive;
+•	the simulation clock may continue updating recovery and environmental processes;
+•	superstructure recovery may occur according to the recovery requirements;
+•	controls unrelated to startup or maintenance should remain unavailable;
+•	required startup conditions shall remain visible to the operator.
+________________________________________
+ 10. Reactor Core Data Model
+Every variable shall eventually be documented using the following format:
+Variable Name:
+Module:
+Type:
+Unit:
+Minimum:
+Maximum:
+Normal Range:
+Initial Value:
+Updated By:
+Used By:
+Networked:
+Display Precision:
+Failure Behavior:
+Notes:
+10.1 General Core Variables
+The core shall include the following general variables:
+containmentFieldRadius
+Represents the effective radius of the containment field.
+Required definition:
+•	Unit: [metres or fictional normalized unit]
+•	Minimum: [TBD]
+•	Maximum: [TBD]
+•	Normal operating range: [TBD]
+•	Primary source: stabilizer system
+•	Primary effects: event-horizon containment, chamber safety, beam compatibility
+containmentFieldStrength
+Represents the current power or intensity of the containment field.
+The system shall define:
+•	safe annihilation-stage range;
+•	safe dark-fusion-stage range;
+•	minimum required strength for each reactor state;
+•	power consumption curve;
+•	overload threshold;
+•	relationship to field stability.
+containmentFieldStability
+Represents the field’s resistance to fluctuation or collapse.
+Low field stability shall increase the probability or severity of containment-related faults.
+planetOrbitalInfluenceSuppression
+Represents the stabilizer’s ability to suppress the reactor’s gravitational or orbital influence.
+The value shall decrease during a singularity containment breach.
+radiation
+Represents the reactor’s current fictional radiation output.
+Radiation may affect:
+•	chamber danger;
+•	environmental effects;
+•	alarms;
+•	player damage;
+•	display readings;
+•	failure severity.
+10.2 Annihilation-Stage Variables
+The annihilation system shall include:
+•	annihilationPowerGW
+•	antimatterPercent
+•	matterPercent
+•	fuelSaturation
+•	antimatterDominance
+•	matterDominance
+•	stellarRadius
+•	singularity
+Spelling and naming shall be normalized before implementation. For example, antimatterDorminace should become antimatterDominance.
+10.3 Matter-Antimatter Equilibrium
+The system shall calculate an equilibrium score representing the balance between matter and antimatter.
+ANN-001
+The equilibrium score shall use a documented calculation.
+ANN-002
+An equilibrium score below approximately 20% should cause either matter dominance or antimatter dominance.
+ANN-003
+Dominance shall reduce total annihilation efficiency.
+ANN-004
+Antimatter dominance shall create a greater containment risk than matter dominance.
+ANN-005
+The operator shall be able to control matter and antimatter together through a main injection control.
+ANN-006
+The operator shall also be able to adjust matter and antimatter separately through fine controls.
+ANN-007
+Automatic AN-Fuel injection shall only be available after the required equilibrium condition is met.
+ANN-008
+The equilibrium score, current dominance, and injection rates shall be visible to the operator.
+10.4 Dark-Fusion-Stage Variables
+The dark-fusion system shall include:
+•	influxTW
+•	outfluxTW
+•	storedFluxGWh
+•	energySaturation
+•	expellingEnergyGW
+•	catalyzerPower
+•	annihilationFusionFactor
+•	nucleogenesisRate
+•	eventHorizonRadius
+•	planetOrbitalInfluence
+•	finalEnergyExportTW
+10.5 Energy Saturation
+DFR-ES-001
+Energy saturation shall represent the balance between reactor influx, outflux, storage, containment, and energy expulsion.
+DFR-ES-002
+Energy saturation shall not be changed directly by a control unless the control is explicitly a debug or timeline override.
+DFR-ES-003
+Operator controls shall influence energy saturation indirectly through modeled variables such as influx, stabilizer power, catalyzer activity, and export.
+DFR-ES-004
+The system shall define at least the following energy-saturation thresholds:
+•	low warning threshold;
+•	stall threshold;
+•	normal operating range;
+•	high warning threshold;
+•	maximum safe threshold;
+•	integrity-damage threshold;
+•	runaway-fusion threshold.
+DFR-ES-005
+Crossing a threshold shall generate a corresponding event.
+DFR-ES-006
+Threshold behavior should use hysteresis where required to prevent alarms from rapidly switching on and off.
+________________________________________
+ 11. Stabilizer and Containment Requirements
+11.1 Stabilizer Variables
+The stabilizer and superstructure system shall include:
+•	temperature
+•	integrity
+•	wasteHeatMW
+•	coolantCirculationRate
+•	subsystemEffectiveness
+•	stabilizerPower
+•	stabilizerConsumptionGW
+•	stabilizerMalfunctionPercent
+•	directorBeamPrecision
+•	directorBeamDirection
+•	lensXOffset
+•	lensYOffset
+•	lensZOffset
+•	directorBeamAutoAlign
+•	finalEnergyExportTW
+11.2 Stabilizer Behavior
+STAB-001
+Increasing stabilizer power shall increase containment capability.
+STAB-002
+Increasing stabilizer power shall increase electrical consumption.
+STAB-003
+The stabilizer shall have a lower power ceiling when no dark-fusion reaction is active.
+STAB-004
+The stabilizer shall permit a higher operating range during dark-fusion operation.
+STAB-005
+Low subsystem effectiveness shall increase stabilizer malfunction percentage.
+STAB-006
+Initial stabilizer malfunction should increase power consumption.
+STAB-007
+More severe stabilizer malfunction shall reduce containment stability or effective stabilizer output.
+STAB-008
+Stabilizer malfunction percentage shall recover gradually when its causes are removed.
+STAB-009
+The system shall define whether recovery can occur during operation, shutdown, or both.
+11.3 Subsystem Effectiveness
+Subsystem effectiveness shall represent the combined effect of heat, damage, coolant performance, and subsystem faults.
+Subsystem effectiveness may affect:
+•	Catalyzers;
+•	Stabilizer;
+•	heat exchangers;
+•	automatic beam alignment;
+•	fuel enrichment machinery;
+•	sensor accuracy;
+•	control response.
+The final implementation shall define whether subsystem effectiveness is:
+•	one shared global value;
+•	one value per subsystem;
+•	or a combination of global and subsystem-specific values.
+________________________________________
+12. Director Beam Requirements
+12.1 Beam Activation
+BEAM-001
+The director beam shall be required during manual annihilation-stage startup.
+BEAM-002
+The beam shall not operate safely above its defined containment-field compatibility limit during early startup.
+BEAM-003
+Attempting to fire the beam above that limit shall trip the stabilizer and apply defined integrity damage.
+12.2 Precision and Direction
+directorBeamDirection shall be represented as a normalized three-dimensional vector.
+The beam direction shall be affected by small disturbances.
+The operator shall adjust three lens offsets:
+•	lensXOffset
+•	lensYOffset
+•	lensZOffset
+The purpose of lens adjustment shall be to align the director beam with its target direction.
+BEAM-004
+Director-beam precision shall be displayed as a percentage.
+BEAM-005
+Imprecision above the defined safe threshold shall cause integrity damage.
+BEAM-006
+Damage caused by imprecision shall scale with reactor power or beam power.
+BEAM-007
+Automatic alignment shall only be enabled when precision is within its activation range.
+BEAM-008
+Automatic alignment effectiveness shall decrease with subsystem effectiveness.
+BEAM-009
+Automatic alignment shall disable itself when imprecision exceeds approximately 6%, unless a different tested value is selected.
+BEAM-010
+Manual startup shall require precision below approximately 1% before full containment throttling is permitted.
+________________________________________
+13. Catalyzer Requirements
+13.1 Quantity
+The reactor shall contain six Dark Fusion Catalyzers.
+13.2 Catalyzer Variables
+Each Catalyzer shall maintain:
+•	unique identifier;
+•	current mode;
+•	throttle;
+•	fuel-cell percentage;
+•	submitted power;
+•	malfunction status;
+•	subsystem effectiveness;
+•	installed stasis-cell status, if applicable;
+•	temperature, if modeled individually;
+•	readiness state.
+13.3 Modes
+Each Catalyzer shall support:
+•	OFFLINE
+•	PASSIVE
+•	ACTIVE
+•	ANNIHILATE
+•	CATALYZE
+The exact distinction between PASSIVE and ACTIVE shall be documented before implementation.
+13.4 Catalyzer Behavior
+CAT-001
+A Catalyzer shall only perform behavior associated with its current mode.
+CAT-002
+Passive mode shall use its throttle setting.
+CAT-003
+Annihilate mode shall support large-scale annihilation-stage startup.
+CAT-004
+Catalyze mode shall support dark-fusion ignition and sustained dark-fusion operation.
+CAT-005
+Catalyzer performance shall be affected by fuel-cell percentage.
+CAT-006
+Catalyzer performance shall be affected by subsystem effectiveness.
+CAT-007
+Low subsystem effectiveness may cause a Catalyzer malfunction.
+CAT-008
+A malfunctioning Catalyzer shall provide visible and audible feedback.
+CAT-009
+The simulation shall define whether one Catalyzer failure prevents ignition or merely reduces performance.
+CAT-010
+Each Catalyzer shall be individually addressable for debugging and future control-room interfaces.
+________________________________________
+14. Superstructure and Damage Requirements
+14.1 Integrity
+Superstructure integrity shall be represented as a percentage from 0% to 100%, unless the implementation requires internal values above 100%.
+14.2 Damage Sources
+Integrity shall decrease when one or more of the following occur:
+•	energy saturation exceeds safe limits;
+•	temperature exceeds safe limits;
+•	director-beam imprecision causes damage;
+•	a containment overload occurs;
+•	an emergency shutdown causes an explosion;
+•	a Catalyzer failure applies structural damage;
+•	a scripted or random damage event occurs;
+•	another documented subsystem failure applies damage.
+14.3 Integrity Effects
+As integrity decreases, the system shall progressively alter reactor and map behavior.
+Effects may include:
+•	reduced subsystem effectiveness;
+•	debris spawning;
+•	increased camera or map shaking;
+•	distant explosion sounds;
+•	sparks and electrical failures;
+•	alarm escalation;
+•	smoke or fog changes;
+•	display failures;
+•	control delays;
+•	incorrect sensor readings;
+•	lower maximum safe power;
+•	increased malfunction probability.
+14.4 Integrity Recovery
+DMG-001
+Integrity shall recover only under defined conditions.
+The default design assumption is that meaningful integrity recovery occurs only while the reactor is shut down.
+The final specification shall define:
+•	recovery delay;
+•	recovery rate;
+•	maximum recoverable integrity;
+•	whether severe damage permanently reduces maximum integrity;
+•	whether player maintenance can accelerate recovery;
+•	whether ending-level damage is recoverable.
+14.5 Integrity Thresholds
+The system shall define named integrity thresholds such as:
+•	stable;
+•	damaged;
+•	heavily damaged;
+•	critical;
+•	irreversible failure;
+•	zero integrity.
+Crossing each threshold shall generate an event and presentation response.
+________________________________________
+15. Thermal Plant Requirements
+15.1 Purpose
+The secondary thermal plant shall convert a portion of reactor waste heat into useful power or transfer waste heat into the primordial sea.
+The initial implementation may be simulation-only and does not require physical moving machinery.
+15.2 Thermal Paths
+The system shall support at least two heat-removal paths.
+Power-Recovery Path
+Reactor Waste Heat → Primordial Coolant Loop → Steam Generator Heat Exchanger → Hyperdense Steam Loop → Turbines → Condenser
+Direct-Rejection Path
+Reactor Waste Heat → Primordial Coolant Loop → Primordial Sea
+15.3 Thermal Requirements
+THERM-001
+Reactor operation shall generate waste heat.
+THERM-002
+Waste heat should normally range from approximately 9,000 MWth to 80 GWth, subject to balancing.
+THERM-003
+Coolant circulation rate shall influence heat removal.
+THERM-004
+Insufficient heat removal shall increase reactor or subsystem temperature.
+THERM-005
+High temperature shall reduce subsystem effectiveness.
+THERM-006
+The power-recovery path shall convert some waste heat into electrical output.
+THERM-007
+The direct-rejection path shall remove heat without producing equivalent electrical output.
+THERM-008
+Direct rejection shall consume or lose primordial coolant according to a defined rate.
+THERM-009
+Primordial coolant production shall consume facility power.
+THERM-010
+Long-term direct rejection should increase primordial-sea temperature if that mechanic remains in scope.
+15.4 Open Thermal Decisions
+The following require definition:
+•	whether coolant quantity is finite;
+•	whether coolant can leak;
+•	whether sea temperature affects the map;
+•	turbine efficiency;
+•	condenser capacity;
+•	maximum coolant-loop flow;
+•	consequences of steam-generator failure;
+•	whether thermal power contributes to the 20 TW reactor rating.
+________________________________________
+16. Fuel and Enrichment Requirements
+16.1 Fuel Types
+The system shall model:
+•	matter fuel;
+•	antimatter fuel;
+•	Catalyzer fuel cells;
+•	stasis cells;
+•	primordial coolant, if treated as a consumable resource.
+16.2 Fuel Receptacles
+The reactor shall contain three primary fuel-cell receptacles for startup preparation.
+Each receptacle shall report:
+•	occupied or empty;
+•	inserted fuel-cell entity;
+•	fuel-cell percentage;
+•	valid or invalid fuel type;
+•	locked or removable state.
+16.3 Fuel Enrichment Towers
+The map shall contain four Dark Fusion Fuel Enrichment Towers.
+The towers shall have their own operating mechanics.
+At minimum, the tower system shall define:
+•	required inputs;
+•	power consumption;
+•	production time;
+•	produced resource;
+•	production capacity;
+•	operating controls;
+•	failure conditions;
+•	visual state;
+•	output collection method.
+16.4 Fuel Requirements
+FUEL-001
+Startup readiness shall require sufficient AN-Fuel.
+FUEL-002
+Startup readiness shall require valid fuel cells in the required receptacles.
+FUEL-003
+Fuel shall not be consumed when its consuming subsystem is offline unless explicitly required.
+FUEL-004
+Fuel production shall consume time and facility resources.
+FUEL-005
+The operator shall receive advance warning before a required fuel resource reaches a forced-shutdown threshold.
+FUEL-006
+Fuel values displayed to clients shall remain synchronized with the authoritative server state.
+________________________________________
+17. Startup Requirements
+17.1 Startup Modes
+The reactor shall support:
+•	automatic startup;
+•	manual startup.
+The selected startup mode shall be communicated to all relevant modules.
+17.2 Shared Startup Preconditions
+Before either startup method can be authorized, the system shall check:
+•	AN-Fuel availability;
+•	required fuel-cell installation;
+•	DECAOS mainframe status;
+•	reactor state;
+•	superstructure integrity;
+•	stabilizer availability;
+•	critical subsystem faults;
+•	whether another startup or shutdown sequence is already active.
+The final specification shall distinguish between:
+•	conditions that block authorization;
+•	conditions that permit authorization but create additional risk;
+•	conditions that produce a warning only.
+17.3 Facility Phone and Authorization
+START-AUTH-001
+The operator shall be able to call extension 7472 through the facility phone.
+START-AUTH-002
+The phone interface shall provide automatic and manual startup options.
+START-AUTH-003
+A startup request shall create an authorization state.
+START-AUTH-004
+The authorization response may be delayed for presentation purposes.
+START-AUTH-005
+Automatic startup may have an approximately 20% denial chance.
+START-AUTH-006
+Manual startup may have an approximately 30% denial chance.
+START-AUTH-007
+A denial shall provide a selected external reason through DECAOS or the phone system.
+START-AUTH-008
+The denial system should be configurable or disableable for testing and accessibility.
+START-AUTH-009
+Repeated denial behavior shall be designed to avoid unnecessarily preventing players from accessing the reactor.
+17.4 Triple Startup Levers
+START-LEV-001
+The reactor shall use three startup levers.
+START-LEV-002
+The system shall define whether the levers must be activated simultaneously, within a time window, or in a sequence.
+START-LEV-003
+The current state of each lever shall be visible to the server.
+START-LEV-004
+Invalid lever activation shall provide feedback.
+START-LEV-005
+The lever system shall not accidentally trigger both startup and shutdown.
+17.5 Automatic Startup
+The automatic startup flow shall approximately follow this sequence:
+1.	Check shared startup preconditions.
+2.	Request automatic startup through extension 7472.
+3.	Activate the three startup levers.
+4.	Await authorization.
+5.	Begin the startup reactive timeline.
+6.	Lock controls that are managed by the timeline.
+7.	Deploy the reactor machinery.
+8.	Start the stabilizer and containment field.
+9.	Activate the director beam.
+10.	Establish matter-antimatter injection.
+11.	Establish the required equilibrium and fuel saturation.
+12.	Activate Catalyzers in annihilate mode.
+13.	Confirm dark-fusion readiness.
+14.	Divert district power to the reactor.
+15.	Activate Catalyzers in catalyze mode.
+16.	Establish dark-fusion output.
+17.	Return power to the district after output exceeds the defined threshold.
+18.	Unlock normal-operation controls.
+START-AUTO-001
+The reactive timeline shall respond to defined major failures.
+START-AUTO-002
+A detected major failure shall stop or suspend timeline control.
+START-AUTO-003
+When timeline control is released, the simulation shall resume from a state consistent with the physical sequence already completed.
+START-AUTO-004
+DECAOS shall instruct the operator about the required manual response.
+START-AUTO-005
+The timeline may temporarily override simulation values only when necessary to synchronize major audiovisual events.
+START-AUTO-006
+All timeline overrides shall be explicitly documented.
+START-AUTO-007
+A timeline override shall not leave the reactor in an invalid state when the sequence is interrupted.
+17.6 Manual Startup
+The manual startup flow shall approximately require the operator to:
+1.	Check AN-Fuel and fuel-cell readiness.
+2.	Request manual startup through extension 7472.
+3.	Await authorization.
+4.	Deploy the reactor machinery.
+5.	Activate the Stabilizer.
+6.	Generate a low-strength containment field.
+7.	Activate the director beam.
+8.	Correct beam imprecision using lens controls.
+9.	Enable automatic alignment when permitted.
+10.	Increase containment-field strength.
+11.	Begin main matter-antimatter injection.
+12.	Balance matter and antimatter using fine controls.
+13.	Reach the required equilibrium.
+14.	Enable automatic AN-Fuel injection.
+15.	Set the fuel-saturation target.
+16.	Activate Catalyzers in annihilate mode.
+17.	Reach the required annihilation power and fuel saturation.
+18.	Prime the Dark Fusion Key.
+19.	Initiate the dark-fusion stage.
+20.	Divert district power to the reactor.
+21.	Activate Catalyzers in catalyze mode.
+22.	Wait for power production to exceed the minimum return threshold.
+23.	Restore power to the district.
+24.	Enter normal operation.
+17.7 Dark-Fusion Ignition Conditions
+The Dark Fusion initiation control shall remain locked until all mandatory conditions are met.
+Initial proposed conditions:
+•	Dark Fusion Key is primed;
+•	fuel saturation is at least approximately 80%;
+•	annihilation power exceeds approximately 500 GW;
+•	required Catalyzers are available;
+•	containment stability is sufficient;
+•	beam precision is sufficient;
+•	no blocking fault exists;
+•	reactor is in the correct annihilation substate.
+The exact thresholds shall be configurable for balancing.
+________________________________________
+18. Normal Operation Requirements
+18.1 Core Operator Objective
+During normal operation, the operator shall balance reactor output, energy saturation, containment demand, thermal load, fuel availability, subsystem health, and external power quotas.
+18.2 Influx and Outflux
+OPER-001
+The reactor shall calculate influx using a documented function.
+OPER-002
+The reactor shall calculate outflux using a documented function.
+OPER-003
+Influx and outflux shall be influenced by multiple reactor variables.
+OPER-004
+Increasing influx shall generally increase production and energy saturation.
+OPER-005
+Increasing stabilizer power shall generally reduce or control energy saturation while increasing reactor consumption.
+OPER-006
+The final effect of a control shall be communicated through instrumentation rather than hidden entirely from the operator.
+18.3 Power Rating
+The reactor is intended to be described as a 20 TW reactor.
+The specification shall clarify whether 20 TW means:
+•	nominal gross reaction output;
+•	maximum safe export;
+•	rated continuous export;
+•	peak short-duration output;
+•	or a fictional nameplate rating.
+18.4 Power Export
+finalEnergyExportTW shall represent the credited power delivered after internal consumption and losses.
+A proposed relation is:
+Final Export = Gross Reactor Output + Recovered Thermal Output - Stabilizer Consumption - Facility Consumption - Enrichment Consumption - Other Internal Loads
+The final formula shall be defined during simulation design.
+18.5 Power Quotas
+QUOTA-001
+Power quotas shall begin after the operator reports the reactor online through extension 7472, or after an equivalent automatic confirmation.
+QUOTA-002
+Quotas shall arrive at defined intervals.
+QUOTA-003
+Each quota shall define a requested power amount and duration.
+QUOTA-004
+Maintaining export at or above the quota shall increase score.
+QUOTA-005
+Operating above safe limits shall reduce credited score.
+QUOTA-006
+Unsafe overproduction shall not be rewarded more than safe quota fulfillment.
+QUOTA-007
+The operator shall be shown current quota, credited output, time remaining, and penalties.
+________________________________________
+19. Shutdown Requirements
+19.1 Dark-Fusion Stall Shutdown
+To leave the dark-fusion stage through controlled stalling:
+1.	The operator shall reduce energy saturation below the defined stall threshold.
+2.	DECAOS shall warn that the reactor is stalling.
+3.	Dark fusion shall end after the stall condition remains valid for the required duration.
+4.	The reactor shall transition to the annihilation stage.
+5.	Automatic AN-Fuel injection may temporarily increase to sustain the annihilation stage.
+SHUT-DF-001
+The stall threshold and delay shall be documented.
+SHUT-DF-002
+The operator shall receive enough warning to distinguish an intended stall from an accidental one.
+SHUT-DF-003
+The transition shall not produce an impossible fuel or energy state.
+19.2 Automatic Annihilation-Stage Shutdown
+Automatic shutdown shall be available when:
+•	the reactor is in the annihilation stage;
+•	DECAOS is available;
+•	the triple-lever system is operational;
+•	no blocking emergency state exists.
+The automatic shutdown should:
+1.	disable automatic AN-Fuel injection;
+2.	resolve unsafe antimatter dominance;
+3.	increase matter injection until matter dominance is achieved;
+4.	vent remaining hydrogen or matter fuel as required;
+5.	shut down the director beam after net power becomes negative or reaches the defined threshold;
+6.	weaken the containment field;
+7.	turn off the stabilizer;
+8.	retract reactor machinery;
+9.	enter the offline state.
+19.3 Manual Shutdown
+A manual shutdown procedure shall be documented separately.
+The manual procedure should require the operator to perform the automatic shutdown actions through individual controls.
+19.4 Shutdown Safety
+SHUT-001
+The system shall prevent containment weakening while antimatter dominance remains above the safe threshold, unless an emergency procedure is active.
+SHUT-002
+The system shall warn the operator before a shutdown action creates a known explosion risk.
+SHUT-003
+Shutdown completion shall restore the correct map lighting, sounds, displays, and machinery positions.
+________________________________________
+20. Emergency Procedures
+20.1 Antimatter Termination
+Antimatter Termination is an emergency shutdown procedure for the annihilation stage.
+The procedure shall:
+•	cut off antimatter injection;
+•	maximize matter injection;
+•	force matter dominance;
+•	stop or rapidly reduce the annihilation reaction;
+•	cause a hydrogen explosion or equivalent pressure event;
+•	overload the containment field;
+•	damage superstructure integrity;
+•	remain recoverable if the resulting damage does not cross an irreversible threshold.
+EMERG-AT-001
+Antimatter Termination shall not be available during the dark-fusion stage.
+EMERG-AT-002
+The interface shall clearly communicate that the procedure causes damage.
+EMERG-AT-003
+The procedure shall require deliberate activation to prevent accidental use.
+20.2 Reactor Purge Sequence
+The Reactor Purge Sequence shall occur automatically during Meltdown Stage 2 unless design changes make it manually initiated.
+The sequence shall require operators to:
+•	retrieve Stasis Cells;
+•	install one Stasis Cell into each of the six Catalyzers;
+•	complete installation before the scheduled stasis-laser firing.
+Successful purge shall:
+•	stop all active reactions;
+•	severely damage or disable the citadel spinal superstructure;
+•	produce a terminal ending due to major asset damage.
+Failure shall transition the reactor to Meltdown Stage 3.
+EMERG-PURGE-001
+The purge sequence shall provide a visible countdown.
+EMERG-PURGE-002
+Each installed Stasis Cell shall be individually confirmed.
+EMERG-PURGE-003
+The purge sequence shall remain completable in multiplayer and single-player contexts.
+EMERG-PURGE-004
+The system shall define behavior when a Stasis Cell is removed after installation.
+________________________________________
+21. Failure and Disaster Requirements
+21.1 Failure Classification
+Failures shall be classified as:
+•	warning;
+•	recoverable fault;
+•	severe recoverable fault;
+•	trip condition;
+•	emergency;
+•	irreversible failure;
+•	terminal disaster.
+21.2 Runaway Fusion
+Runaway Fusion shall begin when superstructure integrity reaches 0% during the dark-fusion stage.
+It shall contain three stages.
+Each stage shall define:
+•	entry condition;
+•	duration;
+•	music;
+•	DECAOS lines;
+•	subtitles;
+•	map effects;
+•	operator objectives;
+•	available controls;
+•	transition condition;
+•	recoverability;
+•	ending behavior.
+21.3 Meltdown Stage 1
+Stage 1 should represent the initial runaway condition.
+Possible operator objectives:
+•	reduce influx;
+•	maximize stabilization;
+•	preserve Catalyzer functionality;
+•	restore coolant circulation;
+•	prevent progression to Stage 2.
+The final design shall define whether Stage 1 is recoverable.
+21.4 Meltdown Stage 2
+Stage 2 shall initiate or prepare the Reactor Purge Sequence.
+Stage 2 shall communicate:
+•	remaining time;
+•	Stasis Cell locations;
+•	installed-cell count;
+•	unavailable Catalyzers;
+•	consequences of success and failure.
+21.5 Meltdown Stage 3
+Stage 3 shall represent an unrecoverable runaway-fusion ending.
+The final sequence shall define:
+•	reactor visual destruction;
+•	map-wide effects;
+•	DECAOS status;
+•	player survival or death;
+•	NPC behavior;
+•	final score;
+•	reset behavior.
+21.6 Singularity Containment Breach
+A singularity breach may be caused by:
+•	event-horizon expansion during prolonged low-power dark-fusion operation;
+•	singularity formation during ultra-high-power annihilation operation;
+•	containment failure while a singularity exists.
+The sequence shall:
+1.	form or expose the singularity;
+2.	consume or destroy the containment field;
+3.	damage or destroy the Stabilizer arm;
+4.	reduce orbital-influence suppression toward zero;
+5.	trigger external commotion communicated through DECAOS;
+6.	disable or destroy the DECAOS mainframe;
+7.	cause the singularity to descend into the planetary core;
+8.	enter a terminal ending state.
+There shall be no recovery after the irreversible singularity-breach threshold.
+The operator shall receive warnings before the irreversible threshold unless the sequence is caused by an intentionally immediate catastrophic action.
+________________________________________
+22. DECAOS Requirements
+22.1 Responsibilities
+DECAOS shall provide:
+•	startup authorization interaction;
+•	operating instructions;
+•	warnings;
+•	alarms;
+•	fault identification;
+•	emergency guidance;
+•	event narration;
+•	subtitles;
+•	state-transition announcements;
+•	quota communication;
+•	ending narration;
+•	optional tutorial assistance.
+22.2 Subtitle System
+DECAOS-SUB-001
+Every important DECAOS voice line shall have a subtitle.
+DECAOS-SUB-002
+Subtitles shall identify DECAOS as the speaker where useful.
+DECAOS-SUB-003
+Subtitle timing shall match the associated line.
+DECAOS-SUB-004
+Subtitles shall remain readable during bright effects and dark scenes.
+DECAOS-SUB-005
+Repeated alarms should avoid continuously replacing critical instructional subtitles.
+DECAOS-SUB-006
+The user should be able to enable or disable subtitles where practical.
+22.3 Mainframe Status
+The DECAOS mainframe shall have a defined operational status.
+Possible states:
+•	online;
+•	degraded;
+•	disconnected;
+•	damaged;
+•	destroyed.
+The system shall define which automated functions remain available in each state.
+________________________________________
+23. Alarm and Feedback Requirements
+23.1 Alarm Priorities
+Alarms shall be assigned priorities such as:
+1.	Information
+2.	Advisory
+3.	Warning
+4.	Critical
+5.	Emergency
+6.	Terminal
+23.2 Alarm Behavior
+ALARM-001
+Each alarm shall have a defined trigger condition.
+ALARM-002
+Each alarm shall have a defined clearing condition.
+ALARM-003
+Critical alarms shall be distinguishable from routine warnings.
+ALARM-004
+Alarm sounds shall not make DECAOS instructions unintelligible.
+ALARM-005
+Important alarms shall have both audio and visual indications.
+ALARM-006
+Alarm lights shall reflect authoritative reactor state.
+ALARM-007
+Repeated alarm messages should be rate-limited.
+ALARM-008
+The system should support acknowledging alarms without hiding the underlying fault.
+________________________________________
+24. User Interface and Instrumentation Requirements
+24.1 General Display Requirements
+Control-room instrumentation shall display enough information for the operator to understand:
+•	current reactor state;
+•	active startup or shutdown phase;
+•	power production;
+•	final power export;
+•	energy saturation;
+•	containment strength;
+•	containment stability;
+•	stabilizer power;
+•	stabilizer consumption;
+•	matter and antimatter levels;
+•	equilibrium;
+•	fuel saturation;
+•	beam precision;
+•	Catalyzer states;
+•	superstructure integrity;
+•	temperature;
+•	waste heat;
+•	coolant circulation;
+•	active faults;
+•	current power quota.
+24.2 Display Quality
+UI-001
+Displayed units shall be consistent.
+UI-002
+Values shall use an appropriate number of decimal places.
+UI-003
+Critical thresholds shall be visually distinguishable.
+UI-004
+Graphs shall define their time window and scale.
+UI-005
+A display shall indicate when data is unavailable, invalid, delayed, or estimated.
+UI-006
+A display shall not silently continue showing stale values after its data source fails.
+UI-007
+Controls shall indicate whether they are locked, available, active, tripped, or malfunctioning.
+24.3 Physical Controls
+Each button, lever, key, dial, and selector shall define:
+•	map target name;
+•	Lua identifier;
+•	accepted interactions;
+•	cooldown;
+•	state;
+•	animation;
+•	sound;
+•	server validation;
+•	control-lock conditions;
+•	fault behavior;
+•	reset behavior.
+________________________________________
+25. Map Integration Requirements
+25.1 Target-Name Registry
+The project shall maintain a registry for important map entities.
+Required categories include:
+•	main reactor visual entities;
+•	control-room displays;
+•	graph displays;
+•	buttons;
+•	levers;
+•	keys;
+•	relays;
+•	effects;
+•	alarm lights;
+•	alarm sounds;
+•	music sources;
+•	moving reactor machinery;
+•	fuel receptacles;
+•	Catalyzers;
+•	enrichment towers;
+•	phone controls;
+•	environment controllers.
+Suggested registry format:
+Logical Name:
+Map Target Name:
+Entity Class:
+Controlled By:
+Inputs Used:
+Outputs Received:
+Required State:
+Failure If Missing:
+Notes:
+25.2 Missing Entity Handling
+MAP-001
+Lua modules shall validate required entity references during initialization.
+MAP-002
+Missing critical entities shall generate a clear developer error.
+MAP-003
+A missing noncritical presentation entity shall not necessarily stop the reactor simulation.
+MAP-004
+The debug system shall identify the logical name and expected target name of a missing entity.
+25.3 Logic Entity Reduction
+The project should minimize logic entities in the final map.
+Source entities may remain when they are:
+•	more reliable for a simple local effect;
+•	unrelated to reactor state;
+•	required by an existing map sequence;
+•	significantly cheaper than a Lua replacement;
+•	intentionally retained for compatibility.
+________________________________________
+26. Timeline and Cinematic Requirements
+26.1 Timeline Capabilities
+The timeline system shall support:
+•	timed events;
+•	conditional events;
+•	pausing;
+•	cancellation;
+•	branch selection;
+•	synchronization with music;
+•	synchronization with DECAOS;
+•	control locking;
+•	control unlocking;
+•	map entity inputs;
+•	variable assignment;
+•	effect triggering;
+•	failure interruption;
+•	resuming or handing control back to simulation.
+26.2 Timeline Safety
+TIME-001
+A timeline shall not permanently lock controls after cancellation.
+TIME-002
+A timeline shall clean up temporary effects when appropriate.
+TIME-003
+A timeline shall define whether it can be restarted.
+TIME-004
+A timeline shall not create duplicate events when activated repeatedly.
+TIME-005
+A timeline shall record its current step for debugging.
+TIME-006
+Critical timeline state shall remain synchronized for late-joining players.
+________________________________________
+27. Music and Sound Requirements
+27.1 Dynamic Music
+Music shall react to reactor state and major events.
+Possible music states:
+•	offline ambience;
+•	authorization;
+•	automatic startup;
+•	manual startup;
+•	annihilation stage;
+•	dark-fusion ignition;
+•	normal operation;
+•	elevated risk;
+•	critical integrity;
+•	Meltdown Stage 1;
+•	Meltdown Stage 2;
+•	Meltdown Stage 3;
+•	singularity breach;
+•	successful shutdown;
+•	ending.
+27.2 Music Transitions
+AUDIO-001
+Music transitions shall avoid unintended overlapping tracks.
+AUDIO-002
+Music shall not overpower critical announcements.
+AUDIO-003
+Music state shall be synchronized for relevant players.
+AUDIO-004
+Late-joining players should enter the correct current music state.
+AUDIO-005
+Timeline-synchronized music shall define fallback behavior if the audio file fails or begins late.
+________________________________________
+28. Physical Hazard Requirements
+28.1 Hazardous Areas and Entities
+The following may cause physical player or NPC damage:
+•	reactor core;
+•	reactor core chamber;
+•	director-beam lasers;
+•	Combine balls;
+•	explosions;
+•	radiation zones;
+•	debris;
+•	high-temperature areas;
+•	disaster effects.
+28.2 Hazard Communication
+Hazardous areas should be communicated through:
+•	signs;
+•	lights;
+•	alarms;
+•	visual effects;
+•	instrument warnings;
+•	DECAOS announcements;
+•	environmental sound.
+28.3 Player Consequences
+The final design shall define:
+•	whether the reactor core instantly kills players;
+•	whether protective equipment exists;
+•	whether NPCs are affected;
+•	whether disasters kill players;
+•	whether terminal sequences end the session without killing players;
+•	whether spectator observation remains possible.
+________________________________________
+29. Multiplayer Requirements
+MP-001
+All players shall observe the same authoritative reactor state.
+MP-002
+Multiple players shall not be able to create invalid state changes by activating the same control simultaneously.
+MP-003
+Control ownership shall be defined where simultaneous interaction is unsafe.
+MP-004
+Late-joining players shall receive the current reactor state.
+MP-005
+Late-joining players shall receive active alarms, timelines, music state, and major visual state.
+MP-006
+Disconnecting a player shall not leave a control permanently held or a sequence permanently blocked.
+MP-007
+The system shall define whether operator roles or permissions are required.
+________________________________________
+30. Non-Functional Requirements
+30.1 Performance
+NFR-PERF-001
+The simulation shall avoid performing expensive calculations every frame when a lower update frequency is sufficient.
+NFR-PERF-002
+Networked values shall be rate-limited and compressed where practical.
+NFR-PERF-003
+The system should remain usable on a typical Garry’s Mod server with multiple players.
+NFR-PERF-004
+Visual effects shall have fallback quality levels where required.
+30.2 Reliability
+NFR-REL-001
+A Lua error in one presentation component should not destroy the authoritative reactor state.
+NFR-REL-002
+Critical state transitions shall be validated.
+NFR-REL-003
+Repeated interactions shall not duplicate one-time sequences.
+NFR-REL-004
+The system shall recover cleanly after map cleanup, round reset, or administrative reset.
+30.3 Maintainability
+NFR-MAIN-001
+Constants and balancing values shall be separated from core logic where practical.
+NFR-MAIN-002
+Module interfaces shall be documented.
+NFR-MAIN-003
+Variable names shall use one consistent naming convention.
+NFR-MAIN-004
+Magic numbers shall be replaced by named configuration values.
+NFR-MAIN-005
+Major state transitions shall be logged in developer mode.
+30.4 Usability
+NFR-USE-001
+The player shall be able to determine why a required action is unavailable.
+NFR-USE-002
+Critical controls shall have clear labels.
+NFR-USE-003
+The automatic startup shall introduce the system without requiring knowledge of every manual control.
+NFR-USE-004
+The manual startup shall reward understanding rather than trial-and-error alone.
+30.5 Accessibility
+The system should consider:
+•	subtitles;
+•	readable text size;
+•	color-independent warning indicators;
+•	adjustable sound levels;
+•	reduced flashing options;
+•	reduced camera shake;
+•	a practice or debug mode without random authorization denial.
+________________________________________
+31. Configuration Requirements
+The following values should be configurable rather than hard-coded:
+•	startup denial chances;
+•	authorization delay;
+•	reactor update rate;
+•	power rating;
+•	safe power limits;
+•	energy-saturation thresholds;
+•	integrity-damage rates;
+•	integrity-recovery rate;
+•	heat-generation coefficients;
+•	cooling efficiency;
+•	stabilizer consumption;
+•	beam-damage threshold;
+•	equilibrium thresholds;
+•	fuel-saturation requirement;
+•	ignition power requirement;
+•	quota interval;
+•	quota difficulty;
+•	score multipliers;
+•	malfunction probability;
+•	timeline timings;
+•	disaster timings;
+•	subtitle duration;
+•	alarm repeat interval.
+________________________________________
+32. Debugging and Administration Requirements
+The system shall provide development tools for:
+•	viewing all reactor variables;
+•	changing reactor state;
+•	setting simulation values;
+•	forcing faults;
+•	starting timelines;
+•	stopping timelines;
+•	spawning fuel resources;
+•	setting integrity;
+•	testing alarms;
+•	testing DECAOS lines;
+•	testing subtitle display;
+•	testing music transitions;
+•	validating map entity target names;
+•	resetting the reactor;
+•	enabling deterministic random behavior;
+•	recording state-transition history.
+Debug tools shall not be available to normal players unless explicitly enabled.
+________________________________________
+33. Logging Requirements
+The system should log:
+•	initialization;
+•	missing entities;
+•	state transitions;
+•	startup requests;
+•	authorization results;
+•	control interactions;
+•	timeline start and interruption;
+•	trips;
+•	failures;
+•	emergency actions;
+•	disaster-stage transitions;
+•	ending conditions;
+•	administrative overrides;
+•	Lua errors associated with reactor modules.
+Logs should include timestamps and module names.
+________________________________________
+34. Testing Requirements
+34.1 Unit-Level Tests
+Where practical, test:
+•	equilibrium calculations;
+•	influx and outflux calculations;
+•	energy-saturation calculation;
+•	stabilizer consumption;
+•	heat calculation;
+•	integrity damage;
+•	threshold crossing;
+•	state-transition validation;
+•	quota scoring.
+34.2 Integration Tests
+Integration testing shall cover:
+•	Lua-to-map entity control;
+•	display synchronization;
+•	control interaction;
+•	Catalyzer coordination;
+•	startup timelines;
+•	shutdown timelines;
+•	music synchronization;
+•	subtitle synchronization;
+•	late joining;
+•	multiplayer simultaneous interaction.
+34.3 Required Scenario Tests
+At minimum, test:
+1.	successful automatic startup;
+2.	automatic startup interrupted by missing fuel;
+3.	successful manual startup;
+4.	failed beam alignment;
+5.	containment overload during startup;
+6.	matter dominance recovery;
+7.	antimatter dominance recovery;
+8.	normal dark-fusion operation;
+9.	quota fulfillment;
+10.	safe stall into annihilation stage;
+11.	successful automatic shutdown;
+12.	Antimatter Termination;
+13.	high-temperature integrity damage;
+14.	low-coolant failure;
+15.	Catalyzer malfunction;
+16.	recoverable Stage 1 meltdown, if supported;
+17.	successful Reactor Purge;
+18.	failed Reactor Purge;
+19.	singularity breach;
+20.	reactor reset after each ending.
+________________________________________
+35. Acceptance Criteria
+The first complete release shall be considered functionally acceptable when:
+•	the reactor can move from offline to annihilation stage;
+•	the reactor can move from annihilation stage to dark-fusion stage;
+•	automatic startup can complete successfully;
+•	manual startup can complete successfully;
+•	normal operation requires meaningful operator adjustment;
+•	the reactor can be shut down through a valid procedure;
+•	at least one recoverable emergency is implemented;
+•	Runaway Fusion contains all three intended stages;
+•	the Reactor Purge Sequence can succeed and fail;
+•	the singularity breach produces its intended ending;
+•	all critical DECAOS lines have subtitles;
+•	major displays reflect server-authoritative values;
+•	required map entities are controlled through Lua;
+•	major state changes are synchronized in multiplayer;
+•	no common operating sequence produces unrecoverable Lua errors;
+•	the system can be reset for another session.
+________________________________________
+36. Open Design Decisions
+The following decisions remain unresolved:
+36.1 Workshop Release Strategy
+Decide whether to:
+•	update the existing Workshop item and publish the old version as a legacy item;
+•	retain the existing item as legacy and publish the redesigned version separately;
+•	publish the redesigned version as a new map variant.
+Factors to evaluate:
+•	existing subscriber retention;
+•	Steam Workshop visibility;
+•	user expectations;
+•	compatibility with old saves or subscriptions;
+•	ability to preserve reviews and ratings;
+•	confusion between legacy and redesigned versions;
+•	update download size;
+•	naming and branding.
+36.2 Reactor Simulation
+Define:
+•	exact energy-saturation formula;
+•	exact influx formula;
+•	exact outflux formula;
+•	energy-storage behavior;
+•	power-export formula;
+•	event-horizon growth formula;
+•	singularity formation criteria;
+•	nucleogenesis behavior;
+•	thermal-conversion efficiency;
+•	subsystem-effectiveness formula.
+36.3 Gameplay
+Define:
+•	intended session length;
+•	single-player versus multiplayer balance;
+•	number of simultaneous operator roles;
+•	tutorial method;
+•	score calculation;
+•	victory condition;
+•	ending presentation;
+•	authorization-denial frustration protection;
+•	resource-production pacing;
+•	whether random failures occur during normal operation.
+36.4 Failure Recovery
+Define:
+•	whether Meltdown Stage 1 is recoverable;
+•	exact point of no return for each disaster;
+•	whether severely damaged Catalyzers can be repaired;
+•	whether integrity can return to 100%;
+•	whether DECAOS can be restored;
+•	whether a singularity warning can be reversed before breach.
+36.5 Legacy Compatibility
+Define:
+•	which Source I/O entities remain;
+•	which old secrets depend on reactor state;
+•	whether legacy addons interact with the map;
+•	whether target names may be changed;
+•	whether the old reactor can be preserved as an alternate mode.
+________________________________________
+37. Design Notes
+This section contains ideas that are not yet mandatory requirements.
+Potential additions include:
+•	operator certification or tutorial scenarios;
+•	multiple power-demand profiles;
+•	random external authorization messages;
+•	DECAOS personality changes as the mainframe degrades;
+•	sensor inaccuracies at low integrity;
+•	individual Catalyzer maintenance;
+•	control-room circuit breakers;
+•	district-wide blackout consequences;
+•	NPC evacuation behavior;
+•	optional hard mode;
+•	free-operation sandbox mode;
+•	scenario selection;
+•	post-session performance report;
+•	Steam achievement support;
+•	persistent operator statistics;
+•	hidden failure chains;
+•	repair gameplay;
+•	multiple endings based on facility condition.
+Items in this section shall not be treated as committed scope until moved into a requirements section.
+________________________________________
+38. Requirement Template for Future Additions
+Use the following format whenever adding a new requirement.
+[Feature Name]
+Requirement ID: [MODULE]-[NUMBER]
+Priority: Must / Should / Could / Deferred
+Status: Proposed / Approved / Implemented / Tested / Rejected
+Source: Design decision, existing behavior, player feedback, technical constraint, or other source
+Requirement:
+The system shall [perform a clear and testable behavior].
+Rationale:
+Explain why the requirement exists.
+Preconditions:
+List the conditions that must already be true.
+Trigger:
+Describe the event or action that activates the behavior.
+Expected Behavior:
+Describe the required system response.
+Failure Behavior:
+Describe what happens if the action cannot be completed.
+Operator Feedback:
+Describe what the player sees or hears.
+Acceptance Test:
+Describe how a tester can verify that the requirement is satisfied.
+Dependencies:
+List related modules, entities, variables, or requirements.
+Open Questions:
+List unresolved details.
+________________________________________
+39. Example Completed Requirement
+Requirement ID: BEAM-011
+Priority: Must
+Status: Proposed
+Source: Manual startup design
+Requirement:
+The system shall prevent the operator from increasing containment-field strength above the startup beam-compatibility limit while director-beam imprecision exceeds 1%.
+Rationale:
+The director beam must be correctly aligned before the containment field reaches full startup strength. This creates an operator task and prevents the startup sequence from skipping beam alignment.
+Preconditions:
+•	reactor is in manual startup;
+•	stabilizer is active;
+•	director beam is active;
+•	dark fusion has not been initiated.
+Trigger:
+The operator attempts to increase containment-field strength above the beam-compatibility limit.
+Expected Behavior:
+If beam imprecision is 1% or lower, the containment-field control shall operate normally.
+If beam imprecision is above 1%, the control input shall be rejected or limited.
+Failure Behavior:
+If the system allows the field to exceed the compatibility limit due to malfunction or forced override, the stabilizer shall trip and the superstructure shall receive damage.
+Operator Feedback:
+•	containment control displays a lock or warning;
+•	DECAOS announces that director alignment is insufficient;
+•	the beam-precision display highlights the current error;
+•	a failed forced attempt produces a trip alarm.
+Acceptance Test:
+1.	Begin manual startup.
+2.	Set director-beam imprecision to 4%.
+3.	Attempt to increase containment strength above the compatibility limit.
+4.	Verify that the normal control is rejected.
+5.	Set imprecision to 0.8%.
+6.	Repeat the action.
+7.	Verify that containment strength increases.
+8.	Force the containment value above the limit through a debug command while imprecision is 4%.
+9.	Verify that the stabilizer trips and integrity damage occurs.
+Dependencies:
+•	Director Beam module;
+•	Stabilizer module;
+•	Manual Startup controller;
+•	DECAOS;
+•	alarm system;
+•	control-room displays.
+Open Questions:
+•	Should the normal control be completely locked or merely slowed?
+•	How much integrity damage should a trip cause?
+•	Should beam power also affect trip severity?
+________________________________________
+40. Change History
+Version 0.1
+•	reorganized initial design scaffold;
+•	established project goals and scope;
+•	defined proposed module structure;
+•	introduced requirement identifiers;
+•	documented reactor states and major workflows;
+•	identified unresolved design decisions.
+Future changes should record:
+•	version number;
+•	date;
+•	author;
+•	changed sections;
+•	reason for change.

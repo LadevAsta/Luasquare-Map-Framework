@@ -1,0 +1,1175 @@
+Dark Fusion Reactor
+System Requirements Definition
+Project: Dark Fusion Reactor
+Map Name: gm_darkfusion or successor name to be determined
+Platform: Garry’s Mod
+Required Framework: Luasquare
+Document Status: Working Draft
+Document Version: 0.2
+Author: LadevAsta
+Last Updated: [2026-07-14]
+________________________________________
+1. Document Purpose
+This document defines the requirements for the redesigned Dark Fusion Reactor experience and the Luasquare framework capabilities required to implement it.
+The requirements are intended to guide development of:
+1.	the reusable Luasquare framework;
+2.	the Dark Fusion Reactor Lua package included within Luasquare;
+3.	the Dark Fusion Reactor Hammer map and supporting assets;
+4.	the integration between Lua-owned simulation and Hammer-placed Source entities.
+The document shall be used as a foundation for:
+•	framework development;
+•	reactor simulation design;
+•	Hammer map modification;
+•	module implementation;
+•	interface design;
+•	integration testing;
+•	public documentation;
+•	Workshop release planning.
+This is a living document. Some reactor mechanics, mathematical relationships, timing values, targetnames, and audiovisual sequences remain intentionally undefined and will be expanded during later design discussions.
+________________________________________
+2. Product Definition
+2.1 Product Identity
+Dark Fusion Reactor is an advanced scripted Garry’s Mod map centered on operating a large fictional power reactor.
+The redesigned product shall remain faithful to the identity of the original published Workshop map. It shall continue to present itself primarily as:
+•	a scripted Garry’s Mod map;
+•	a playable reactor-operation experience;
+•	a technical and cinematic sandbox;
+•	a map whose principal attraction is its reactor system.
+The redesigned product shall not become a separate standalone game mode, competitive mode, or conventional campaign.
+2.2 Relationship to the Existing Map
+The existing published map shall be treated as the Legacy Version.
+The Legacy Version is notable because its reactor, sequences, and control logic are implemented almost entirely through Source Engine entity I/O without Lua programming.
+The Legacy Version shall remain available separately and should be preserved as an example of advanced Source I/O map scripting.
+The redesigned Dark Fusion Reactor shall be released as a separate Workshop product rather than replacing the Legacy Version.
+The redesigned product shall:
+•	retain the original concept and identity;
+•	reuse or reinterpret the existing physical map;
+•	preserve recognizable reactor visuals and lore;
+•	replace major Source I/O logic with Lua-owned systems;
+•	provide substantially more detailed operation;
+•	provide more complex failure and recovery behavior;
+•	use Luasquare as a required dependency.
+2.3 Intended Experience
+The reactor shall feel like an extremely large and complex fictional industrial machine.
+The experience shall combine:
+•	science-fiction concepts;
+•	internally consistent system behavior;
+•	selected realistic power-plant concepts;
+•	operator procedures;
+•	resource management;
+•	control-room instrumentation;
+•	audiovisual spectacle;
+•	catastrophic event sequences.
+The science does not need to represent real physics accurately.
+However, the reactor shall behave according to defined internal rules. A player who studies those rules should be able to predict system responses, improve their operation, and understand why failures occurred.
+2.4 Intended Player Reaction
+A new player is expected to feel overwhelmed when first encountering the redesigned reactor.
+This is an accepted and partially intentional quality of the experience.
+The system shall not be simplified solely to ensure that an unprepared player can immediately operate it successfully.
+Complexity should come from interacting systems and procedures rather than from deliberately concealed or inconsistent rules.
+2.5 Learning Model
+The redesigned map shall not require a fully guided in-game tutorial.
+The primary learning materials may include:
+•	an external written manual;
+•	Steam Workshop documentation;
+•	an instructional YouTube video;
+•	readable notes placed inside the map;
+•	control labels;
+•	diagrams;
+•	DECAOS warnings and operational feedback.
+DECAOS may provide situational guidance, but shall not function as a complete step-by-step tutorial during normal gameplay.
+The map should allow players to learn through:
+•	observation;
+•	experimentation;
+•	failure;
+•	external documentation;
+•	repeated operation.
+________________________________________
+3. Target Audience
+3.1 General Workshop Audience
+The product shall remain discoverable and usable as an interesting Garry’s Mod Workshop map.
+A player may initially encounter it while searching for:
+•	scripted maps;
+•	reactor maps;
+•	science-fiction maps;
+•	interactive maps;
+•	sandbox maps;
+•	power-plant simulations;
+•	cinematic experiences.
+3.2 Core Audience
+The primary long-term audience is expected to include players who:
+•	enjoy complex reactor-operation games;
+•	enjoy technical or industrial simulations;
+•	are willing to read documentation;
+•	are comfortable experimenting with complicated systems;
+•	are experienced with Garry’s Mod;
+•	enjoy operating large fictional machinery;
+•	appreciate advanced Source or Lua map scripting.
+3.3 Accessibility Expectation
+The map does not need to be immediately understandable to every Workshop user.
+However:
+•	important controls shall be labeled;
+•	current system states shall be observable;
+•	blocking conditions should be communicated;
+•	dangerous actions should provide warnings;
+•	the cause of major failures should be discoverable;
+•	external documentation should be sufficient to operate the reactor correctly.
+________________________________________
+4. Core Gameplay Model
+4.1 Primary Activity
+Reactor operation shall be the central activity and main selling point of the map.
+Other environmental, exploratory, or cinematic elements may support the experience but shall not replace the reactor as the primary focus.
+4.2 Session Structure
+A typical session may contain:
+1.	map exploration and preparation;
+2.	fuel and subsystem inspection;
+3.	startup authorization;
+4.	automatic or manual startup;
+5.	annihilation-stage operation;
+6.	dark-fusion ignition;
+7.	normal power operation;
+8.	power-quota management;
+9.	subsystem maintenance and fuel production;
+10.	controlled shutdown, emergency shutdown, or disaster;
+11.	post-ending exploration of the altered environment.
+4.3 Session Duration
+The Legacy Version typically supports sessions of approximately two to three hours from startup to a meltdown ending.
+The redesigned map does not yet have a fixed target session duration.
+The redesigned simulation may produce longer or shorter sessions depending on:
+•	startup method;
+•	operator skill;
+•	selected operating power;
+•	quota behavior;
+•	random failures;
+•	fuel-production demands;
+•	shutdown decisions;
+•	disaster progression.
+Session duration shall be evaluated during playtesting rather than fixed during the initial requirements phase.
+4.4 Success and Failure
+The reactor shall not have a conventional victory condition.
+The operator may continue operation until they choose to shut down or until the reactor reaches a terminal condition.
+Performance shall be evaluated primarily through an operator score.
+The score is expected to represent the financial value of exported electricity, potentially using a fictional future-market value expressed in currency per megawatt-hour.
+A conceptual form is:
+Operator Revenue
+    = Credited Exported Energy
+    × Market Value per MWh
+    - Safety Penalties
+    - Equipment Damage Costs
+    - Internal Consumption Costs
+    - Failure Penalties
+The final scoring formula remains to be defined.
+The player’s practical goals shall be to:
+•	export as much credited energy as possible;
+•	satisfy power quotas;
+•	avoid unsafe overproduction;
+•	minimize equipment damage;
+•	minimize unnecessary internal consumption;
+•	avoid catastrophic failure;
+•	complete a controlled shutdown when desired.
+4.5 Terminal Conditions
+Terminal conditions may include:
+•	successful but costly Reactor Purge;
+•	unrecoverable runaway fusion;
+•	singularity containment breach;
+•	other future disaster endings.
+A terminal condition shall end meaningful reactor operation but does not need to force the player out of the map.
+________________________________________
+5. Single-Player and Multiplayer Direction
+5.1 Original Design
+The original map was designed primarily as a single-player experience.
+The redesigned reactor shall remain fully operable by one player.
+No required procedure shall permanently depend on the presence of multiple players unless a separate multiplayer-specific mode is introduced later.
+5.2 Multiplayer Support
+The redesigned map should support cooperative multiplayer because of:
+•	player demand expressed through Workshop comments;
+•	the benefits of dividing complex operator tasks;
+•	the current server-authoritative design of Luasquare;
+•	the potential for different players to operate different subsystems.
+Multiplayer support does not initially require formal operator roles.
+Players may be allowed to interact with any available control unless future design introduces permissions.
+5.3 Control Arbitration
+When multiple players attempt to use the same control:
+•	the server shall validate the interaction;
+•	the first valid interaction shall be accepted;
+•	the control shall enter a short interaction or movement lock;
+•	later conflicting interactions shall be ignored until the lock clears.
+This behavior shall prevent simultaneous use from producing invalid control states.
+Advanced role ownership, permissions, or operator stations are not required for the first implementation.
+________________________________________
+6. Publication and Showable State
+6.1 Definition of Showable
+The project shall be considered showable when the Dark Fusion Reactor map can be publicly demonstrated alongside a publishable version of the Luasquare framework.
+“Showable” does not necessarily mean that every planned mechanic is implemented.
+At minimum, a showable build should demonstrate:
+•	a working separately installed Luasquare addon;
+•	a Dark Fusion Reactor map that requires Luasquare;
+•	successful map bootstrap;
+•	Lua-owned simulation state;
+•	working Hammer entity integration;
+•	functional reactor controls;
+•	working 3D2D instrumentation;
+•	at least one complete reactor operating path;
+•	framework debugging sufficient to diagnose major problems;
+•	enough stability for a public technical demonstration.
+6.2 Final Public Release
+The final public release is expected to require more than the initial showable build.
+Final-release requirements may include:
+•	complete startup paths;
+•	dark-fusion operation;
+•	shutdown procedures;
+•	fuel production;
+•	major disasters;
+•	DECAOS subtitles;
+•	dynamic music;
+•	operator scoring;
+•	multiplayer validation;
+•	documentation;
+•	Workshop dependency configuration.
+________________________________________
+7. Product and Repository Structure
+7.1 Repository Separation
+Development shall use two principal repositories.
+Luasquare Repository
+The Luasquare repository shall contain:
+•	the reusable Luasquare framework;
+•	reusable display and control modules;
+•	reusable power-plant simulation modules;
+•	networking helpers;
+•	debugging tools;
+•	the Dark Fusion Reactor Lua package;
+•	DFR-specific simulation modules;
+•	DFR-specific timeline and state systems where they are not generally reusable;
+•	shared models, materials, sounds, or scripts belonging to the framework addon.
+Dark Fusion Reactor Repository
+The Dark Fusion Reactor repository shall contain:
+•	the Hammer VMF;
+•	compiled BSP files;
+•	map-specific models;
+•	map-specific materials;
+•	map-specific sounds;
+•	map-specific music;
+•	DECAOS voice assets;
+•	map-specific targetname design;
+•	map documentation;
+•	Workshop publishing metadata;
+•	any other content that belongs to the map rather than the reusable framework.
+7.2 Runtime Relationship
+The Dark Fusion Reactor map addon shall declare the Luasquare addon as a requirement.
+A user shall be expected to install or subscribe to:
+1.	Luasquare;
+2.	Dark Fusion Reactor.
+The map shall not duplicate the entire Luasquare framework inside its own addon.
+7.3 Legacy Distribution
+The Legacy Version shall remain a separate Workshop item.
+The expected public product family is therefore:
+Luasquare
+    Reusable Lua map-simulation framework
+
+Dark Fusion Reactor
+    New Lua-driven reactor map
+    Requires Luasquare
+
+Dark Fusion Reactor: Legacy
+    Original Source I/O implementation
+    Does not require Luasquare
+Final names remain to be determined.
+________________________________________
+8. Luasquare Framework Definition
+8.1 Current Definition
+Luasquare is a Garry’s Mod Lua map-simulation framework.
+It connects Hammer-placed Source entities to Lua-owned simulation systems.
+Hammer provides:
+•	physical map layout;
+•	geometry;
+•	props;
+•	moving entities;
+•	buttons;
+•	levers;
+•	lights;
+•	sprites;
+•	display anchors;
+•	relays;
+•	targetnames;
+•	audiovisual entities.
+Lua provides:
+•	simulation state;
+•	update loops;
+•	control logic;
+•	plant systems;
+•	instrumentation;
+•	alarms;
+•	map entity commands;
+•	networking;
+•	debugging;
+•	map-specific orchestration.
+8.2 Framework Character
+Luasquare is not currently:
+•	a visual scripting system;
+•	a Hammer extension;
+•	a node editor;
+•	a custom entity-component framework;
+•	a typed wiring environment;
+•	a custom map editor.
+Luasquare is currently based on:
+•	Lua tables and namespaces;
+•	registration functions;
+•	named module instances;
+•	shared state tables;
+•	getter callbacks;
+•	independent update timers;
+•	Garry’s Mod networking;
+•	Hammer targetnames;
+•	Source entity inputs;
+•	map-specific bootstrap files.
+8.3 Name Meaning
+“Luasquare” is a viable fictional project name.
+The word “square” does not currently represent a technical framework object.
+Requirements shall not use “square” to mean:
+•	a node;
+•	a component;
+•	a device;
+•	a processing block;
+•	a map region;
+•	a connection.
+The preferred technical terms are:
+•	framework;
+•	module;
+•	subsystem;
+•	registered instance;
+•	display;
+•	control;
+•	map binding;
+•	map target;
+•	bootstrap;
+•	simulation state.
+________________________________________
+9. Luasquare Design Goal
+9.1 Mapper-Friendly Operation
+Luasquare shall be designed for map creators who want to build complex scripted systems without implementing the entire system through Source I/O.
+The framework should allow a mapper to:
+1.	place Source entities in Hammer;
+2.	assign targetnames;
+3.	create a Lua bootstrap;
+4.	register framework modules;
+5.	bind modules to targetnamed entities;
+6.	define simulation values and getter functions;
+7.	operate the map with fewer logic entities.
+9.2 Hammer Integration Philosophy
+Luasquare shall not require a custom Hammer editor extension.
+The framework shall use normal Hammer entities where practical.
+A mapper should remain able to use:
+•	info_target;
+•	prop_dynamic;
+•	func_button;
+•	func_rot_button;
+•	func_movelinear;
+•	func_tracktrain;
+•	logic_relay;
+•	sprites;
+•	lights;
+•	sound entities;
+•	other standard Source entities.
+9.3 Source I/O Reduction
+One of the framework’s principal purposes is to reduce the need for large Source I/O logic circuits.
+This shall help avoid:
+•	excessive logic entities;
+•	difficult-to-maintain relay chains;
+•	duplicated timers;
+•	entity-limit pressure;
+•	opaque state-machine construction;
+•	manually repeated I/O connections;
+•	complex debugging inside Hammer.
+Source I/O shall remain valid for simple local presentation actions.
+Luasquare does not need to replace every relay or every entity output.
+________________________________________
+10. Current Luasquare Codebase
+10.1 Existing Module Packages
+The current Luasquare repository contains several broad module groups.
+Display and Control Modules
+Located primarily under:
+lua/luasquare_module/
+Current capabilities include:
+•	pseudo seven-segment displays;
+•	3D2D displays;
+•	graph displays;
+•	annunciators;
+•	gauges;
+•	keypads;
+•	RBMK rod-selection interfaces.
+Reusable Power-Plant Modules
+Located primarily under:
+lua/luasquare_powerplant/
+Current systems include:
+•	fluid networks;
+•	valves;
+•	pumps;
+•	heat exchangers;
+•	condensers;
+•	deaerators;
+•	steam separators;
+•	turbines;
+•	generators;
+•	electrical grids;
+•	diesel generators;
+•	cooling towers;
+•	power-plant debugging.
+RBMK-Specific Modules
+Located primarily under:
+lua/luasquare_rbmk/
+Current systems include:
+•	reactor simulation;
+•	reactor channels;
+•	neutron-flux behavior;
+•	heat;
+•	fuel;
+•	steam;
+•	controls;
+•	debugging;
+•	layouts.
+10.2 Current Example Bootstrap
+The current RBMK experiment map uses a large map-specific bootstrap.
+The bootstrap includes required packages and registers the systems used by the map.
+Example:
+include('luasquare_module/seg7display.lua')
+include('luasquare_module/3d2display.lua')
+include('luasquare_module/annunciator/annunciator.lua')
+include('luasquare_module/gaugedisplay.lua')
+include('luasquare_module/keypad_controller.lua')
+include('luasquare_module/rod_selector.lua')
+include('luasquare_powerplant/init.lua')
+include('luasquare_rbmk/init.lua')
+The bootstrap also registers map-specific instances.
+Example:
+LUASQUARE_SEG7.RegisterDisplay('reactor_mwth', {
+    'reactor_mwth_0',
+    'reactor_mwth_1',
+    'reactor_mwth_2',
+    'reactor_mwth_3',
+    'reactor_mwth_4'
+})
+
+LUASQUARE_SEG7.BindDisplay('reactor_mwth', function()
+    return math.floor(RBMK.LastThermalMW + RBMK.LastFlashBoilMW)
+end)
+The string values in this registration correspond to targetnamed Hammer entities.
+10.3 Current Limitations
+The current framework does not yet provide:
+•	formal base classes;
+•	formal module lifecycle management;
+•	typed ports;
+•	a visual connection graph;
+•	declarative module wiring;
+•	a custom editor;
+•	unified reset behavior;
+•	deterministic scheduling;
+•	a timeline engine;
+•	formal state-machine support;
+•	generic Source output listeners;
+•	generic control abstraction;
+•	full map entity validation;
+•	module-wide error containment;
+•	automated bootstrap generation.
+These limitations shall be accounted for when defining DFR implementation requirements.
+________________________________________
+11. DFR Package within Luasquare
+11.1 Package Location
+The Dark Fusion Reactor Lua package shall live inside the Luasquare addon.
+A likely logical path is:
+lua/luasquare_dfr/
+The final folder name may differ.
+11.2 Package Responsibility
+The DFR package shall contain the Lua implementation of systems specific to Dark Fusion Reactor.
+Expected systems include:
+•	DFR state management;
+•	core simulation;
+•	annihilation-stage simulation;
+•	dark-fusion-stage simulation;
+•	Stabilizer behavior;
+•	containment field;
+•	director beam;
+•	Catalyzers;
+•	superstructure damage;
+•	fuel-cell behavior;
+•	enrichment-tower simulation;
+•	secondary thermal plant;
+•	DECAOS logic;
+•	power quotas;
+•	operator scoring;
+•	disaster state logic;
+•	DFR-specific debug support.
+11.3 Map Bootstrap Responsibility
+The map-specific DFR bootstrap shall:
+•	include required Luasquare packages;
+•	include the DFR package;
+•	register map-specific modules;
+•	provide targetnames;
+•	bind displays;
+•	bind controls;
+•	define map-specific configuration;
+•	validate required entities;
+•	start the reactor simulation.
+The bootstrap shall not become the authoritative location for reactor equations where those equations can reside inside DFR modules.
+________________________________________
+12. Bootstrap Requirements
+12.1 Initial Implementation Direction
+The first DFR bootstrap may follow the current Luasquare registration style.
+Immediate development shall prioritize a functioning reactor over general bootstrap simplification.
+A declarative bootstrap system or automatic registration utility may be developed later, but is not a prerequisite for the initial DFR vertical slice.
+12.2 Maintainability
+Although the first DFR bootstrap may be manually written, it should be divided into understandable code sections.
+Suggested sections include:
+•	framework includes;
+•	DFR includes;
+•	configuration;
+•	entity bindings;
+•	control registration;
+•	display registration;
+•	alarm registration;
+•	sound and music bindings;
+•	simulation startup;
+•	validation;
+•	debug initialization.
+The bootstrap should avoid embedding large simulation functions directly inside registration blocks.
+12.3 Idempotency
+The current framework prevents repeated bootstrap initialization through a global initialization flag.
+The DFR bootstrap shall similarly prevent accidental duplicate registration.
+Until unified lifecycle support exists, a full map reload may be required after bootstrap failure or code reload.
+________________________________________
+13. Targetname Management
+13.1 Registration Model
+Targetnames may continue to be declared inside the relevant registration block.
+Example:
+LUASQUARE_SEG7.RegisterDisplay('reactor_export_tw', {
+    'dfr_export_tw_0',
+    'dfr_export_tw_1',
+    'dfr_export_tw_2',
+    'dfr_export_tw_3'
+})
+A separate universal registry is not mandatory for the initial implementation.
+13.2 Targetname Redesign
+The DFR VMF may rename legacy targetnames.
+New targetnames should use a consistent convention.
+Suggested prefixes include:
+dfr_core_
+dfr_stabilizer_
+dfr_catalyzer_
+dfr_ctrl_
+dfr_disp_
+dfr_alarm_
+dfr_fx_
+dfr_audio_
+dfr_timeline_
+dfr_fuel_
+dfr_thermal_
+13.3 Targetname Requirements
+Targetnames shall:
+•	be unique where uniqueness is required;
+•	identify the related subsystem;
+•	avoid ambiguous abbreviations;
+•	remain stable after public release where practical;
+•	be documented for Lua integration;
+•	distinguish control entities from visual entities.
+13.4 Binding Classification
+Each required map binding shall be classified as one of:
+Critical
+A missing binding prevents the reactor from operating safely or meaningfully.
+Examples:
+•	main reactor movement entity;
+•	startup controls;
+•	required fuel receptacles;
+•	essential state-control relays.
+Required Gameplay
+A missing binding breaks a major procedure but does not necessarily prevent framework initialization.
+Examples:
+•	one Catalyzer control;
+•	shutdown control;
+•	district power switch.
+Presentation
+A missing binding removes expected audiovisual feedback.
+Examples:
+•	alarm light;
+•	display digit;
+•	effect relay;
+•	music source.
+Optional
+A missing binding does not prevent normal reactor operation.
+Examples:
+•	secondary ambient effect;
+•	decorative indicator;
+•	nonessential environmental response.
+________________________________________
+14. Map Entity Validation
+14.1 Initialization Validation
+The DFR bootstrap shall validate map bindings before beginning the reactor simulation.
+Validation shall detect:
+•	missing targetnames;
+•	duplicate entities where one entity is expected;
+•	incorrect entity classes where detectable;
+•	missing critical controls;
+•	missing display anchors;
+•	missing relays;
+•	unavailable DFR modules.
+14.2 Validation Behavior
+If a critical binding is missing:
+•	initialization shall stop;
+•	the reactor simulation shall not begin;
+•	a loud Lua error or prominent console error shall be produced;
+•	the missing logical binding and expected targetname shall be identified.
+If a required-gameplay binding is missing:
+•	initialization should stop unless a defined degraded mode exists.
+If a presentation binding is missing:
+•	initialization may continue;
+•	a warning shall be printed;
+•	the affected feature shall be marked unavailable.
+If an optional binding is missing:
+•	initialization may continue;
+•	a lower-priority warning may be printed.
+14.3 Validation Report
+A future validation report should list:
+•	logical binding name;
+•	targetname;
+•	expected entity class;
+•	entities found;
+•	requirement classification;
+•	validation result.
+A graphical validation UI is not required for the first implementation.
+________________________________________
+15. Lua and Hammer Authority
+15.1 Simulation Authority
+Lua shall be authoritative for:
+•	reactor state;
+•	subsystem state;
+•	control availability;
+•	control logical position;
+•	alarms;
+•	damage;
+•	power values;
+•	fuel values;
+•	startup and shutdown progression;
+•	ending conditions.
+Hammer entities shall represent and present the authoritative Lua state.
+15.2 Control Flow
+The preferred control interaction is:
+Player activates Hammer control
+    → Hammer invokes Luasquare or DFR
+    → Server validates interaction
+    → Lua updates logical state
+    → Lua commands physical control movement
+    → Lua commands associated relays, sounds, or effects
+A control should not visually complete an invalid action before Lua validation where this can reasonably be prevented.
+15.3 Source Outputs
+Hammer controls may initially call Lua through existing methods such as lua_run.
+A reusable Source output listener or control-discovery system may be added later.
+The first implementation does not require automatic discovery of every map control.
+15.4 Lua-Controlled Source Inputs
+Luasquare shall use Source entity inputs where appropriate.
+Examples include:
+•	enabling or disabling controls;
+•	locking or unlocking buttons;
+•	setting button states;
+•	moving func_movelinear;
+•	controlling func_tracktrain;
+•	activating func_rotating;
+•	triggering relays;
+•	setting prop skins;
+•	showing or hiding sprites;
+•	playing or stopping sounds.
+Support for sending inputs to func_button or related controls should be added where needed so that the physical control state remains synchronized with Lua state.
+________________________________________
+16. Simulation Timing Model
+16.1 Server Authority
+The server shall own the authoritative DFR simulation.
+Clients shall not independently calculate authoritative reactor behavior.
+16.2 Central DFR Update Loop
+DFR shall introduce a central simulation update loop.
+A conceptual interface is:
+DFR.Update(deltaTime)
+The central update loop shall coordinate:
+•	reactor state transitions;
+•	core calculations;
+•	annihilation behavior;
+•	dark-fusion behavior;
+•	Stabilizer behavior;
+•	damage progression;
+•	thermal behavior;
+•	quota and scoring behavior;
+•	major failure detection.
+16.3 Lag Behavior
+The simulation shall prioritize stability and resilience over strict real-time progression.
+If the server slows down:
+•	the reactor simulation may slow down with it;
+•	the system shall avoid extreme single-step calculations;
+•	the system shall avoid producing large instant changes from one delayed timer update;
+•	safety thresholds shall not be skipped because of an unusually large time step.
+Strict deterministic replay is not required.
+16.4 Delta-Time Handling
+The update loop should:
+•	measure elapsed simulation time;
+•	clamp unusually large delta values;
+•	use stable rate-based calculations;
+•	avoid calculations that depend on rendered frame rate;
+•	avoid catching up through an unbounded number of update steps.
+A possible policy is:
+Normal delay:
+    Process measured delta time.
+
+Large delay:
+    Clamp delta time to a safe maximum.
+
+Severe stall:
+    Slow simulation progression rather than attempting a large catch-up.
+Exact values remain to be selected through testing.
+16.5 Subsystem Update Rates
+Not all systems need the same response speed.
+The reactor is canonically extremely large. Its supporting infrastructure extends through the spinal superstructure of a Half-Life 2 Citadel and may span kilometers vertically.
+Local reactor systems may react relatively quickly.
+Remote or physically massive systems may react more slowly.
+Examples of slower systems include:
+•	coolant pumps on distant levels;
+•	secondary thermal plant turbines;
+•	large coolant networks;
+•	district-scale electrical switching;
+•	heat migration;
+•	superstructure temperature changes;
+•	long-distance mechanical response.
+This difference in response time shall contribute to the sense of scale.
+________________________________________
+17. Timeline and Music Timing
+17.1 Simulation Priority
+Physical simulation shall take priority over perfect music synchronization.
+The reactor shall not be forced into physically invalid states solely to remain synchronized with a soundtrack.
+17.2 Sectioned Music
+Long music tracks may be separated into multiple files or sections.
+The system may crossfade between sections when:
+•	a timeline phase changes;
+•	startup progresses;
+•	a fault interrupts a sequence;
+•	the reactor changes state;
+•	a disaster escalates.
+17.3 Timeline Relationship
+The future timeline system shall coordinate presentation with simulation but shall not replace the authoritative reactor simulation.
+A timeline may:
+•	request a state transition;
+•	temporarily restrict controls;
+•	trigger audiovisual events;
+•	wait for simulation conditions;
+•	provide controlled overrides where explicitly defined.
+If the simulation is delayed, music transitions may also be delayed or moved to a safe loop point.
+The final synchronization policy shall be refined after the timeline engine and music assets exist.
+________________________________________
+18. Scale and Response Characteristics
+18.1 Reactor Scale
+The Dark Fusion Reactor shall be treated as a massive installation.
+The reactor’s superstructure is part of a Citadel-scale spinal structure extending for kilometers.
+The simulation should communicate this scale through:
+•	delayed mechanical responses;
+•	long startup processes;
+•	distant subsystem activity;
+•	large thermal inertia;
+•	large stored energy;
+•	delayed consequences;
+•	communication with remote plant levels;
+•	slow response from secondary systems.
+18.2 Mixed Response Speeds
+Different variables shall have different response characteristics.
+Examples:
+Fast Response
+•	control input recognition;
+•	alarm activation;
+•	injection-valve command;
+•	electrical trip signal;
+•	emergency cutoff command.
+Moderate Response
+•	containment-field change;
+•	annihilation equilibrium;
+•	director-beam alignment;
+•	Catalyzer output;
+•	energy saturation.
+Slow Response
+•	coolant-flow changes across the Citadel;
+•	turbine output;
+•	bulk temperature;
+•	sea-heating effects;
+•	superstructure recovery;
+•	fuel production;
+•	remote plant deployment.
+Exact time constants shall be defined during simulation design.
+________________________________________
+19. Multiplayer State Synchronization
+19.1 Authoritative State
+The server shall remain authoritative for all DFR module state.
+19.2 Client State
+Clients shall receive the data required for:
+•	3D2D displays;
+•	graphs;
+•	alarm presentation;
+•	DECAOS subtitles;
+•	music state;
+•	control positions;
+•	cinematic effects;
+•	debug views.
+19.3 Late Joining
+A late-joining player should receive:
+•	current reactor state;
+•	current subsystem values required by displays;
+•	current control positions;
+•	active alarms;
+•	graph history where supported;
+•	active timeline phase;
+•	current music section;
+•	current disaster stage.
+The existing 3D2D framework already broadcasts display state and graph history. DFR shall extend this principle to additional presentation systems.
+________________________________________
+20. Control Interaction Requirements
+20.1 Native Hammer Controls
+DFR controls shall use native Hammer entities.
+Wiremod shall not be required.
+Likely control entities include:
+•	func_button;
+•	func_rot_button;
+•	func_movelinear;
+•	prop_dynamic;
+•	relay-driven control assemblies.
+20.2 Logical Control State
+Every important control shall have a Lua-owned logical state.
+Possible control states include:
+•	unavailable;
+•	available;
+•	moving;
+•	enabled;
+•	disabled;
+•	locked;
+•	tripped;
+•	malfunctioning;
+•	overridden.
+20.3 Interaction Lock
+A control shall enter a temporary lock after accepting an interaction when required by its physical or logical behavior.
+During the lock:
+•	conflicting uses shall be rejected;
+•	repeated Hammer outputs shall not duplicate the action;
+•	the physical animation shall be allowed to complete;
+•	the operator should receive feedback if the control remains unavailable.
+20.4 State Synchronization
+Lua should be able to command the corresponding Hammer entity so that:
+•	button position;
+•	lever position;
+•	animation;
+•	lock state;
+•	availability;
+remain consistent with authoritative logical state.
+________________________________________
+21. Error Handling Policy
+21.1 General Policy
+Luasquare and DFR shall fail loudly.
+Unexpected framework or simulation errors shall not be silently hidden if they could leave the reactor in an invalid state.
+21.2 Critical Error Behavior
+When an unexpected critical Lua error occurs:
+•	the DFR simulation shall stop;
+•	active update loops shall stop or become inert;
+•	control interactions shall be disabled where possible;
+•	a prominent error shall be printed;
+•	the failed module and stack information shall be exposed;
+•	the player or developer shall be informed that the map requires reload.
+The system shall not attempt to continue operating with potentially corrupted reactor state.
+21.3 Presentation Getter Errors
+Display or alarm getter functions may remain wrapped in protected calls.
+A failed display getter may:
+•	show an error state;
+•	show unavailable data;
+•	print a warning;
+•	continue allowing the reactor simulation to run.
+A presentation failure shall only halt the entire simulation if it indicates broader state corruption.
+21.4 Development Philosophy
+During development, detailed failures are preferable to silent fallback behavior.
+The first implementation does not require automatic module restart or fault recovery after programming errors.
+________________________________________
+22. Reset, Cleanup, and Ending Behavior
+22.1 Normal Ending Behavior
+After a terminal reactor ending, the map shall remain loaded.
+The reactor does not need to automatically reset itself.
+Players shall be free to:
+•	explore the damaged environment;
+•	observe remaining effects;
+•	inspect the result of the event;
+•	continue sandbox activity where possible.
+22.2 Recommended Reset
+To begin a new complete session, the player shall be encouraged to reload the map.
+A full reload is preferred because it:
+•	restores all Hammer entities;
+•	clears spawned objects;
+•	resets Lua state;
+•	stops lingering effects;
+•	restores map memory state;
+•	avoids incomplete manual cleanup.
+22.3 In-Session Reset
+A complete in-session reactor reset is not required for the first DFR implementation.
+A future development reset command may be added for testing.
+22.4 Cleanup Compatibility
+The current framework is generally not destroyed by Garry’s Mod cleanup commands because core map entities are not normal spawned props.
+However, DFR may deploy or spawn additional physical modules and objects.
+The final system shall define cleanup behavior for:
+•	spawned fuel cells;
+•	spawned debris;
+•	temporary props;
+•	deployed modules;
+•	dynamically created effects;
+•	debug entities.
+If cleanup removes required runtime objects, DFR may:
+•	stop the simulation;
+•	report that a map reload is required;
+•	or rerun selected bootstrap registration where safe.
+Full automatic recovery after “Clean Up Everything” is not mandatory for the first public version.
+________________________________________
+23. Framework Features Required by DFR
+The following capabilities shall be introduced or expanded as part of DFR development.
+23.1 Required for Initial Vertical Slice
+•	DFR package structure;
+•	central DFR simulation update;
+•	formal reactor state-machine behavior;
+•	critical map binding validation;
+•	improved Lua-owned control state;
+•	server-side interaction locking;
+•	simulation stop on critical error;
+•	DFR-specific debugging;
+•	manual startup foundations;
+•	basic instrumentation.
+23.2 Required Later
+•	reactive timeline engine;
+•	music-section synchronization;
+•	DECAOS subtitle networking;
+•	cinematic effect control;
+•	disaster sequencing;
+•	broader Source entity helpers;
+•	prop_coreball control;
+•	full ending-state handling;
+•	late-join timeline synchronization;
+•	deployed-object cleanup.
+23.3 Deferred Framework Improvements
+The following are useful but shall not block initial DFR development:
+•	declarative bootstrap files;
+•	automatic bootstrap generation;
+•	typed input and output ports;
+•	connection graph visualization;
+•	formal module base classes;
+•	full lifecycle interface;
+•	hot-reload-safe reinitialization;
+•	generic third-party module inspector;
+•	performance-profiler UI;
+•	custom Hammer entities.
+________________________________________
+24. Initial Development Strategy
+24.1 Strategy
+Development shall use a framework-first vertical-slice approach.
+This means that only the minimum reusable framework capabilities necessary for a complete DFR operating path shall be developed before expanding the reactor.
+24.2 Proposed Phase Order
+Phase 1: DFR Framework Foundation
+Implement:
+•	DFR package loading;
+•	central simulation tick;
+•	state-machine foundation;
+•	critical error halt behavior;
+•	map binding validation;
+•	server-authoritative control state;
+•	interaction locks;
+•	debugging output.
+Phase 2: VMF Integration Foundation
+Modify the map to provide:
+•	redesigned targetnames;
+•	required control entities;
+•	display anchors;
+•	basic reactor movement entities;
+•	essential output relays;
+•	minimal test chamber integration.
+Phase 3: Manual Annihilation Vertical Slice
+Implement one complete path:
+OFFLINE
+→ STARTUP PREPARATION
+→ MANUAL STARTUP
+→ ANNIHILATION STAGE
+→ CONTROLLED SHUTDOWN
+→ OFFLINE
+This vertical slice shall include:
+•	startup controls;
+•	Stabilizer activation;
+•	low-strength containment;
+•	director-beam activation;
+•	beam alignment;
+•	matter-antimatter injection;
+•	equilibrium;
+•	basic power production;
+•	shutdown.
+Phase 4: Instrumentation and Alarms
+Add:
+•	core displays;
+•	graphs;
+•	annunciators;
+•	basic DECAOS warnings;
+•	control state indicators;
+•	subsystem fault display.
+Phase 5: Automatic Startup and Timeline Engine
+Develop:
+•	timeline scheduling;
+•	control locking;
+•	failure interruption;
+•	sequence handoff;
+•	DECAOS coordination;
+•	sectioned music control.
+Phase 6: Dark-Fusion Operation
+Implement:
+•	dark-fusion ignition;
+•	Catalyzers;
+•	influx and outflux;
+•	energy saturation;
+•	high-output Stabilizer behavior;
+•	power export;
+•	quota operation.
+Phase 7: Supporting Plant Systems
+Implement:
+•	secondary thermal plant;
+•	coolant response;
+•	fuel production;
+•	enrichment towers;
+•	remote subsystem delays;
+•	facility power consumption.
+Phase 8: Damage and Disaster Systems
+Implement:
+•	integrity degradation;
+•	performance penalties;
+•	progressive environmental damage;
+•	Runaway Fusion stages;
+•	Reactor Purge;
+•	singularity breach;
+•	terminal endings.
+Phase 9: Public Release Preparation
+Complete:
+•	multiplayer validation;
+•	external manual;
+•	instructional video planning;
+•	subtitles;
+•	Workshop requirement setup;
+•	optimization;
+•	packaging;
+•	public documentation.
+________________________________________
+25. Current Development State
+25.1 Luasquare
+Luasquare currently has:
+•	working module registration patterns;
+•	reusable display systems;
+•	reusable graphs;
+•	gauges;
+•	annunciators;
+•	several power-plant systems;
+•	an RBMK reactor implementation;
+•	server-authoritative simulation;
+•	networking for displays and debug state;
+•	map target lookup;
+•	Source input control;
+•	existing debugging tools;
+•	an operating experiment map.
+Luasquare does not yet have the major DFR-specific architectural features identified in this document.
+25.2 Dark Fusion Reactor Lua
+No new Dark Fusion Reactor Lua implementation currently exists.
+Current DFR work consists primarily of:
+•	the Legacy Version;
+•	design concepts;
+•	initial variable lists;
+•	proposed workflows;
+•	this requirements definition.
+25.3 Dark Fusion Reactor VMF
+The existing VMF is available but has not yet been modified for the new Lua-driven implementation.
+Planned early changes include:
+•	redesigning targetnames;
+•	identifying legacy Source I/O for removal;
+•	preserving selected environmental logic;
+•	preparing controls for Lua authority;
+•	placing or updating display targets;
+•	exposing reactor machinery for Lua control;
+•	defining required relays and effects.
+25.4 Immediate Next Dependency
+VMF modification should begin after the first framework requirements are sufficiently defined to determine:
+•	required targetnames;
+•	required entity classes;
+•	required control behavior;
+•	required display anchors;
+•	required relays;
+•	required movable entities;
+•	required validation metadata.
+________________________________________
+26. Initial Architectural Requirements
+ARCH-001
+Dark Fusion Reactor shall require the separately installed Luasquare addon.
+ARCH-002
+DFR-specific Lua modules shall be distributed as part of Luasquare.
+ARCH-003
+The DFR map addon shall contain the VMF-derived map and map-specific content.
+ARCH-004
+The server shall own authoritative reactor state.
+ARCH-005
+Hammer shall provide physical entities and targetnames.
+ARCH-006
+Lua shall provide simulation, control validation, alarms, displays, and state progression.
+ARCH-007
+The map bootstrap shall register and connect required modules manually during the initial implementation.
+ARCH-008
+The first implementation shall not require a visual scripting editor or Hammer extension.
+ARCH-009
+The framework shall support a central DFR simulation tick.
+ARCH-010
+The DFR simulation may slow down during server lag rather than attempting unsafe catch-up.
+ARCH-011
+Critical map bindings shall be validated before simulation startup.
+ARCH-012
+Critical Lua failures shall halt the DFR simulation.
+ARCH-013
+The first valid use of a temporarily contested control shall take priority.
+ARCH-014
+The reactor shall remain fully operable by one player.
+ARCH-015
+The design should allow multiple players to divide operating tasks.
+ARCH-016
+The normal method of starting a new session after an ending shall be reloading the map.
+ARCH-017
+The reactor map shall remain loaded after an ending so players may inspect the resulting environment.
+ARCH-018
+Simulation correctness shall take priority over exact music synchronization.
+ARCH-019
+The first development milestone shall be a manual annihilation-stage vertical slice.
+ARCH-020
+General bootstrap simplification shall not block initial DFR implementation.
+________________________________________
+27. Open Architectural Decisions
+The following remain open:
+1.	Exact DFR package folder structure;
+2.	exact boundary between general Luasquare modules and DFR-specific modules;
+3.	final Workshop naming;
+4.	final addon dependency declaration method;
+5.	exact state-machine API;
+6.	exact central-tick frequency;
+7.	maximum accepted delta time;
+8.	exact interaction-lock implementation;
+9.	exact method for Lua to control native button positions;
+10.	whether a centralized targetname registry will later replace local registration blocks;
+11.	whether cleanup can rerun part of the bootstrap safely;
+12.	whether a developer-only in-session reset will be implemented;
+13.	how sectioned music will remain synchronized during severe server slowdown;
+14.	whether timeline functionality becomes a general Luasquare feature or remains DFR-oriented;
+15.	whether DFR modules will later serve as documented examples for third-party mappers.
+________________________________________
+28. Change History
+Version 0.2
+•	defined the redesigned map as a separate successor to the Legacy Version;
+•	clarified the intended player experience and learning model;
+•	defined Luasquare as a separately installed mapper-friendly framework;
+•	established the two-repository structure;
+•	placed the DFR Lua package within Luasquare;
+•	documented current Luasquare capabilities and limitations;
+•	defined bootstrap and targetname practices;
+•	introduced map binding classifications;
+•	defined server-lag behavior;
+•	established Lua authority over simulation and controls;
+•	defined loud critical-error behavior;
+•	documented reload-based session reset;
+•	established the framework-first vertical-slice strategy;
+•	documented the truthful current development state.
