@@ -12,6 +12,7 @@ local function registerVisual(id, targetName, data)
         onInput = data.onInput,
         offInput = data.offInput,
         basisScale = tonumber(data.basisScale) or 1,
+        basisRadiusHammer = tonumber(data.basisRadiusHammer),
         basisRadiusMeters = tonumber(data.basisRadiusMeters)
     }
 
@@ -44,26 +45,30 @@ function DFR.RegisterDefaultCoreVisuals(options)
     registerVisual('core_sphere', options.coreSphere or 'dfr_prop_coresphere', {
         kind = 'prop',
         class = 'prop_scalable',
-        basisScale = options.coreSphereBasisScale or 1,
-        basisRadiusMeters = options.coreSphereBasisRadiusMeters
+        basisScale = options.coreSphereBasisScale or 1.0,
+        basisRadiusHammer = options.coreSphereBasisRadiusHammer or 230,
+        basisRadiusMeters = options.coreSphereBasisRadiusMeters or 5.842
     })
     registerVisual('core_stellar', options.coreStellar or 'dfr_prop_corestellar', {
         kind = 'prop',
         class = 'prop_scalable',
-        basisScale = options.coreStellarBasisScale or 1,
-        basisRadiusMeters = options.coreStellarBasisRadiusMeters
+        basisScale = options.coreStellarBasisScale or 3.6,
+        basisRadiusHammer = options.coreStellarBasisRadiusHammer or 230,
+        basisRadiusMeters = options.coreStellarBasisRadiusMeters or 5.842
     })
     registerVisual('core_blackhole', options.coreBlackhole or 'dfr_prop_coreblackhole', {
         kind = 'prop',
         class = 'prop_scalable',
-        basisScale = options.coreBlackholeBasisScale or 1,
-        basisRadiusMeters = options.coreBlackholeBasisRadiusMeters
+        basisScale = options.coreBlackholeBasisScale or 2.3,
+        basisRadiusHammer = options.coreBlackholeBasisRadiusHammer or 230,
+        basisRadiusMeters = options.coreBlackholeBasisRadiusMeters or 5.842
     })
     registerVisual('core_shield', options.coreShield or 'dfr_prop_coreshield', {
         kind = 'prop',
         class = 'prop_scalable',
-        basisScale = options.coreShieldBasisScale or 1,
-        basisRadiusMeters = options.coreShieldBasisRadiusMeters
+        basisScale = options.coreShieldBasisScale or 0.34,
+        basisRadiusHammer = options.coreShieldBasisRadiusHammer or 230,
+        basisRadiusMeters = options.coreShieldBasisRadiusMeters or 5.842
     })
 
     registerVisual('beam_director', options.directorBeam or 'beam_core_director', { kind = 'beam', class = 'env_beam', all = true })

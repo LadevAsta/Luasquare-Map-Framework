@@ -10,6 +10,7 @@ LUASQUARE_3D2D.GraphHistory = LUASQUARE_3D2D.GraphHistory or {}
 LUASQUARE_3D2D.TickInterval = LUASQUARE_3D2D.TickInterval or 0.1
 LUASQUARE_3D2D.NetMessage = 'LUASQUARE_3D2D_State'
 LUASQUARE_3D2D.DefaultScale = LUASQUARE_3D2D.DefaultScale or 0.1
+LUASQUARE_3D2D.DefaultSurfaceOffset = LUASQUARE_3D2D.DefaultSurfaceOffset or 0.05
 
 local function copyColor(value, fallback)
     if not value then
@@ -50,6 +51,23 @@ local function firstNumber(source, keys)
         if source[key] ~= nil then
             local value = tonumber(source[key])
             if value and value > 0 then return value end
+        end
+    end
+
+    return nil
+end
+
+local function firstNumberAllowZero(source, keys)
+    for _, key in ipairs(keys) do
+        if source[key] ~= nil then
+            local raw = source[key]
+            local value = nil
+            if type(raw) == 'number' then
+                value = raw
+            elseif type(raw) == 'string' then
+                value = tonumber(raw)
+            end
+            if value then return value end
         end
     end
 
@@ -398,6 +416,7 @@ if SERVER then
             useTargetAngle = data.useTargetAngle or data.targetAngle or ((data.target or data.infoTarget) and true or false),
             pos = data.pos,
             offset = data.offset or Vector(0, 0, 0),
+            surfaceOffset = firstNumberAllowZero(data, {'surfaceOffset', 'normalOffset', 'planeOffset', 'zFightOffset', 'zFightingOffset', 'depthOffset'}),
             ang = data.ang or data.angle,
             angleOffset = data.angleOffset or data.angOffset or Angle(0, 0, 0),
             title = data.title,
@@ -438,6 +457,10 @@ if SERVER then
             barColor = data.barColor,
             barBackgroundColor = data.barBackgroundColor
         }
+
+        if LUASQUARE_3D2D.Displays[name].surfaceOffset == nil then
+            LUASQUARE_3D2D.Displays[name].surfaceOffset = LUASQUARE_3D2D.DefaultSurfaceOffset or 0.05
+        end
     end
 
     function LUASQUARE_3D2D.SetDisplay(name, content)
@@ -481,6 +504,18 @@ if SERVER then
         local ent = LUASQUARE_3D2D.GetEnt(targetName)
         if IsValid(ent) then return addAngle(ent:GetAngles(), offset) end
         return nil
+    end
+
+    function LUASQUARE_3D2D.ApplySurfaceOffset(pos, ang, display)
+        if not pos then return nil end
+
+        local amount = tonumber(display.surfaceOffset)
+        if not amount or amount == 0 then return pos end
+
+        ang = ang or copyAngle(display.ang) or Angle(0, 0, 90)
+        if not ang or not ang.Up then return pos end
+
+        return pos + ang:Up() * amount
     end
 
     function LUASQUARE_3D2D.GetTime()
@@ -587,8 +622,8 @@ if SERVER then
             if display.visible ~= false then
                 local pos = LUASQUARE_3D2D.ResolvePosition(display)
                 if pos then
-                    display.resolvedPos = pos
                     display.resolvedAng = LUASQUARE_3D2D.ResolveAngle(display)
+                    display.resolvedPos = LUASQUARE_3D2D.ApplySurfaceOffset(pos, display.resolvedAng, display)
                     local sanitized = sanitizeDisplay(name, display)
                     LUASQUARE_3D2D.ApplyGraphHistory(name, sanitized.lines)
                     table.insert(state.Displays, sanitized)
@@ -1214,6 +1249,7 @@ end
 --     ang = Angle(0, 90, 90),
 --     -- width/height are Hammer units. scale is Hammer units per canvas pixel.
 --     -- Use resolutionWidth/resolutionHeight when you need to override the derived pixel canvas.
+--     -- surfaceOffset defaults to 0.05 Hammer units along local Z/blue to reduce Z-fighting.
 --     scale = 0.1,
 --     width = 32,
 --     height = 15,

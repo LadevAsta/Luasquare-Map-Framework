@@ -9,6 +9,13 @@ example: ('dfr_pt_stab_1' <> 'dfr_pt_stab_2' <> 'dfr_pt_stab_3')
             dfr_pt_stab_2 next stop is dfr_pt_stab_1, branch path is dfr_pt_stab_3.
             dfr_pt_stab_3 next stop is dfr_pt_stab_2.
 
+NOTES!
+    Core size basis, at this XYZ size, all are equal in size with core_sphere (Core sphere radius is 230 hammer unit or around 5.842 meters at basis)
+    core_sphere size basis = 1.0
+    core_stellar size basis = 3.6
+    core_blackhole size basis = 2.3
+    core_shield size basis = 0.34
+
 The code should drive the tracktrain to destination node path_track while path_track send update whenever the tracktrain pass on it to lua and lua would stop the train when destination path track is reached.
 
 ReactorMachine mechanicals hierarchy:
@@ -32,8 +39,8 @@ ReactorMachine effects:
     Core [no longer using prop_coreball because it is inferior]
         CoreSphere prop_scalable 'dfr_prop_coresphere' [This is the main appearance, (combine coreball)]
         CoreStellar prop_scalable 'dfr_prop_corestellar' [This is a sphere to represent a micro star in annihilation stage]
-        CoreBlackhole prop_scalable 'dfr_prop_coreblackhole' [This is a sphere to represent a singularity]
-        CoreShield prop_scalable 'dfr_prop_coreshield' [This is a sphere to represent]
+        CoreBlackhole prop_scalable 'dfr_prop_coreblackhole' [This is a sphere to represent event horizon]
+        CoreShield prop_scalable 'dfr_prop_coreshield' [This is a sphere to represent the shield around core sphere and during annihilation phase where core sphere is not visible for the favor of micro star]
         [other effects to be added such as accretion disk if we figure out the lua effect or shader and modeling...]
         [Each prop_scalable should have a 'basis' size since the model used are not of the same size. At basis, all sphere model should appear equal in size]
         [We also need to figure out the base radius at basis when we convert them into meter unit]

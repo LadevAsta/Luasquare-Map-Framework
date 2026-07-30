@@ -17,6 +17,14 @@ function DFR.GetBinding(id)
     return DFR.SourceBindings:Get(id)
 end
 
+function DFR.GetBindingMetadata(id, key, default)
+    return DFR.SourceBindings:GetMetadata(id, key, default)
+end
+
+function DFR.SetBindingMetadata(id, key, value)
+    return DFR.SourceBindings:SetMetadata(id, key, value)
+end
+
 function DFR.GetEntByName(targetName)
     local entities = DFR.SourceBindings:GetEntitiesByName(targetName)
     return entities[1]

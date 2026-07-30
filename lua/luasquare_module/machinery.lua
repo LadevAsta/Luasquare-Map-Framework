@@ -26,6 +26,14 @@ local function copyRoute(route)
     return out
 end
 
+local function routeHasEdge(route, fromNode, toNode)
+    for i = 1, #route - 1 do
+        if route[i] == fromNode and route[i + 1] == toNode then return true end
+    end
+
+    return false
+end
+
 function LUASQUARE_MACHINERY.CreateRegistry(name, options)
     name = normalizeId(name) or 'default'
     options = options or {}
@@ -202,7 +210,8 @@ function Registry:RegisterPath(id, data)
     local path = {
         id = id,
         nodes = {},
-        edges = {}
+        edges = {},
+        switches = {}
     }
 
     for _, node in ipairs(data.nodes or {}) do
@@ -231,8 +240,40 @@ function Registry:RegisterPath(id, data)
         end
     end
 
+    for _, switch in ipairs(data.switches or data.branches or {}) do
+        local node = normalizeId(switch.node or switch.from)
+        local to = normalizeId(switch.to or switch.branchTo or switch.alternateTo)
+        if node and to then
+            table.insert(path.switches, {
+                node = node,
+                to = to,
+                binding = switch.binding or switch.id or node,
+                enableInput = switch.enableInput or 'EnableAlternatePath',
+                disableInput = switch.disableInput or 'DisableAlternatePath'
+            })
+        end
+    end
+
     self.Paths[id] = path
     return true
+end
+
+function Registry:SetPathSwitchesForRoute(pathId, route)
+    local path = self.Paths[pathId]
+    if not path then return true end
+
+    local ok = true
+    for _, switch in ipairs(path.switches or {}) do
+        local useAlternate = route and routeHasEdge(route, switch.node, switch.to)
+        local inputName = useAlternate and switch.enableInput or switch.disableInput
+        ok = self:FireBinding(switch.binding, inputName) and ok
+    end
+
+    return ok
+end
+
+function Registry:ResetPathSwitches(pathId)
+    return self:SetPathSwitchesForRoute(pathId, nil)
 end
 
 function Registry:FindRoute(pathId, fromNode, toNode)
@@ -293,9 +334,12 @@ function Registry:MoveTrackTrainTo(id, destinationNode)
         machine.destinationNode = nil
         machine.route = copyRoute(route)
         machine.arrivedAt = self:GetTime()
+        self:ResetPathSwitches(machine.path)
         self:Command(id, machine.stopInput)
         return true
     end
+
+    self:SetPathSwitchesForRoute(machine.path, route)
 
     if direction == 'backward' then
         if machine.retractSpeed ~= nil then self:SetSpeed(id, machine.retractSpeed) end
@@ -352,6 +396,7 @@ function Registry:OnPathTrackPassed(nodeName, machineId)
 
                 if machine.destinationNode == nodeName then
                     self:Command(id, machine.stopInput)
+                    self:ResetPathSwitches(machine.path)
                     machine.state = 'arrived'
                     machine.arrivedAt = self:GetTime()
                     machine.destinationNode = nil
@@ -386,4 +431,3 @@ function Registry:GetSnapshot()
 
     return out
 end
-

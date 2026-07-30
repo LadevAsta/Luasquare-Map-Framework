@@ -30,6 +30,52 @@ local function normalizeString(value)
     return value
 end
 
+local function shallowCopy(value)
+    if type(value) ~= 'table' then return value end
+
+    local out = {}
+    for k, v in pairs(value) do
+        out[k] = v
+    end
+
+    return out
+end
+
+local function copyInto(target, source)
+    if type(source) ~= 'table' then return target end
+
+    for k, v in pairs(source) do
+        target[k] = shallowCopy(v)
+    end
+
+    return target
+end
+
+local function buildMetadata(data)
+    local metadata = {}
+
+    copyInto(metadata, data.metadata)
+    copyInto(metadata, data.meta)
+
+    local metadataFields = {
+        display = true,
+        telemetry = true,
+        debug = true,
+        machinery = true,
+        visual = true,
+        tags = true,
+        units = true
+    }
+
+    for key in pairs(metadataFields) do
+        if data[key] ~= nil then
+            metadata[key] = shallowCopy(data[key])
+        end
+    end
+
+    return metadata
+end
+
 function LUASQUARE_SOURCEBINDING.CreateRegistry(name, options)
     name = normalizeString(name) or 'default'
     options = options or {}
@@ -83,6 +129,7 @@ function Registry:Register(id, data)
         targetNames = data.targetName or data.target or data.entity
     end
 
+    local metadata = buildMetadata(data)
     self.Bindings[id] = {
         id = id,
         targetName = normalizeString(data.targetName or data.target or data.entity),
@@ -91,6 +138,15 @@ function Registry:Register(id, data)
         required = data.required and true or false,
         all = data.all and true or false,
         notes = data.notes,
+        metadata = metadata,
+        meta = metadata,
+        display = metadata.display,
+        telemetry = metadata.telemetry,
+        debug = metadata.debug,
+        machinery = metadata.machinery,
+        visual = metadata.visual,
+        tags = metadata.tags,
+        units = metadata.units,
         missing = false,
         entity = nil,
         entities = {}
@@ -101,6 +157,28 @@ end
 
 function Registry:Get(id)
     return self.Bindings[id]
+end
+
+function Registry:GetMetadata(id, key, default)
+    local binding = self:Get(id)
+    if not binding then return default end
+
+    local metadata = binding.metadata or {}
+    if key == nil then return metadata end
+    if metadata[key] == nil then return default end
+    return metadata[key]
+end
+
+function Registry:SetMetadata(id, key, value)
+    local binding = self:Get(id)
+    if not binding then return false end
+    if key == nil then return false end
+
+    binding.metadata = binding.metadata or {}
+    binding.meta = binding.metadata
+    binding.metadata[key] = value
+    binding[key] = value
+    return true
 end
 
 function Registry:GetTargetNames(binding)

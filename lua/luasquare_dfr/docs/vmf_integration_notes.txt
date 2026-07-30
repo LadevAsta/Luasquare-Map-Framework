@@ -27,6 +27,16 @@ Path track callbacks:
     If two logical trains ever share a node name, pass the machine id:
         DFR.OnPathTrackPassed('dfr_pt_upper_1', 'upper_shaft_train')
 
+Path track branching:
+    The stabilizer path uses dfr_pt_stab_2 as a branch switch.
+    When Lua routes the stabilizer train from dfr_pt_stab_1 toward dfr_pt_stab_3, it fires:
+        dfr_pt_stab_2 -> EnableAlternatePath
+
+    For routes that should use the default dfr_pt_stab_2 -> dfr_pt_stab_1 path, Lua fires:
+        dfr_pt_stab_2 -> DisableAlternatePath
+
+    Lua also disables the alternate path again after the destination path_track is reached.
+
 Registered tracktrain machine ids:
     upper_shaft_train
         targetname: dfr_train_upper
@@ -60,9 +70,15 @@ Registered moving machinery:
 
 Registered core visuals:
     core_sphere -> dfr_prop_coresphere
+        basis scale: 1.0
     core_stellar -> dfr_prop_corestellar
+        basis scale: 3.6
     core_blackhole -> dfr_prop_coreblackhole
+        basis scale: 2.3
     core_shield -> dfr_prop_coreshield
+        basis scale: 0.34
+    Shared visual basis:
+        radius: 230 Hammer units, approximately 5.842 metres
     beam_director -> beam_core_director
     beam_annihilation -> beam_core_annihilation
     beam_darkfusion -> beam_core_darkfusion
@@ -90,3 +106,36 @@ Spawnmenu testing:
     DISPLAY512x256_ means a 512x256 Hammer-unit surface.
     Canvas size is derived from scale, so the default 0.1 scale makes that a 5120x2560 canvas.
     Explicit bootstrap dimensions or scale fields still override/refine the targetname metadata.
+
+Binding display metadata:
+    DFR bindings can now carry map-owned display metadata.
+    This keeps the targetname and display tuning together in the bootstrapper:
+
+        DFR.RegisterBinding('core_status_panel', {
+            targetName = 'DISPLAY512x256_dfr_status_panel',
+            class = 'info_target',
+            required = false,
+            display = {
+                scale = 0.2,
+                title = 'DFR CORE STATUS',
+                surfaceOffset = 0.05
+            }
+        })
+
+    DFR.RegisterDefaultTelemetryDisplays() will use binding.display as its default data.
+    Explicit options passed directly to RegisterDefaultTelemetryDisplays still override the binding metadata.
+
+3D2D surface offset:
+    3D2D displays default to a tiny normal offset of 0.05 Hammer units to reduce Z-fighting
+    when the info_target sits exactly on a brush face.
+
+    The offset is applied along the display plane normal, which is the target's local Z/blue axis.
+    Set it per display when needed:
+
+        display = {
+            scale = 0.2,
+            surfaceOffset = 0.1
+        }
+
+    Set surfaceOffset = 0 to disable it.
+    Accepted aliases are normalOffset, planeOffset, zFightOffset, zFightingOffset, and depthOffset.

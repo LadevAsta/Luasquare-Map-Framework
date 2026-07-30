@@ -29,6 +29,10 @@ local function registerBinding(id, targetName, class, notes, all)
     })
 end
 
+local function registerPathTrack(id, targetName, notes)
+    return registerBinding(id, targetName, 'path_track', notes)
+end
+
 local function registerDoor(id, targetName, label)
     registerBinding(id, targetName, 'func_door_rotating', label)
     return DFR.RegisterMachinery(id, {
@@ -79,8 +83,19 @@ function DFR.RegisterDefaultReactorMachineLayout(options)
             positions.stabilizerDeployed,
             positions.stabilizerService,
             positions.stabilizerRetracted
+        },
+        switches = {
+            {
+                node = positions.stabilizerService,
+                to = positions.stabilizerRetracted,
+                binding = 'stabilizer_service_path_switch',
+                enableInput = 'EnableAlternatePath',
+                disableInput = 'DisableAlternatePath'
+            }
         }
     })
+
+    registerPathTrack('stabilizer_service_path_switch', positions.stabilizerService, 'Switches stabilizer train from service node to retracted branch.')
 
     registerBinding('upper_shaft_train', options.upperTrain or 'dfr_train_upper', 'func_tracktrain', 'Upper reactor shaft train')
     registerBinding('lower_shaft_train', options.lowerTrain or 'dfr_train_lower', 'func_tracktrain', 'Lower reactor shaft train')

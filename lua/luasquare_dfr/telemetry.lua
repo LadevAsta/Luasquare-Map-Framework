@@ -21,6 +21,21 @@ local function pctFraction(value)
     return clamp01((tonumber(value) or 0) / 100)
 end
 
+local function shallowCopy(source)
+    local out = {}
+    for key, value in pairs(source or {}) do
+        out[key] = value
+    end
+    return out
+end
+
+local function mergeInto(target, source)
+    for key, value in pairs(source or {}) do
+        target[key] = value
+    end
+    return target
+end
+
 function DFR.TelemetryCoreLines()
     local resources = DFR.Resources or {}
     local validation = DFR.LastBindingValidation or {}
@@ -75,49 +90,89 @@ function DFR.RegisterTelemetryDisplay(name, data, getter)
     end
 
     data = data or {}
-    LUASQUARE_3D2D.RegisterDisplay(name, {
-        target = data.target or data.entity or data.infoTarget,
-        posTarget = data.posTarget,
-        angleTarget = data.angleTarget,
-        useTargetAngle = data.useTargetAngle ~= false,
-        width = data.width,
-        height = data.height,
-        scale = data.scale or 0.1,
-        title = data.title or name,
-        padding = data.padding or 6,
-        lineHeight = data.lineHeight or 14,
-        titleHeight = data.titleHeight or 22,
-        drawBackground = data.drawBackground ~= false,
-        drawBorder = data.drawBorder ~= false,
-        backgroundColor = data.backgroundColor,
-        borderColor = data.borderColor,
-        textColor = data.textColor,
-        titleColor = data.titleColor
-    })
+    local displayData = shallowCopy(data)
+    displayData.target = data.target or data.targetName or data.entity or data.infoTarget
+    displayData.posTarget = data.posTarget
+    displayData.angleTarget = data.angleTarget
+    displayData.useTargetAngle = data.useTargetAngle ~= false
+    displayData.scale = data.scale or data.pixelScale or 0.1
+    displayData.title = data.title or name
+    displayData.padding = data.padding or 6
+    displayData.lineHeight = data.lineHeight or 14
+    displayData.titleHeight = data.titleHeight or 22
+    displayData.drawBackground = data.drawBackground ~= false
+    displayData.drawBorder = data.drawBorder ~= false
+
+    LUASQUARE_3D2D.RegisterDisplay(name, displayData)
 
     LUASQUARE_3D2D.BindDisplay(name, getter)
     return true
 end
 
-function DFR.RegisterDefaultTelemetryDisplays()
+local function displayTargetFromBinding(bindingId, fallback)
+    local binding = DFR.GetBinding and DFR.GetBinding(bindingId) or nil
+    return (binding and binding.targetName) or fallback
+end
+
+local function targetUsesAutoDimensions(targetName)
+    return targetName and string.match(tostring(targetName), '^DISPLAY[%d%.]+[xX][%d%.]+_') ~= nil
+end
+
+local function withFallbackSize(data, width, height)
+    if targetUsesAutoDimensions(data.target or data.targetName or data.entity or data.infoTarget) then return data end
+    if data.width == nil then data.width = width end
+    if data.height == nil then data.height = height end
+    return data
+end
+
+local function displayDataFromBinding(bindingId, fallbackTarget, fallbackTitle, overrides)
+    local binding = DFR.GetBinding and DFR.GetBinding(bindingId) or nil
+    local data = {}
+
+    if binding and type(binding.display) == 'table' then
+        mergeInto(data, binding.display)
+    elseif binding and binding.metadata and type(binding.metadata.display) == 'table' then
+        mergeInto(data, binding.metadata.display)
+    end
+
+    if not data.target and not data.targetName and not data.entity and not data.infoTarget then
+        data.target = (binding and binding.targetName) or fallbackTarget
+    end
+
+    data.title = data.title or fallbackTitle
+    mergeInto(data, overrides)
+
+    if not data.target and not data.targetName and not data.entity and not data.infoTarget then
+        data.target = (binding and binding.targetName) or fallbackTarget
+    end
+
+    data.title = data.title or fallbackTitle
+    return data
+end
+
+function DFR.RegisterDefaultTelemetryDisplays(options)
     if not LUASQUARE_3D2D then
         DFR.Log('Default telemetry displays skipped, LUASQUARE_3D2D is not loaded')
         return false
     end
 
-    DFR.RegisterTelemetryDisplay('dfr_core_status_panel', {
-        target = 'tar_dfr_status_panel',
-        title = 'DFR CORE STATUS',
-        width = 42,
-        height = 26
-    }, DFR.TelemetryCoreLines)
+    options = options or {}
 
-    DFR.RegisterTelemetryDisplay('dfr_startup_status_panel', {
-        target = 'tar_dfr_startup_panel',
-        title = 'DFR MANUAL STARTUP',
-        width = 42,
-        height = 30
-    }, DFR.TelemetryStartupLines)
+    local coreData = displayDataFromBinding(
+        'core_status_panel',
+        displayTargetFromBinding('core_status_panel', 'tar_dfr_status_panel'),
+        'DFR CORE STATUS',
+        options.core
+    )
+    DFR.RegisterTelemetryDisplay('dfr_core_status_panel', withFallbackSize(coreData, 42, 26), DFR.TelemetryCoreLines)
+
+    local startupData = displayDataFromBinding(
+        'startup_status_panel',
+        displayTargetFromBinding('startup_status_panel', 'tar_dfr_startup_panel'),
+        'DFR MANUAL STARTUP',
+        options.startup
+    )
+    DFR.RegisterTelemetryDisplay('dfr_startup_status_panel', withFallbackSize(startupData, 42, 30), DFR.TelemetryStartupLines)
 
     DFR.Log('Default telemetry displays registered')
     return true
