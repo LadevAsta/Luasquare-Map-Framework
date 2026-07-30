@@ -73,9 +73,10 @@ luasquare_module
         - 3D2D already broadcasts display state, but DFR also needs subtitles, music state, timeline phase, etc.
         - Should support rate-limited server-owned state.
 
-    cleanup.lua (cleanup/reset hooks for spawned runtime objects and temporary effects) [needed later]
-        - Tracks objects created by Lua and stops dangling timers/effects when a session ends.
-        - Full in-session reset can remain deferred, but cleanup ownership should be explicit.
+    cleanup.lua (cleanup/reset hooks for framework declarations, registries, commands, and timers) [prototype implemented]
+        - PreCleanupMap removes named Luasquare/RBMK/DFR timers and commands, then clears framework globals.
+        - A run-on-spawn lua_run can then include the map bootstrap against a fresh runtime.
+        - Map bootstraps can register additional globals and timer prefixes when needed.
 
     sourcefx.lua (generic Source presentation/effect helpers) [needed later]
         - Relays, sprites, lights, skins, bodygroups, particles/effects if practical.

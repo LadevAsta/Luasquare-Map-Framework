@@ -14,6 +14,19 @@ Bootstrap calls:
     -- Existing control and telemetry registration can remain map-owned.
     DFR.Start()
 
+    RegisterDefaultReactorMachineLayout schedules a forced retraction two seconds
+    later so newly spawned tracktrains settle at their retracted endpoints.
+    Override the delay with:
+        DFR.RegisterDefaultReactorMachineLayout({ initialRetractionDelay = 3 })
+    Or disable it for a map that owns this sequence:
+        DFR.RegisterDefaultReactorMachineLayout({ initialRetraction = false })
+
+Cleanup lifecycle:
+    The map lua_run should enable "Run Code on Spawn".
+    PreCleanupMap clears Luasquare timers, declarations, loader flags, and
+    registries before map entities are recreated. The respawned lua_run then
+    includes the map bootstrap again and builds a fresh runtime.
+
 Path track callbacks:
     Each important path_track should call Lua when a train passes it.
 

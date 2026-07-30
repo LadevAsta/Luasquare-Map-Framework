@@ -387,9 +387,12 @@ function RBMK.BlowoutSteam()
         if IsValid(ent) then
             ent:Fire('SetSpeed', tostring(speed))
             ent:Fire('Open')
-            timer.Simple(duration, function()
+            local closeTimer = 'RBMK_BlowoutValve_' .. tostring(valve.key)
+            local fallSpeed = RBMK.BlowoutFallSpeed
+            if timer.Exists(closeTimer) then timer.Remove(closeTimer) end
+            timer.Create(closeTimer, duration, 1, function()
                 if IsValid(ent) then
-                    ent:Fire('SetSpeed', tostring(RBMK.BlowoutFallSpeed))
+                    ent:Fire('SetSpeed', tostring(fallSpeed))
                     ent:Fire('Close')
                 end
             end)
@@ -484,7 +487,9 @@ function RBMK.FuelMeltdown(x, y, cell)
     RBMK.FireRelay(RBMK.FuelMeltdownRelay)
     print(string.format('[' .. RBMK.ModelName .. '] FUEL MELTDOWN STARTED! %d,%d', x or 0, y or 0))
 
-    timer.Simple(RBMK.FuelMeltdownDelay, function()
+    local meltdownTimer = 'RBMK_FuelMeltdown_' .. tostring(x) .. '_' .. tostring(y)
+    if timer.Exists(meltdownTimer) then timer.Remove(meltdownTimer) end
+    timer.Create(meltdownTimer, RBMK.FuelMeltdownDelay, 1, function()
         if RBMK and RBMK.EventState and not RBMK.EventState.Failed then
             RBMK.CatastrophicFailure('FUEL_MELTDOWN')
         end
@@ -500,7 +505,8 @@ function RBMK.CatastrophicFailure(reason)
     RBMK.FireRelay(RBMK.CatastrophicFailureRelay)
     if timer.Exists('RBMK_Tick') then timer.Remove('RBMK_Tick') end
     print('[' .. RBMK.ModelName .. '] CATASTROPHIC FAILURE!!! :  ' .. tostring(RBMK.EventState.FailureReason))
-    timer.Simple(RBMK.CatastrophicClearDelay, function()
+    if timer.Exists('RBMK_CatastrophicClear') then timer.Remove('RBMK_CatastrophicClear') end
+    timer.Create('RBMK_CatastrophicClear', RBMK.CatastrophicClearDelay, 1, function()
         if RBMK then RBMK.ClearReactorData() end
     end)
     return true

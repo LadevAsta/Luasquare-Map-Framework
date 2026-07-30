@@ -5,6 +5,10 @@
 -- This is orchestration script to set up map integration.
 -- Deploy THIS SCRIPT using a lua_run in the map :
 -- include('luasquare_rbmk/bootstrapper/experiment_rbmk.lua')
+-- Enable the lua_run "Run Code on Spawn" flag so Clean Up Everything
+-- recreates the entity and runs this bootstrap again.
+
+include('luasquare_module/cleanup.lua')
 
 local MAPNAME = 'experiment_rbmk'
 
@@ -12,10 +16,10 @@ local MAPNAME = 'experiment_rbmk'
 -- PRE-FLIGHT CHECKS
 -- =========================================
 
--- Luasquare script's presence (This file)
--- As of now, Luasquare modules are impervious to 'Clean Up Everything'. Reload is the only option.
+-- Luasquare script's presence (This file).
+-- PreCleanupMap clears this guard before the run-on-spawn lua_run is recreated.
 if LUASQUARE_FRAMEWORK_INITIALIZED then
-    print('[LUASQUARE FRAMEWORK] BOOTSTRAP FAILED!\n[LUASQUARE FRAMEWORK] It already happened once in this session. Reload map.')
+    print('[LUASQUARE FRAMEWORK] BOOTSTRAP SKIPPED!\n[LUASQUARE FRAMEWORK] It already ran for the current map state.')
 return end
 
 -- Addon Dependencies

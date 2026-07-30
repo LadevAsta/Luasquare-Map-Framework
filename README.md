@@ -43,7 +43,7 @@ garrysmod/
         `-- sound/
 ```
 
-Restart Garry's Mod or reload the map after changing server-side framework files. The running simulations and their timers are designed around a map session and are not reset by **Clean Up Everything**.
+Restart Garry's Mod or reload the map after changing server-side framework files. **Clean Up Everything** now clears framework declarations, registries, entity caches, debug commands, and named runtime timers before map entities respawn. A map with a run-on-spawn bootstrap then constructs a fresh simulation automatically.
 
 ## Trying the RBMK reference map
 
@@ -53,7 +53,7 @@ Start the included map:
 map experiment_rbmk
 ```
 
-The map's `lua_run` automatically includes the current bootstrap when the map loads. The bootstrap only initializes once per map session; reload the map to start over or pick up server-side framework changes.
+The map's `lua_run` automatically includes the current bootstrap when the map loads and after **Clean Up Everything**. The bootstrap only initializes once for each spawned map state.
 
 The reference is deliberately map-specific. Its targetnames, positions, capacities, relays, controls, and display registrations are examples to study and adapt rather than defaults suitable for another map.
 
@@ -72,7 +72,9 @@ Luasquare does not automatically create a plant. A map owns a bootstrap script t
 A small server-side bootstrap has this general shape:
 
 ```lua
-if MY_MAP_SIM_INITIALIZED then return end
+include('luasquare_module/cleanup.lua')
+
+if LUASQUARE_MY_MAP_SIM_INITIALIZED then return end
 
 include('luasquare_module/seg7display.lua')
 include('luasquare_module/3d2display.lua')
@@ -100,16 +102,18 @@ RBMK.SetSteamNetwork('main_steam')
 RBMK.Start()
 LUASQUARE_FLUID.Start()
 
-MY_MAP_SIM_INITIALIZED = true
+LUASQUARE_MY_MAP_SIM_INITIALIZED = true
 ```
 
-In Hammer, place a `lua_run`, give it a stable targetname such as `MY_MAP_SIM`, and put the bootstrap `include(...)` in its `Code` keyvalue. Buttons and relays can then send calls to it:
+In Hammer, place a `lua_run`, enable **Run Code on Spawn**, give it a stable targetname such as `MY_MAP_SIM`, and put the bootstrap `include(...)` in its `Code` keyvalue. The spawn flag is required for automatic rebuilding after **Clean Up Everything**. Buttons and relays can then send calls to it:
 
 ```text
 Target:      MY_MAP_SIM
 Input:       RunPassedCode
 Parameter:   RBMK.SCRAM()
 ```
+
+Framework-owned globals and map bootstrap guards should use a `LUASQUARE_`, `RBMK_`, or `DFR_` prefix so cleanup can remove them. A map can register an exceptional name with `LUASQUARE_CLEANUP.RegisterGlobal(name)`. Custom named timers should use the same prefixes, or register their prefix with `LUASQUARE_CLEANUP.RegisterTimerPrefix(prefix)`.
 
 Keep VMF targetnames and map coordinates in the map's bootstrap. Reusable behavior belongs in `luasquare_module`, `luasquare_powerplant`, or the relevant reactor package.
 

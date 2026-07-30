@@ -1,3 +1,5 @@
+include('luasquare_module/cleanup.lua')
+
 if LUASQUARE_DFR_CORE_LOADED then return end
 LUASQUARE_DFR_CORE_LOADED = true
 

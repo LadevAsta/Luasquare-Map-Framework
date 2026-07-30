@@ -1,3 +1,5 @@
+include('luasquare_module/cleanup.lua')
+
 if LUASQUARE_POWERPLANT_CORE_LOADED then return end
 LUASQUARE_POWERPLANT_CORE_LOADED = true
 LUASQUARE_POWERPLANT = LUASQUARE_POWERPLANT or {}

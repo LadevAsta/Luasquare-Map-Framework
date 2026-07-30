@@ -10,6 +10,8 @@ DFR.ReactorMachine.DefaultPositions = DFR.ReactorMachine.DefaultPositions or {
     stabilizerService = 'dfr_pt_stab_2',
     stabilizerRetracted = 'dfr_pt_stab_3'
 }
+DFR.ReactorMachine.InitialRetractionDelay = DFR.ReactorMachine.InitialRetractionDelay or 2
+DFR.ReactorMachine.InitialRetractionTimer = 'LUASQUARE_DFR_InitialReactorMachineRetraction'
 
 local function mergeDefaults(data, defaults)
     data = data or {}
@@ -56,6 +58,54 @@ local function registerRotator(id, targetName, label, spinSpeed)
         stopInput = 'Stop',
         setSpeedInput = 'SetSpeed'
     })
+end
+
+function DFR.PrimeReactorMachineForInitialRetraction()
+    for _, id in ipairs({
+        'upper_shaft_train',
+        'lower_shaft_train',
+        'stabilizer_shaft_train'
+    }) do
+        local machine = DFR.GetMachinery(id)
+        if machine and machine.deployNode then
+            -- The Source entity may spawn between nodes even though the logical
+            -- default is retracted. Route from the deployed side once so the
+            -- initial retract command cannot collapse into a no-op Stop.
+            machine.currentNode = machine.deployNode
+            machine.destinationNode = nil
+            machine.route = nil
+            machine.direction = nil
+            machine.state = 'initializing'
+        end
+    end
+end
+
+function DFR.ScheduleInitialReactorMachineRetraction(delay)
+    if not timer or not timer.Create then return false end
+
+    delay = math.max(tonumber(delay) or DFR.ReactorMachine.InitialRetractionDelay or 2, 0.01)
+    local timerName = DFR.ReactorMachine.InitialRetractionTimer
+    if timer.Exists(timerName) then timer.Remove(timerName) end
+
+    timer.Create(timerName, delay, 1, function()
+        if not DFR or not DFR.ReactorMachine or not DFR.ReactorMachine.Registered then return end
+        if not DFR.RetractReactorMachine then return end
+
+        local ok, result = pcall(function()
+            DFR.PrimeReactorMachineForInitialRetraction()
+            return DFR.RetractReactorMachine()
+        end)
+
+        if not ok then
+            DFR.Log('Initial reactor machine retraction failed: ' .. tostring(result))
+        elseif not result then
+            DFR.Log('Initial reactor machine retraction could not command every registered train')
+        else
+            DFR.Log('Initial reactor machine retraction commanded')
+        end
+    end)
+
+    return true
 end
 
 function DFR.RegisterDefaultReactorMachineLayout(options)
@@ -143,6 +193,9 @@ function DFR.RegisterDefaultReactorMachineLayout(options)
     registerRotator('lower_director_lens_rotator_2', options.lowerLensRotator2 or 'dfr_rot_shaft_lower_2', 'Lower Director Lens 2', options.lensSpinSpeed or 20)
 
     DFR.Log('Default DFR reactor machine layout registered')
+    if options.initialRetraction ~= false then
+        DFR.ScheduleInitialReactorMachineRetraction(options.initialRetractionDelay)
+    end
     return true
 end
 
