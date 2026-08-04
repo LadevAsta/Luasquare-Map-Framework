@@ -62,7 +62,7 @@ function DFR.TelemetryCoreLines()
 end
 
 function DFR.TelemetryStartupLines()
-    local startup = DFR.Startup or {}
+    local startup = DFR.GetStartupSnapshot and DFR.GetStartupSnapshot() or {}
     local containmentLimit = DFR.Config.ContainmentFieldStartupLimitPercent or 35
 
     return {

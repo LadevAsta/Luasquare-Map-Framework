@@ -47,6 +47,21 @@ local function removeRuntimeCommands()
     for _, name in ipairs(names) do concommand.Remove(name) end
 end
 
+local function cancelRuntimeTimelines(reason)
+    local timeline = LUASQUARE_TIMELINE
+    if not timeline or not timeline.Registries then return end
+
+    for name, registry in pairs(timeline.Registries) do
+        if registry and registry.CancelAll then
+            local ok, err = pcall(registry.CancelAll, registry, reason)
+            if not ok then
+                print('[LUASQUARE CLEANUP] Timeline registry ' .. tostring(name)
+                    .. ' cancellation failed: ' .. tostring(err))
+            end
+        end
+    end
+end
+
 local function shouldClearGlobal(name)
     if name == 'RBMK' or name == 'DFR' then return true end
     if startsWith(name, 'LUASQUARE_') or startsWith(name, 'RBMK_') or startsWith(name, 'DFR_') then return true end
@@ -82,6 +97,9 @@ local function resetRuntime(reason)
     reason = tostring(reason or 'manual reset')
     print('[LUASQUARE CLEANUP] Resetting framework runtime: ' .. reason)
 
+    -- Let timeline owners restore their own machinery and presentation while
+    -- the component registries and map entities are still available.
+    cancelRuntimeTimelines(reason)
     removeRuntimeTimers()
     removeRuntimeCommands()
     if SetGlobal2Bool then SetGlobal2Bool('LUASQUARE_FRAMEWORK_INITIALIZED_GLOBAL', false) end

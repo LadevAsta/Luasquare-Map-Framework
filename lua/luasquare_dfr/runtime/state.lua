@@ -121,10 +121,19 @@ function DFR.RequestTransition(nextState, reason, actor)
         return false
     end
 
+    if DFR.CancelAllTimelines then
+        DFR.CancelAllTimelines('reactor state changing to ' .. tostring(nextState))
+    end
+
     DFR.State.previous = current
     DFR.State.current = nextState
     DFR.State.enteredAt = DFR.GetTime()
     recordTransition(current, nextState, reason, actor)
+    if nextState == DFR.STATE_OFFLINE then
+        if DFR.ResetStartupSystems then DFR.ResetStartupSystems() end
+        if DFR.ResetCoreVisuals then DFR.ResetCoreVisuals() end
+        if DFR.ResetCatalyzers then DFR.ResetCatalyzers() end
+    end
     DFR.Log('Transition ' .. tostring(current) .. ' -> ' .. tostring(nextState) .. ': ' .. tostring(reason or 'no reason'))
     return true
 end
@@ -133,6 +142,7 @@ function DFR.Halt(reason)
     DFR.Halted = true
     DFR.HaltReason = reason or 'critical error'
     DFR.Running = false
+    if DFR.CancelAllTimelines then DFR.CancelAllTimelines('reactor halted') end
     if DFR.State.current ~= DFR.STATE_HALTED_ERROR then
         local current = DFR.State.current
         DFR.State.previous = current

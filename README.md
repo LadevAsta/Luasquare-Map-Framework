@@ -14,7 +14,7 @@ Luasquare began as an RBMK-style reactor experiment, but it is now a broader map
 | RBMK simulation | Grid-based reactor layouts; four-direction neutron-flux propagation; fuel, xenon, heat, control rods, automatic regulation, vessel water/steam, recirculation, pressure, integrity, leaks, blowouts, SCRAM, and failure handling |
 | Balance of plant | Fluid networks, pumps, valves, heat exchangers, steam separators, condensers, deaerators, cooling towers, turbines, generators, diesel generators, electrical grids, breakers, and transformers |
 | Map modules | 3D2D displays and graphs, skin-based seven-segment displays, gauges, numeric keypads, annunciators, control bindings, Source entity bindings, and movable-machinery helpers |
-| Dark Fusion Reactor | An early framework for state transitions, startup controls, resource state, VMF bindings, reactor machinery, core visuals, telemetry, debug commands, and a guarded simulation tick |
+| Dark Fusion Reactor | A staged reactor framework with startup controls, resource state, VMF bindings, machinery, independently animated core visuals, reusable timelines, six-catalyzer sequencing, telemetry, debug controls, and a guarded simulation tick |
 | Development tools | Client-side RBMK and plant overlays, DFR admin controls in the spawn menu, bundled annunciator/display assets, and asset-generation scripts |
 | Reference content | The playable `experiment_rbmk` BSP, its editable VMF source, an LRBMKP-400 layout, and a complete map-specific RBMK bootstrap |
 
@@ -146,7 +146,7 @@ Spawn Menu -> Options -> Luasquare
 
 The **RBMK Framework** and **Powerplant Framework** panels control client-side world overlays and filters. Registered components need `monitorPos`, a named monitor target, or reactor world-position data to appear in the appropriate overlay.
 
-The **Dark Fusion Reactor** panel exposes development commands for state changes, binding validation, machinery, startup controls, and core visuals. These commands are restricted to single-player, admins, and the server console. They are test tools, not player-facing reactor controls. Although this is mainly related to luasquare_dfr and is WIP.
+The **Dark Fusion Reactor** panel exposes development controls for state changes, binding validation, machinery, core radii and animation, timelines, and individual catalyzer inspection. These commands are restricted to single-player, admins, and the server console. They are test tools, not player-facing reactor controls. The DFR remains a work in progress.
 
 ## Repository layout
 
@@ -156,7 +156,7 @@ lua/
 |-- luasquare_module/        Reusable displays, controls, bindings, and machinery
 |-- luasquare_powerplant/    Fluid, thermal, turbine, generator, and grid systems
 |-- luasquare_rbmk/          RBMK core simulation, layouts, and example bootstrap
-`-- luasquare_dfr/           In-progress Dark Fusion Reactor foundation and notes
+`-- luasquare_dfr/           DFR runtime, reactor, procedure, presentation, and superstructure modules
 maps/                        Compiled reference map and editable VMF source
 materials/, models/, sound/ Bundled control-room and environmental assets
 tools/                       Annunciator model/material generation scripts

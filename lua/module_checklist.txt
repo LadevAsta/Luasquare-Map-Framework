@@ -55,8 +55,10 @@ luasquare_module
         - Should not contain DFR-specific shaft or stabilizer names.
         - Current prototype adds path registration, destination-aware tracktrain movement, and path_track pass callbacks.
 
-    timeline.lua (reactive timeline and sequence engine) [needed]
-        - Timed events, waits, branches, cancellation, control locks, state handoff.
+    timeline.lua (reactive timeline and sequence engine) [prototype implemented in luasquare_module/timeline.lua]
+        - Absolute timed events, scoped owners, named channels, parent/child runs,
+          failure state, cancellation, pause/resume, owner locks, guards, and state handoff.
+        - Wait conditions and branches remain future extensions.
         - Should coordinate presentation with simulation but not replace simulation.
         - Needed later for automatic startup, DECAOS sequences, disasters, music sections.
 
@@ -74,7 +76,7 @@ luasquare_module
         - Should support rate-limited server-owned state.
 
     cleanup.lua (cleanup/reset hooks for framework declarations, registries, commands, and timers) [prototype implemented]
-        - PreCleanupMap removes named Luasquare/RBMK/DFR timers and commands, then clears framework globals.
+        - PreCleanupMap cancels timeline registries, removes named Luasquare/RBMK/DFR timers and commands, then clears framework globals.
         - A run-on-spawn lua_run can then include the map bootstrap against a fresh runtime.
         - Map bootstraps can register additional globals and timer prefixes when needed.
 
@@ -111,21 +113,21 @@ luasquare_dfr
     init.lua (loads DFR package modules, not map-specific targetnames) [prototype exists]
     config.lua (DFR constants and development-tunable values) [prototype exists]
 
-    statecontroller.lua (DFR top-level state progression) [needed]
+    runtime/state.lua (DFR top-level state progression) [prototype exists]
         - OFFLINE, STARTUP_PREP, MANUAL_STARTUP, ANNIHILATION_STAGE, DARK_FUSION_STAGE, shutdown, disaster, ending.
         - Should use generic luasquare_module/statemachine.lua once available.
-        - Current state.lua prototype should move toward this.
+        - Current runtime prototype should move toward a generic state machine.
 
-    procedure.lua (manual/automatic startup and shutdown procedure coordinator) [needed]
+    procedure/ (manual startup and pre-annihilation coordinators) [prototype exists]
         - Operator workflow logic belongs here, not in reactor physics.
         - Automatic startup should eventually perform the same steps manual startup uses.
-        - Current startup.lua prototype should split: procedure logic here, subsystem logic elsewhere.
+        - Component choreography is invoked through owned child timelines.
 
-    telemetry.lua (operator-facing data builders for 3D2D displays) [prototype exists]
+    presentation/telemetry.lua (operator-facing data builders for 3D2D displays) [prototype exists]
         - Keep separate from debug.
         - Should read subsystem state and produce display lines only.
 
-    debug.lua (developer/admin inspection and forced test commands) [prototype exists / expanded]
+    runtime/debug.lua (developer/admin inspection and forced test commands) [prototype exists / expanded]
         - Snapshots, force state, force values, validation reports, test helpers.
         - Not the same thing as operator telemetry.
         - Current prototype adds admin/server console commands used by the DFR spawnmenu debug panel.
@@ -162,7 +164,7 @@ luasquare_dfr
 
     superstructure
         superstructure.lua (waste heat, global integrity, subsystem effectiveness, damage) [needed]
-        catalyzer.lua (six catalyzers, fuel receptors, modes, readiness, malfunction) [needed later]
+        catalyzer.lua (six catalyzers, bindings, modes, and owned operation timelines) [prototype exists]
 
     reactor
         core.lua (shared core state, containment sphere, event horizon, radiation, output aggregation) [needed]
@@ -171,8 +173,8 @@ luasquare_dfr
         annihilation.lua (matter/antimatter injection, equilibrium, fuel saturation, annihilation power GW) [needed next]
         darkfusion.lua (influx/outflux, stored flux GWh, energy saturation, final export TW) [needed later]
         energysaturation.lua (thresholds, hysteresis, warning/damage/runaway events) [needed later]
-        stabilizer.lua (containment field strength/stability, power draw, malfunction) [needed]
-        directorbeam.lua (beam active state, lens offsets, precision/imprecision, damage gates) [needed]
+        stabilizer.lua (containment field strength/stability, power draw, core inflation) [prototype exists]
+        directorbeam.lua (beam active state, lens offsets, precision/imprecision) [prototype exists]
 
     facility
         facilitypower.lua (facility/internal power routing and consumption) [needed later]
@@ -201,9 +203,9 @@ Map repository bootstrapper scripts
 
 Migration notes
     - Move generic DFR prototypes into luasquare_module:
-        mapbinding.lua -> luasquare_module/mapbinding.lua or sourcebinding.lua
-        control.lua -> luasquare_module/controlbinding.lua
-        machinery.lua -> luasquare_module/machinery.lua
+        runtime/binding.lua -> luasquare_module/sourcebinding.lua
+        runtime/control.lua -> luasquare_module/controlbinding.lua
+        runtime/machinery.lua -> luasquare_module/machinery.lua
         DFR.Log parts -> luasquare_module/logging.lua
         DFR.Halt/tick safety parts -> luasquare_module/runtime.lua
 

@@ -17,6 +17,13 @@ config.InitialSuperstructureIntegrityPercent = config.InitialSuperstructureInteg
 config.OfflineIntegrityRecoveryPerSecond = config.OfflineIntegrityRecoveryPerSecond or 0.02
 
 config.StabilizerStartupPowerGW = config.StabilizerStartupPowerGW or 8
+config.StabilizerRampUpSeconds = config.StabilizerRampUpSeconds or 5
+config.StabilizerRampDownSeconds = config.StabilizerRampDownSeconds or 3
+config.CoreFormationThresholdFraction = config.CoreFormationThresholdFraction or 0.15
+config.StartupCoreSphereRadiusMeters = config.StartupCoreSphereRadiusMeters or 2.6
+config.StartupCoreShieldRadiusMeters = config.StartupCoreShieldRadiusMeters or 3.0
+config.CoreShieldMinimumMarginMeters = config.CoreShieldMinimumMarginMeters or 0.5
+config.MinimumAvailableCatalyzers = config.MinimumAvailableCatalyzers or 1
 config.ContainmentFieldStepPercent = config.ContainmentFieldStepPercent or 5
 config.ContainmentFieldStartupLimitPercent = config.ContainmentFieldStartupLimitPercent or 35
 config.LensOffsetStep = config.LensOffsetStep or 0.025

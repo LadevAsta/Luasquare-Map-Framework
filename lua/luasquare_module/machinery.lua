@@ -92,6 +92,9 @@ function Registry:RegisterMachine(id, data)
         return false
     end
 
+    local speedInputScale = asNumber(data.speedInputScale, 1)
+    local configuredSpeed = asNumber(data.configuredSpeed, asNumber(data.spinSpeed, nil))
+
     self.Machines[id] = {
         id = id,
         type = data.type or data.kind or 'generic',
@@ -112,6 +115,11 @@ function Registry:RegisterMachine(id, data)
         deploySpeed = data.deploySpeed,
         retractSpeed = data.retractSpeed,
         spinSpeed = data.spinSpeed,
+        configuredSpeed = configuredSpeed,
+        currentSpeed = asNumber(data.currentSpeed, configuredSpeed),
+        sourceSpeed = configuredSpeed and configuredSpeed * speedInputScale or nil,
+        speedInputScale = speedInputScale,
+        debug = data.debug or {},
         path = data.path,
         currentNode = data.currentNode or data.initialNode,
         initialNode = data.initialNode or data.currentNode,
@@ -152,7 +160,21 @@ end
 function Registry:SetSpeed(id, speed)
     local machine = self:GetMachine(id)
     if not machine then return false end
-    return self:Command(id, machine.setSpeedInput, speed)
+
+    speed = asNumber(speed, nil)
+    if speed == nil then return false end
+
+    local sourceSpeed = speed * (machine.speedInputScale or 1)
+    machine.configuredSpeed = speed
+    machine.sourceSpeed = sourceSpeed
+    if machine.type == 'rotator' then machine.spinSpeed = speed end
+
+    local ok = self:Command(id, machine.setSpeedInput, sourceSpeed)
+    if ok then
+        machine.currentSpeed = speed
+    end
+
+    return ok
 end
 
 function Registry:SetPosition(id, position)
@@ -424,6 +446,11 @@ function Registry:GetSnapshot()
             currentNode = machine.currentNode,
             destinationNode = machine.destinationNode,
             direction = machine.direction,
+            configuredSpeed = machine.configuredSpeed,
+            currentSpeed = machine.currentSpeed,
+            sourceSpeed = machine.sourceSpeed,
+            speedInputScale = machine.speedInputScale,
+            debug = machine.debug,
             lastCommand = machine.lastCommand,
             lastCommandTime = machine.lastCommandTime
         }

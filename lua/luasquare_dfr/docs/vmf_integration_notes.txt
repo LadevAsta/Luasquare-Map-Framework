@@ -10,11 +10,17 @@ Bootstrap calls:
     -- Optional but recommended for testing the current gm_darkfusion_v2 armature targetnames.
     DFR.RegisterDefaultReactorMachineLayout()
     DFR.RegisterDefaultCoreVisuals()
+    DFR.RegisterDefaultCatalyzers()
 
-    -- Existing control and telemetry registration can remain map-owned.
+    -- Register controls before the upper procedure control.
+    DFR.RegisterStartupPrepControls()
+    DFR.RegisterManualStartupControls()
+    DFR.RegisterPreAnnihilationProcedure()
+
+    -- Existing telemetry registration can remain map-owned.
     DFR.Start()
 
-    RegisterDefaultReactorMachineLayout schedules a forced retraction two seconds
+    RegisterDefaultReactorMachineLayout schedules a forced retraction ten seconds
     later so newly spawned tracktrains settle at their retracted endpoints.
     Override the delay with:
         DFR.RegisterDefaultReactorMachineLayout({ initialRetractionDelay = 3 })
@@ -23,8 +29,9 @@ Bootstrap calls:
 
 Cleanup lifecycle:
     The map lua_run should enable "Run Code on Spawn".
-    PreCleanupMap clears Luasquare timers, declarations, loader flags, and
-    registries before map entities are recreated. The respawned lua_run then
+    PreCleanupMap first cancels shared timeline registries so each owner can run
+    its local cleanup, then clears Luasquare timers, declarations, loader flags,
+    and registries before map entities are recreated. The respawned lua_run
     includes the map bootstrap again and builds a fresh runtime.
 
 Path track callbacks:
@@ -81,23 +88,92 @@ Registered moving machinery:
     lower_director_lens_rotator_1 -> dfr_rot_shaft_lower_1
     lower_director_lens_rotator_2 -> dfr_rot_shaft_lower_2
 
+Reactor-machine timelines:
+    deploy
+        Starts the upper and lower shafts immediately, then starts the stabilizer
+        shaft three seconds later.
+    retract
+        Closes stabilizer arms, stops rotators, and commands all shafts retracted.
+    initial_retract
+        Waits ten seconds after bootstrap and starts retract.
+    stabilizer_warmup
+        Starts the rotor and opens the arms, closes the arms at three seconds,
+        and completes at five seconds while leaving the rotor running.
+    stabilizer_shutdown
+        Closes the arms immediately and stops the rotor after three seconds.
+    pre_annihilation_gate
+        Opens the stabilizer arms immediately and closes them after three seconds.
+
+    These timelines are owned by the reactor_machine timeline owner. Procedures
+    and controls start them through DFR.StartReactorMachineTimeline rather than
+    reproducing their individual machinery inputs.
+
 Registered core visuals:
     core_sphere -> dfr_prop_coresphere
-        basis scale: 1.0
+        unmodified model radius: 230 Hammer units
     core_stellar -> dfr_prop_corestellar
-        basis scale: 3.6
+        unmodified model radius: 64 Hammer units
     core_blackhole -> dfr_prop_coreblackhole
-        basis scale: 2.3
+        unmodified model radius: 100 Hammer units
     core_shield -> dfr_prop_coreshield
-        basis scale: 0.34
-    Shared visual basis:
-        radius: 230 Hammer units, approximately 5.842 metres
+        unmodified model radius: 700 Hammer units
+    basisRadiusHammer is measured by the mapper from each unscaled model.
+    Lua converts a requested axis radius using:
+        model scale = radius metres / (basisRadiusHammer * 0.0254)
+    SetScaleX/Y/Z are commanded separately so wobble can deform each axis.
     beam_director -> beam_core_director
     beam_annihilation -> beam_core_annihilation
     beam_darkfusion -> beam_core_darkfusion
     beam_unstable -> beam_core_unstable
     beam_catalyze -> beam_core_catalyze
     core_chamber_light -> light_corechamber
+
+Core presentation:
+    Offline resets every prop_scalable axis to zero and hides the shield.
+    Stabilizer startup ramps over five seconds. Formation begins after 15 percent
+    power and reaches a 2.6 m sphere and 3.0 m shield. Shutdown deflates over
+    three seconds before stopping the stabilizer machinery.
+    The annihilation-entry preset is sphere 3.0 m, stellar 3.5 m, shield 4.0 m.
+    dark_fusion_future is recorded only; it is not activated by current physics.
+    The core-sphere shader's dark region becomes useful around a 5 m radius.
+    Its future relationship to an approximately 2 m event horizon is not simulated.
+
+Catalyzers:
+    RegisterDefaultCatalyzers creates 32 logical bindings for each of six units.
+    Each current VMF unit resolves to an identical 52-entity structure.
+    Prefixes are CZ1_, CZ2_, CZ3_, CZ4_, an empty prefix for unit 5, and CZ6_.
+    Unit 5 is the special-paste source and must never be inferred as CZ5_.
+    Bindings whose targetname is shared by several entities use all = true.
+    allcatalyzers_tip_beam_target is validation-only.
+    Explosion, damage-fire particle, destructible, and dark-beam groups are never
+    used by the normal pre-annihilation procedure.
+    Every unit owns an independent timeline scope, allowing all six units to run
+    the local annihilation_fire timeline simultaneously without ID collisions.
+    The future names dark_fusion_catalysis, active_fuel_cycle_fire, and
+    passive_fuel_cycle_initial_fire are reserved but are not registered yet.
+
+Pre-annihilation procedure:
+    pre_annihilation_begin is a MANUAL_STARTUP control. It requires an active
+    stabilizer and director beam, four resolved stabilizer arms, and the configured
+    minimum number of catalyzer light beams (one by default for development).
+    It starts annihilation_fire as a child timeline on every available unit.
+    Each child owns its 0/5/8/11/12-second effects and cleanup. At eight seconds
+    the procedure starts the reactor machine's pre_annihilation_gate child and
+    pulses the core. It hands off to ANNIHILATION_STAGE at 15 seconds.
+    A failed unit is taken offline while the procedure continues above the
+    configured catalyzer quorum. Parent cancellation cascades to all active child
+    timelines; components perform their own cleanup.
+
+Available display screens:
+    DISPLAY512x256_mainscreen_m
+    DISPLAY512x256_mainscreen_l
+    DISPLAY512x256_mainscreen_r
+    DISPLAY160x80_r_1
+    DISPLAY160x80_r_2
+    DISPLAY220x80_r_3
+    DISPLAY160x80_l_1
+    DISPLAY160x80_l_2
+    DISPLAY220x80_l_3
 
 Spawnmenu testing:
     Options -> Luasquare -> Dark Fusion Reactor

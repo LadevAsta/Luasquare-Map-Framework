@@ -10,8 +10,7 @@ DFR.ReactorMachine.DefaultPositions = DFR.ReactorMachine.DefaultPositions or {
     stabilizerService = 'dfr_pt_stab_2',
     stabilizerRetracted = 'dfr_pt_stab_3'
 }
-DFR.ReactorMachine.InitialRetractionDelay = DFR.ReactorMachine.InitialRetractionDelay or 2
-DFR.ReactorMachine.InitialRetractionTimer = 'LUASQUARE_DFR_InitialReactorMachineRetraction'
+DFR.ReactorMachine.InitialRetractionDelay = DFR.ReactorMachine.InitialRetractionDelay or 10
 
 local function mergeDefaults(data, defaults)
     data = data or {}
@@ -54,6 +53,15 @@ local function registerRotator(id, targetName, label, spinSpeed)
         binding = id,
         label = label or id,
         spinSpeed = spinSpeed or 40,
+        speedInputScale = 0.01,
+        debug = {
+            speed = {
+                min = 0,
+                max = 100,
+                decimals = 1,
+                unit = '%'
+            }
+        },
         startInput = 'Start',
         stopInput = 'Stop',
         setSpeedInput = 'SetSpeed'
@@ -81,31 +89,13 @@ function DFR.PrimeReactorMachineForInitialRetraction()
 end
 
 function DFR.ScheduleInitialReactorMachineRetraction(delay)
-    if not timer or not timer.Create then return false end
-
-    delay = math.max(tonumber(delay) or DFR.ReactorMachine.InitialRetractionDelay or 2, 0.01)
-    local timerName = DFR.ReactorMachine.InitialRetractionTimer
-    if timer.Exists(timerName) then timer.Remove(timerName) end
-
-    timer.Create(timerName, delay, 1, function()
-        if not DFR or not DFR.ReactorMachine or not DFR.ReactorMachine.Registered then return end
-        if not DFR.RetractReactorMachine then return end
-
-        local ok, result = pcall(function()
-            DFR.PrimeReactorMachineForInitialRetraction()
-            return DFR.RetractReactorMachine()
-        end)
-
-        if not ok then
-            DFR.Log('Initial reactor machine retraction failed: ' .. tostring(result))
-        elseif not result then
-            DFR.Log('Initial reactor machine retraction could not command every registered train')
-        else
-            DFR.Log('Initial reactor machine retraction commanded')
-        end
-    end)
-
-    return true
+    local owner = DFR.ReactorMachine.TimelineOwner
+    if not owner then return false end
+    if delay ~= nil and tonumber(delay) ~= DFR.ReactorMachine.ConfiguredInitialRetractionDelay then
+        DFR.RegisterDefaultReactorMachineTimelines(delay)
+        owner = DFR.ReactorMachine.TimelineOwner
+    end
+    return owner:Start('initial_retract', {})
 end
 
 function DFR.RegisterDefaultReactorMachineLayout(options)
@@ -192,6 +182,8 @@ function DFR.RegisterDefaultReactorMachineLayout(options)
     registerRotator('lower_director_lens_rotator_1', options.lowerLensRotator1 or 'dfr_rot_shaft_lower_1', 'Lower Director Lens 1', options.lensSpinSpeed or 20)
     registerRotator('lower_director_lens_rotator_2', options.lowerLensRotator2 or 'dfr_rot_shaft_lower_2', 'Lower Director Lens 2', options.lensSpinSpeed or 20)
 
+    DFR.RegisterDefaultReactorMachineTimelines(options.initialRetractionDelay)
+
     DFR.Log('Default DFR reactor machine layout registered')
     if options.initialRetraction ~= false then
         DFR.ScheduleInitialReactorMachineRetraction(options.initialRetractionDelay)
@@ -211,15 +203,44 @@ local function run(ids, fn)
     return any and ok
 end
 
-function DFR.DeployReactorMachine()
+local function deployPrimaryShafts()
     return run({
         'upper_shaft_train',
-        'lower_shaft_train',
-        'stabilizer_shaft_train'
+        'lower_shaft_train'
     }, DFR.DeployMachinery)
 end
 
-function DFR.RetractReactorMachine()
+local function deployStabilizerShaft()
+    return run({'stabilizer_shaft_train'}, DFR.DeployMachinery)
+end
+
+local function closeStabilizerArms()
+    return run({
+        'stabilizer_arm_1',
+        'stabilizer_arm_2',
+        'stabilizer_arm_3',
+        'stabilizer_arm_4'
+    }, DFR.CloseMachinery)
+end
+
+local function openStabilizerArms()
+    return run({
+        'stabilizer_arm_1',
+        'stabilizer_arm_2',
+        'stabilizer_arm_3',
+        'stabilizer_arm_4'
+    }, DFR.OpenMachinery)
+end
+
+local function stopMovingShafts()
+    return run({
+        'stabilizer_shaft_train',
+        'upper_shaft_train',
+        'lower_shaft_train'
+    }, DFR.StopMachinery)
+end
+
+local function commandRetraction()
     run({
         'stabilizer_arm_1',
         'stabilizer_arm_2',
@@ -242,31 +263,171 @@ function DFR.RetractReactorMachine()
     }, DFR.RetractMachinery)
 end
 
-function DFR.ActivateReactorStabilizerMachine()
-    run({
-        'stabilizer_rotator'
-    }, DFR.StartMachinery)
+function DFR.SetReactorStabilizerImmediate(active)
+    if active then
+        run({'stabilizer_rotator'}, DFR.StartMachinery)
+        return openStabilizerArms()
+    end
+    closeStabilizerArms()
+    return run({'stabilizer_rotator'}, DFR.StopMachinery)
+end
 
-    return run({
-        'stabilizer_arm_1',
-        'stabilizer_arm_2',
-        'stabilizer_arm_3',
-        'stabilizer_arm_4'
-    }, DFR.OpenMachinery)
+function DFR.RegisterDefaultReactorMachineTimelines(initialRetractionDelay)
+    local owner = DFR.CreateTimelineOwner('reactor_machine', {
+        defaultConflictPolicy = 'reject'
+    })
+    DFR.ReactorMachine.TimelineOwner = owner
+    local initialDelay = math.max(
+        tonumber(initialRetractionDelay) or DFR.ReactorMachine.InitialRetractionDelay or 10,
+        0.01
+    )
+    DFR.ReactorMachine.ConfiguredInitialRetractionDelay = initialDelay
+
+    owner:Register('deploy', {
+        label = 'Deploy Reactor Machine',
+        channel = 'movement',
+        conflictPolicy = 'replace',
+        duration = 3,
+        steps = {
+            { id = 'primary_shafts', at = 0, required = true, action = deployPrimaryShafts },
+            { id = 'stabilizer_shaft', at = 3, required = true, action = deployStabilizerShaft }
+        },
+        onCancel = function() stopMovingShafts() end
+    })
+    owner:Register('retract', {
+        label = 'Retract Reactor Machine',
+        channel = 'movement',
+        conflictPolicy = 'replace',
+        duration = 0,
+        steps = {
+            { id = 'safe_retract', at = 0, required = true, action = commandRetraction }
+        },
+        onCancel = function() stopMovingShafts() end
+    })
+    owner:Register('initial_retract', {
+        label = 'Initial Delayed Retraction',
+        channel = 'bootstrap',
+        conflictPolicy = 'replace',
+        duration = initialDelay,
+        cancelChildrenOnComplete = false,
+        steps = {
+            {
+                id = 'initial_retract',
+                at = initialDelay,
+                required = true,
+                action = function(context, instance)
+                    DFR.PrimeReactorMachineForInitialRetraction()
+                    return DFR.TimelineRegistry:StartChild(
+                        instance, owner, 'retract', { initial = true }, { role = 'movement' }
+                    )
+                end
+            }
+        }
+    })
+    owner:Register('stabilizer_warmup', {
+        label = 'Stabilizer Warm-up',
+        channel = 'stabilizer',
+        conflictPolicy = 'replace',
+        duration = 5,
+        steps = {
+            {
+                id = 'open_and_spin', at = 0, required = true,
+                action = function()
+                    local rotor = DFR.StartMachinery('stabilizer_rotator')
+                    return openStabilizerArms() and rotor
+                end
+            },
+            { id = 'close_arms', at = 3, required = true, action = closeStabilizerArms }
+        },
+        onCancel = function()
+            closeStabilizerArms()
+            DFR.StopMachinery('stabilizer_rotator')
+        end
+    })
+    owner:Register('stabilizer_shutdown', {
+        label = 'Stabilizer Shutdown',
+        channel = 'stabilizer',
+        conflictPolicy = 'replace',
+        duration = 3,
+        steps = {
+            { id = 'close_arms', at = 0, required = true, action = closeStabilizerArms },
+            {
+                id = 'stop_rotor', at = 3, required = true,
+                action = function() return DFR.StopMachinery('stabilizer_rotator') end
+            }
+        },
+        onCancel = function()
+            closeStabilizerArms()
+            DFR.StopMachinery('stabilizer_rotator')
+        end
+    })
+    owner:Register('pre_annihilation_gate', {
+        label = 'Pre-Annihilation Stabilizer Gate',
+        channel = 'stabilizer',
+        conflictPolicy = 'replace',
+        duration = 3,
+        steps = {
+            { id = 'force_open', at = 0, required = true, action = openStabilizerArms },
+            { id = 'close', at = 3, required = true, action = closeStabilizerArms }
+        },
+        onCancel = function() closeStabilizerArms() end
+    })
+    return true
+end
+
+function DFR.StartReactorMachineTimeline(name, context, runOptions)
+    local owner = DFR.ReactorMachine.TimelineOwner
+    if not owner then return false end
+    return owner:Start(name, context, runOptions)
+end
+
+function DFR.CancelReactorMachineTimeline(name, reason)
+    local owner = DFR.ReactorMachine.TimelineOwner
+    return owner and owner:Cancel(name, reason) or false
+end
+
+function DFR.GetReactorMachineTimelineSnapshot()
+    local owner = DFR.ReactorMachine.TimelineOwner
+    return owner and owner:GetSnapshot() or { ownerId = 'reactor_machine', definitions = {}, runs = {} }
+end
+
+function DFR.IsReactorMachineDeployed()
+    local owner = DFR.ReactorMachine.TimelineOwner
+    if owner and owner:GetActiveInChannel('movement') then return false end
+    for _, id in ipairs({
+        'upper_shaft_train',
+        'lower_shaft_train',
+        'stabilizer_shaft_train'
+    }) do
+        local machine = DFR.GetMachinery(id)
+        if not machine or not DFR.ResolveBinding(machine.binding or id)
+            or machine.currentNode ~= machine.deployNode then
+            return false
+        end
+    end
+    return true
+end
+
+function DFR.DeployReactorMachine()
+    return DFR.StartReactorMachineTimeline('deploy', {})
+end
+
+function DFR.RetractReactorMachine()
+    return DFR.StartReactorMachineTimeline('retract', {})
+end
+
+function DFR.ActivateReactorStabilizerMachine()
+    return DFR.StartReactorMachineTimeline('stabilizer_warmup', {})
 end
 
 function DFR.DeactivateReactorStabilizerMachine()
-    run({
-        'stabilizer_arm_1',
-        'stabilizer_arm_2',
-        'stabilizer_arm_3',
-        'stabilizer_arm_4'
-    }, DFR.CloseMachinery)
-
-    return run({
-        'stabilizer_rotator'
-    }, DFR.StopMachinery)
+    return DFR.StartReactorMachineTimeline('stabilizer_shutdown', {})
 end
+
+DFR.DeployStartupMachinery = DFR.DeployReactorMachine
+DFR.RetractStartupMachinery = DFR.RetractReactorMachine
+DFR.ActivateStabilizerMachinery = DFR.ActivateReactorStabilizerMachine
+DFR.DeactivateStabilizerMachinery = DFR.DeactivateReactorStabilizerMachine
 
 function DFR.SetDirectorLensMachineryActive(active)
     local fn = active and DFR.StartMachinery or DFR.StopMachinery
