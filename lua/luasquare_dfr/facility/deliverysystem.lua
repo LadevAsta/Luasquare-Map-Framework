@@ -1,0 +1,2 @@
+-- This is where operator point (money) is spent.
+-- 

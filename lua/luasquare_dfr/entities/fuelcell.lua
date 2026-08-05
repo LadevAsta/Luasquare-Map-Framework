@@ -1,0 +1,1 @@
+-- This is scripted entity for Dark Fusion Fuel Cell.

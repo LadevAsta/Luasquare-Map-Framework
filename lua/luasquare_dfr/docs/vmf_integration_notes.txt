@@ -152,6 +152,188 @@ Catalyzers:
     The future names dark_fusion_catalysis, active_fuel_cycle_fire, and
     passive_fuel_cycle_initial_fire are reserved but are not registered yet.
 
+    [Info Update 8/6/26 0:16] 
+    I should clarify that :
+        Catalyzer system runs on Annihilation and Darkfusion Fuel
+        Catalyzer Power (Future implementation) influences how frequent or powerful catalyzer system is.
+        At Annihilation Stage, AN-Fuel are used to only ignite stellar.
+        At Darkfusion Stage, AN-Fuel are not used but Inserted Darkfusion Fuel will be and the way it is used up depends on Fuelcycle types:
+            - Active Fuel cycle, the system runs on intervals. when interval is hit, one of the six catalyzers that is not the recent one and have least heat is choosen, Triggering its Darkfusion Fuelcycle.
+                - Fuel efficient but creates huge reactivity spikes.
+                - Catalyzer power influences amount of fuel fired
+            - Passive Fuel cycle, upon switch to this mode, ALL Catalyzers primes once and take longer time to charge up. Then they fire a sustained beam until switched back to active or error occurs in any of them.
+                - Slightly less fuel efficient but more stable.
+                - Catalyzer power influences beam intensity
+
+        Catalyzers does not mainly transfer AN-Fuel(this is done by AN-fuel Injectors in Director Beam) but will consumes them on Annihilation ignition.
+        Catalyzers systematically transfers Darkfusion fuel into the core for reaction. further math and physics model is to be discussed.
+        My mental model is that the Core tries to consume as much Darkfusion fuel as possible with available 'momentum' provided by Influx inside then output outflux. Net-positive gain Darkfusion fuel causes Event horizon to expand and mainly will be caused by passive fuel cycle.
+        Outflux is routed by Director Beam system some will definitely be routed back to Influx, which might be controlled by Influx input (Probably a keypad or fine adjustment buttons).
+
+    gm_darkfusion Original CATALYZER ANIMATION :
+        It was built with logic_relays, spilt into two parts, Hull and Tip.
+        delay (seconds) : Targetnameconvention - Target_Input parameter (notes or new planned entities)
+        most animation are for timing with sound effects.
+        We must try to adapt this into our system.
+
+        Relay - Prime : (Warning state before anything, only Hull)
+            Hull :
+                delay 0 :
+                    alertsignalloop_timer Enable
+                        (for this signal loop, series of signal sprites, each are now using OnUser1 with their individual delays)
+                        (It will change this to simply 'sprite_signal FireUser1')
+                        (FireUser1 has to be fired with internal lua timer now, preferably 1/s until this timer is stopped)
+                        (We lose control of individual signal run speed this way but may still control colors)
+                    sndalert - Playsound
+
+        Relay - Windup : (charge up)
+            Hull : 
+                delay 0 :
+                    sndwindup - PlaySound
+                    prop_mdl_hull_platform - SetAnimation close
+                delay 4.5 :
+                    beamlow - TurnOn
+                    prop_mdl_hull_socket - SetAnimation close (New)
+            Tip :
+                delay 0 : 
+                    rotor_a - Start (this is the rotator mechanical part, it accelerate to max in this animation)
+                    rotor_b - Start
+                    prop_mdl_tip - SetAnimation close
+                    prop_mdl_tip_len - Skin 0
+                    sndcharge - PlaySound
+                delay 1 through 10 :
+                    sprite - SetScale 1,2,3,4,5,6,7,8,9,10 (multiple delay entires are used in original source output to simulate interpolating growing sprite scales, invent new functions?)
+
+
+        Relay - Fire : (Shoot beam)
+            Hull : 
+                delay 0 :
+                    beamhigh - TurnOn
+                    sndfire - PlaySound
+                    sprite - ShowSprite
+                    light - TurnOn
+            Tip :
+                delay 0 : 
+                    sndfire - PlaySound
+                    beamdark - TurnOn
+                    beamlight - TurnOn
+                    sndcharge - StopSound
+                    shake - StartShake
+                    sprite - SetScale 15
+                    RELAY_CORE_DF_REACT - Trigger (This is core energy pulse interrupt, does not involve in animating the catalyzer itself)
+                    prop_impact - TurnOn
+                    sprite_impact - ShowSprite
+
+        Relay - End : (End beam)
+            Hull :
+                delay 0 :
+                    beamhigh - TurnOff
+                    beamlow - TurnOff
+                    sndendfire - PlaySound
+                    sndfire - StopSound
+                    sprite - HideSprite
+                    sndwindup - StopSound
+                    light - TurnOff
+                    prop_mdl_hull_socket - SetAnimation open (New)
+            Tip :
+                delay 0 :
+                    sndend - PlaySound
+                    sndfire - StopSound
+                    beamlight - TurnOff
+                    beamdark - TurnOff
+                    shake - StopShake
+                    sprite - HideSprite
+                    sprite_impact - HideSprite
+                    prop_impact - TurnOff
+
+        Relay - Winddown : (Cooldown)
+            Hull :
+                delay 0 :
+                    alertsignalloop_timer - Disable (Stop lua's internal timer so no more FireUser1)
+                    sndalert - StopSound
+                    prop_mdl_hull_platform - SetAnimation open
+            Tip :
+                delay 0 :
+                    rotor_a - StopAtStartPos
+                    rotor_b - StopAtStartPos
+                    prop_mdl_tip - SetAnimation open
+                    prop_mdl_tip_len - Skin 1
+            Always leaves Catalyzer at IDLE state.
+
+        Relay - Darkfusion Fuelcycle : (Used in Active Fuelcycle when one of the catalyzer is choosen) (One chosen Catalyzer)
+            Hull :
+                delay 0 : Prime
+                delay 2 : Windup
+                delay 10 : Fire
+                delay 20 : End
+                delay 25 : Winddown
+            Tip :
+                delay 0 : Windup
+                delay 10 : Fire
+                delay 20 : End
+                delay 25 : Winddown
+            Leaves chosen Catalyzer at IDLE state.
+            *Windup delay mismatches between Hull and Tip is intentional.
+
+        (NEW) Animation - Annihilate (Pre-Annihilation to Annihilation Stage) (All six):
+            Hull :
+                delay 0 : Prime
+                delay 2 : Windup
+                delay 10 : Fire
+                delay 11 : End
+                delay 15 : Winddown
+            Tip :
+                delay 0 : Windup
+                delay 10 : Fire
+                delay 11 : End
+                delay 15 : Winddown
+            Leaves all Catalyzers at IDLE state.
+            *Windup delay mismatches between Hull and Tip is intentional.
+            **At 'Fire' precisely, ignites Annihilate stage immediately which followed by explosion of annihilation power, stellar formation and a bright lua effect when we figure that one out.
+
+        (NEW) Animation lifecycle - Passive Fuelcycle (Entry) (All six) :
+            Hull :
+                delay 0 : Prime
+                delay 10 : Windup
+                delay 20 : Fire
+            Tip :
+                delay 0 : Windup
+                delay 20 : Fire
+                delay 23 : beamdark - TurnOff
+            Shared :
+                delay 23 : stop all sounds then play looping sndpassivefire (shared 'allcatalyzers_tip_snd_passivefire')
+            Leaves all Catalyzers at SUSTAIN state.
+
+        (NEW) Animation lifecycle - Passive Fuelcycle (Exit) (All six) :
+            Hull :
+                delay 0 : Prime
+                delay 10 : End
+                delay 20 : Winddown
+            Tip :
+                delay 10 : End
+                delay 20 : Winddown
+            Shared :
+                delay 20 : sndpassivefire (shared 'allcatalyzers_tip_snd_passivefire') - StopSound
+            Leaves all Catalyzers at IDLE state.
+        
+        In original map, these relays are also triggered by other relays outside of catalyzer as well, such as startup sequence, catalysis sequence, etc.
+
+        I suggest that Prime, Windup, Fire, End and Winddown are defined timelines that catalyzer module can play when it is called by api so they will be exposed to outside modules like other reactor systems or control.
+        Higher relays like Darkfusion Fuelcycle should be defined right in the catalyzer and be exposed as well.
+        2 seperate timelines controls Hull and Tip. Two should be able to play at the same time alongside. api should be able to play one or defaultly both.
+        
+        I purpose new state model for catalyzers.
+            OFFLINE - System offline, Full-Maintenance is available.
+            IDLE - Powered but no Fuel inserted in assigned receptacle, not in action. Live-Maintenance is avaliable.
+            EXCITED - Powered and Fuel inserted in assigned receptacle, not in action. Live-Maintenance is available.
+            CHARGE - About to transition into ANNIHILATE, TRANSFER or SUSTAIN.
+            ANNIHILATE - Short state for transferring a bulk of AN-Fuel into core.
+            TRANSFER - Short state for transferring DF-Fuel into core.
+            SUSTAIN - Prolonged state for sustaining DF-Fuel level in the core.
+            PRECATALYSIS - Same as charge but much more powerful, about to transition into CATALYSIS.
+            CATALYSIS - Draw extreme amount of power and DF-Fuel from receptacle.
+        *Maintenance mechanics will be introduced later.
+
 Pre-annihilation procedure:
     pre_annihilation_begin is a MANUAL_STARTUP control. It requires an active
     stabilizer and director beam, four resolved stabilizer arms, and the configured
