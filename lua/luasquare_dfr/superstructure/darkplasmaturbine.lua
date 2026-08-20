@@ -1,0 +1,2 @@
+-- Dark Plasma Turbines generates conventional electricity for citadel's own demand and the excess will be exported as electrical power.
+-- Dark Plasma Turbine generates waste heat when operational.

@@ -1,6 +1,19 @@
 DFR = DFR or {}
 DFR.Catalyzers = DFR.Catalyzers or {}
 
+-- Reactor Darkfusion Catalyzers
+-- These are cannons that transfer darkfusion fuel into the actual reactor core.
+-- Closely work with attached fuel receptacle.
+-- Many catalyzers can use same one receptacle.
+-- In Active Fuel Cycle, the most-ready (Least system heat then longest time since last fire) catalyzer will fire on set interval
+-- Catalyzer deliver large gulp of fuel point into the core per seconds in a short fire time until it cease.
+-- In Passive Fuel Cycle, all intact catalyzers fire fuel into the core at lower intensity than Active although with less final resource efficiency and slightly worse wear and tear.
+-- All Catalyzers will each delivers set constant fuel point into the core
+
+-- When catalyzer is transferring fuel into the core, it will take away available yield in the fuel cell of the receptacle until none is left or until condition of the cell is failed.
+-- Yield gives fuel point to the core.
+-- Catalyzer also read other attributes of the fuel. and systematically transmit that data to the core for further physics calculation.
+
 local Catalyzer = {}
 Catalyzer.__index = Catalyzer
 

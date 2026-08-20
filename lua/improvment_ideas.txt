@@ -1,4 +1,4 @@
-Put idea here.
+Put idea or next working changes here.
 
 Improve 3d2display placement experience. [prototype implemented]
     Mapper could name their info_target something like 'DISPLAY512x256_dfr_status_panel', and place and orient the info_target correctly so that it resides on canva's upper left corner(already a feature) and the local z gizmo point upward from display's normal and local x gizmo point along the display width.
@@ -9,3 +9,51 @@ Improve 3d2display placement experience. [prototype implemented]
         - DISPLAY512x256_ means a 512x256 Hammer-unit surface.
         - Canvas size is derived from the scale factor, so DISPLAY512x256_ at default scale 0.1 becomes 5120x2560 canvas pixels.
         - Explicit bootstrap width/height/unitWidth/unitHeight/scale values still override or refine the targetname metadata.
+
+Expand 3d2display functionality and architecture
+    [3d2display.lua has been moved and renamed to engine.lua in 3d2display folder in luasquare_module!]
+    Displays config will now be saved as sharable 'source file' packable with the map.
+    It will read 3d2display source file (What kind of text file extension that is allowed by GMAD?)
+    Then it will build and place displays on map start or when asked to. (Discuss how it will 'build' or 'compile' them and into what)
+
+    The display will have 2 'buildmodes'. Simple which is the current line-based system and Complex which will be compatible with the following :
+        - Multiple pages / tabs
+        - Multiple Elements in one page
+            - Each element are independently scaled, placed and animated if it is.
+        - Element layering.
+        - Add image(texture/material) rendering.
+            - Texture animation (With internal timer switching defined textures, not actually using an animated vmt unless its possible)
+        - Optional input behavior (expensive?), it would have input/mouse detection, display cursor and only activate this behavior if a player is very nearby.
+        - These are initial elements I thought of :
+            - element LinePanel
+                - Multi-Lines architecture
+                - Text line, headers, etc.
+                - Graph.
+                - Material (for panel)
+            - element Material (panel independent)
+            - element SolidRectangle (scalable solid color for decoration purposes)
+            - element Annunciator (integrates with annunciator system)
+            - For element material, it can be animated by :
+                - Matching condition, (changing image, animation or hiding when some conditon is met)
+                - animation timer (flashing image, changing image...)
+            - For each elements, they may use 'global colors' which is a shared color scheme that may be changed at runtime (eg. lightblue theme changed to red during emergency.)
+            - For each elements, they may also have their own added color as well.
+            - For material, color means tinting the material?
+
+        - Added for simple buildmode display, it will now also have shared global color scheme with similar behavior with complex.
+
+Add toolkit for 3d2display creation, an in-game gui editor to create or edit a display source file.
+    It will also have data handling for displays, add option to save 3d2display config.
+    Tool can also override/replace some existing display with selected display for testing purpose.
+    And it will display preview.
+    in complex display it will :
+        - have right-click add element.
+        - have 2d Scaling box for elements.
+        - can move elements by dragging them around the canvas. have snapping with other elements if snap is enabled.
+        - have inspector tab to edit the current selected element.
+        - can switch current editing page/tab.
+
+    in simple display it will :
+        - have right-click add line
+        - have inspector tab to edit the current selected line
+        - can reorder lines via up/down button atop the inspector

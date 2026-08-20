@@ -1,0 +1,4 @@
+-- Dark Plasma Nodes acts as provider node for other systems that want to use Dark Plasma as energy.
+-- A node can be flagged as Endpoint, endpoint node actively export excess darkplasma up to maximum capacity, after that it dumps them into heavens or space.
+-- Dark Plasma Nodes and Turbines are attached to Dark Plasma Director Beam of the reactor.
+-- The Dark Plasma Director Beam decides which one to supply first then the next will have what's remain as available power to pull and so on and so fourth...

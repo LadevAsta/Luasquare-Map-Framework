@@ -15,5 +15,14 @@
 -- 2. receptacle slowly move away the item to original offseted point before detaching it automatically. This will give the SENT a 20 seconds cooldown before it could run checks to be attached to any receptacles again.
 
 -- receptacle should also be able to :
--- 1. optionally detach item prior to insertion
--- 2. stream the item's data to assigned 3D2D display if there is one.
+-- 1. stream the item's data to assigned 3D2D display if there is one.
+-- 2. optionally entfire env_sprite to change their color to tell status. 
+    -- Red = Locked and none inserted
+    -- Yellow = Unlocked and none inserted
+    -- Lightblue = Unlocked and have item
+    -- Green = Locked and have item
+    -- Teal = Other system indicates that it is actively working on the inserted item, it is usually locked at this time.
+-- 3. optionally entfire func_door to have them open if unlocked and no item and close if locked and no item
+-- 4. optionally timer entfire env_sprite to have them blink (blinking = moving or other system tells it to blink)
+-- 5. Make the attached item ignore physgun.
+-- 6. detach item prior to insertion click when there is gravity gun punt.

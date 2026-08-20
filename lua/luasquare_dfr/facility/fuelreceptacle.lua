@@ -1,7 +1,7 @@
 -- This module will wrap itemreceptacle.lua
 -- Add some functions to itself.
 
--- Varient : Darkfusion Fuel Cell Receptacle (Corechamber, DEFER)
+-- Varient : Darkfusion Fuel Cell Receptacle (Corechamber, TFSC)
 -- Accepts inactive and active darkfusion fuelcells.
 -- Active darkfusion fuel workflow (Corechamber, One receptacle is linked to TWO catalyzers (12,34,56)):
 -- 1. Bring in and insert active Darkfusion Fuel cell. (Enrichment > 50%)
@@ -12,12 +12,15 @@
 -- 3. Excitation lever is locked outside of emergencies after initial excitation. If safety override A is enabled in control room, this is unlocked.
 -- 4. When darkfusion fuelcell is depleted (Enrichment < 10%) unlock excitation lever.
 -- 5. Operator comes and eject the fuel cell by disabling the excitation and extract the cell.
--- Inactive darkfusion fuel workflow (DEFER, One receptacle is linked to one Tower system)
+-- Inactive darkfusion fuel workflow (TFSC, One receptacle is linked to one Tower system)
 -- 1. Bring in and insert inactive Darkfusion Fuel cell.
+-- 2. Excitation is not needed, tell TFSC that the fuel is ready.
+-- 3. TFSC start working, and lock the receptacle
+-- Keeping Fuel Excited constantly consumes electrical power. if not enough power, trigger a violent rejection (Quickly eject the fuel cell and explode it).
 
--- Varient : Fissile Booster Receptacle (DEFER)
+-- Varient : Fissile Booster Receptacle (TFSC)
 -- Accepts RBMK Fuel Rods.
--- Can insert and extract freely but is locked if DEFER is working.
+-- Can insert and extract freely but is locked if TFSC is working.
 -- This is used to increase product darkfusion fuelcell's stats such as yield(or max enrichment%), reactivity, purity half-life.
 
 -- Varient : Meta-Positive Stasis Cell Receptacle (Catalyzer Hulls)
