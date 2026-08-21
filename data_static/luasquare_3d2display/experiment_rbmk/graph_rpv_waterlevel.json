@@ -1,0 +1,6 @@
+{
+  "schema": "luasquare.3d2display/v1", "id": "graph_rpv_waterlevel", "buildMode": "simple",
+  "target": "tar_display_graph_rpv_waterlevel", "unitWidth": 34, "unitHeight": 19, "scale": 0.1,
+  "themeGroup": "rbmk", "padding": 10, "lineHeight": 18,
+  "lines": [{"type": "graph", "id": "rpv_waterlevel", "label": "RPV WATER", "value": {"provider": "rbmk.graphs", "path": "waterPercent"}, "min": 0, "max": 100, "seconds": 60, "height": 144, "decimals": 0, "unit": "%", "color": [80, 180, 255, 255], "thresholds": [{"value": 10, "label": "LOW", "color": [255, 95, 95, 255]}, {"value": 80, "label": "NOM", "color": [110, 255, 150, 255]}]}]
+}

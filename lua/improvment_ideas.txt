@@ -10,7 +10,7 @@ Improve 3d2display placement experience. [prototype implemented]
         - Canvas size is derived from the scale factor, so DISPLAY512x256_ at default scale 0.1 becomes 5120x2560 canvas pixels.
         - Explicit bootstrap width/height/unitWidth/unitHeight/scale values still override or refine the targetname metadata.
 
-Expand 3d2display functionality and architecture
+Expand 3d2display functionality and architecture [implemented in luasquare.3d2display/v1]
     [3d2display.lua has been moved and renamed to engine.lua in 3d2display folder in luasquare_module!]
     Displays config will now be saved as sharable 'source file' packable with the map.
     It will read 3d2display source file (What kind of text file extension that is allowed by GMAD?)
@@ -42,7 +42,7 @@ Expand 3d2display functionality and architecture
 
         - Added for simple buildmode display, it will now also have shared global color scheme with similar behavior with complex.
 
-Add toolkit for 3d2display creation, an in-game gui editor to create or edit a display source file.
+Add toolkit for 3d2display creation, an in-game gui editor to create or edit a display source file. [implemented]
     It will also have data handling for displays, add option to save 3d2display config.
     Tool can also override/replace some existing display with selected display for testing purpose.
     And it will display preview.
@@ -57,3 +57,10 @@ Add toolkit for 3d2display creation, an in-game gui editor to create or edit a d
         - have right-click add line
         - have inspector tab to edit the current selected line
         - can reorder lines via up/down button atop the inspector
+
+Implementation note:
+    Sources are JSON under data_static/luasquare_3d2display. They compile into validated
+    in-memory render trees and never generate or execute Lua. Live values and actions are
+    supplied through named server registrations. Interaction is crosshair raycasting plus
+    Use rather than mouse capture. Packed files remain read-only in the editor; draft export
+    goes to data/luasquare_3d2display/drafts/<map>/ for manual copying into the map addon.

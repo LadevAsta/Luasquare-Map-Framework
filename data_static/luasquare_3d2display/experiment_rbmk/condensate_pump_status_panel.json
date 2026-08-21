@@ -1,0 +1,11 @@
+{
+  "schema": "luasquare.3d2display/v1", "id": "condensate_pump_status_panel", "buildMode": "simple",
+  "target": "tar_display_coolingloop", "unitWidth": 54, "unitHeight": 33, "scale": 0.1,
+  "title": "COOLING LOOP", "themeGroup": "rbmk", "padding": 10, "lineHeight": 18, "titleHeight": 28,
+  "lines": [
+    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.cooling_loop", "path": "row1"}},
+    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.cooling_loop", "path": "row2"}},
+    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.cooling_loop", "path": "row3"}},
+    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.cooling_loop", "path": "row4"}}
+  ]
+}

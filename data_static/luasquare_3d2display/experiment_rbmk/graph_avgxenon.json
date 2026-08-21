@@ -1,0 +1,6 @@
+{
+  "schema": "luasquare.3d2display/v1", "id": "graph_avgxenon", "buildMode": "simple",
+  "target": "tar_display_graph_avgxenon", "unitWidth": 19, "unitHeight": 12, "scale": 0.1,
+  "themeGroup": "rbmk", "padding": 6, "lineHeight": 13, "font": "Luasquare3D2D_Small",
+  "lines": [{"type": "graph", "id": "average_xenon", "label": "AVG XENON", "value": {"provider": "rbmk.graphs", "path": "averageXenon"}, "min": 0, "max": 100, "seconds": 60, "height": 89, "decimals": 0, "unit": "%", "color": [190, 130, 255, 255], "yTicks": 2, "xTicks": 2}]
+}

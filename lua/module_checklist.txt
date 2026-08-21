@@ -10,7 +10,11 @@ Architecture rule:
 
 luasquare_module
     +existing modules.
-        3d2display.lua (3D2D operator displays, graph renderer, DISPLAYWxH_ target auto-dimensions) [existing / expanded]
+        3d2display/ (source compiler, server runtime, chunked networking, client renderers,
+            raycast interaction, graph history, shared themes, and admin editor) [implemented]
+            - v1 JSON supports Simple lines and Complex pages/layered elements.
+            - Packed sources live in map-owned data_static; editor drafts live in data/.
+            - Runtime values/actions are named server registrations, never source Lua.
         gaugedisplay.lua (Source entity gauge display driver) [existing]
         keypad_controller.lua (numeric keypad state and callbacks) [existing]
         seg7display.lua (skin-based pseudo 7-segment displays) [existing]

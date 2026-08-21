@@ -1,0 +1,32 @@
+{
+  "schema": "luasquare.3d2display/v1",
+  "kind": "theme_pack",
+  "group": "rbmk",
+  "defaultTheme": "normal",
+  "themes": {
+    "normal": {
+      "text": [205, 235, 240, 255],
+      "title": [255, 255, 255, 255],
+      "background": [3, 10, 12, 235],
+      "panel": [6, 18, 22, 235],
+      "border": [30, 163, 216, 230],
+      "accent": [80, 220, 160, 255],
+      "bar_background": [18, 32, 36, 240],
+      "warning": [255, 210, 70, 255],
+      "critical": [255, 95, 95, 255],
+      "inactive": [90, 110, 115, 255]
+    },
+    "emergency": {
+      "text": [255, 220, 210, 255],
+      "title": [255, 245, 240, 255],
+      "background": [30, 3, 3, 240],
+      "panel": [48, 7, 7, 235],
+      "border": [255, 70, 60, 245],
+      "accent": [255, 125, 65, 255],
+      "bar_background": [58, 12, 12, 245],
+      "warning": [255, 190, 55, 255],
+      "critical": [255, 255, 255, 255],
+      "inactive": [130, 75, 75, 255]
+    }
+  }
+}

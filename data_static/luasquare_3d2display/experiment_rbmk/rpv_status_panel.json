@@ -1,0 +1,16 @@
+{
+  "schema": "luasquare.3d2display/v1", "id": "rpv_status_panel", "buildMode": "simple",
+  "target": "tar_display_rpv", "unitWidth": 34, "unitHeight": 53, "scale": 0.1,
+  "title": "RPV STATUS", "themeGroup": "rbmk", "padding": 10, "lineHeight": 18, "titleHeight": 28,
+  "lines": [
+    {"type": "value", "label": "MWth", "value": {"provider": "rbmk.rpv", "path": "thermalMW"}, "decimals": 0},
+    {"type": "value", "label": "RPV Pressure", "value": {"provider": "rbmk.rpv", "path": "pressure"}, "decimals": 1, "unit": "bar", "warn": {"provider": "rbmk.rpv", "path": "pressureWarn"}},
+    {"type": "bar", "fraction": {"provider": "rbmk.rpv", "path": "pressureFraction"}, "height": 5},
+    {"type": "bar", "label": "Core Hold-up", "fraction": {"provider": "rbmk.rpv", "path": "waterFraction"}, "height": 5},
+    {"type": "value", "label": "Core Flow", "value": {"provider": "rbmk.rpv", "path": "coreFlow"}, "decimals": 0, "unit": "/s", "warn": {"provider": "rbmk.rpv", "path": "dryoutWarn"}},
+    {"type": "value", "label": "Natural Flow", "value": {"provider": "rbmk.rpv", "path": "naturalFlow"}, "decimals": 0, "unit": "/s"},
+    {"type": "value", "label": "Quality", "value": {"provider": "rbmk.rpv", "path": "qualityPercent"}, "decimals": 1, "unit": "%"},
+    {"type": "value", "label": "Void", "value": {"provider": "rbmk.rpv", "path": "voidPercent"}, "decimals": 1, "unit": "%"},
+    {"type": "bar", "label": "Dryout Risk", "fraction": {"provider": "rbmk.rpv", "path": "dryoutRisk"}, "height": 5, "warn": {"provider": "rbmk.rpv", "path": "dryoutWarn"}}
+  ]
+}

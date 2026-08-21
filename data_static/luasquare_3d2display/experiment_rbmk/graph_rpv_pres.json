@@ -1,0 +1,6 @@
+{
+  "schema": "luasquare.3d2display/v1", "id": "graph_rpv_pres", "buildMode": "simple",
+  "target": "tar_display_graph_rpv_pres", "unitWidth": 34, "unitHeight": 19, "scale": 0.1,
+  "themeGroup": "rbmk", "padding": 10, "lineHeight": 18,
+  "lines": [{"type": "graph", "id": "rpv_pressure", "label": "RPV PRESS", "value": {"provider": "rbmk.graphs", "path": "rpvPressure"}, "min": 0, "max": {"provider": "rbmk.graphs", "path": "catastrophicPressure"}, "seconds": 60, "height": 144, "decimals": 0, "unit": "bar", "color": [120, 220, 255, 255], "thresholds": {"provider": "rbmk.graphs", "path": "rpvThresholds"}}]
+}

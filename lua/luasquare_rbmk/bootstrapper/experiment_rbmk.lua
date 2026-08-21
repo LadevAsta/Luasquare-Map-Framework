@@ -32,7 +32,7 @@ return end
 -- =========================================
 
 include('luasquare_module/seg7display.lua') -- Pseudo 7-Segments numeric display
-include('luasquare_module/3d2display.lua') -- 3D2D Display
+include('luasquare_module/3d2display/engine.lua') -- Source-driven 3D2D displays
 include('luasquare_module/annunciator/annunciator.lua') -- Alarm annunciator system
 include('luasquare_module/gaugedisplay.lua') -- Gauge display
 include('luasquare_module/keypad_controller.lua') -- Numeric Keypads
@@ -918,71 +918,6 @@ end)
 -- 3D2D PANEL DISPLAYS FUNCTION
 -- =========================================
 
--- width/height are Hammer units. At scale 0.1, a 44x22 HU panel gets a 440x220 pixel canvas.
-local MAPDEF_panelScale = 0.1
-
-local function MAPDEF_panelBase(title, pos, width, height, angle)
-    local data
-    if type(title) == 'table' then
-        data = title
-    else
-        data = {
-            title = title,
-            pos = pos,
-            width = width,
-            height = height,
-            ang = angle
-        }
-    end
-
-    local displayWidth = data.width or 1
-    local displayHeight = data.height or 1
-    local displayAngle = data.ang or data.angle
-    local target = data.target or data.infoTarget
-    local posTarget = data.posTarget or data.positionTarget
-    local angleTarget = data.angleTarget or data.angTarget
-    local useTargetAngle = data.useTargetAngle
-    if useTargetAngle == nil then useTargetAngle = data.targetAngle end
-    if useTargetAngle == nil and (target or posTarget or (type(data.pos) == 'string' and not displayAngle)) then useTargetAngle = true end
-
-    local compact = displayHeight <= 16
-    return {
-        target = target,
-        posTarget = posTarget,
-        angleTarget = angleTarget,
-        useTargetAngle = useTargetAngle,
-        pos = data.pos,
-        ang = displayAngle,
-        offset = data.offset,
-        angleOffset = data.angleOffset or data.angOffset,
-        anchorX = data.anchorX,
-        anchorY = data.anchorY,
-        targetOrigin = data.targetOrigin,
-        anchor = data.anchor,
-        anchorMode = data.anchorMode,
-        origin = data.origin,
-        screenOrigin = data.screenOrigin,
-        centeredOnTarget = data.centeredOnTarget,
-        centerOnTarget = data.centerOnTarget,
-        targetCentered = data.targetCentered,
-        centered = data.centered,
-        scale = data.scale or MAPDEF_panelScale,
-        width = displayWidth,
-        height = displayHeight,
-        padding = data.padding or (compact and 6 or 10),
-        lineHeight = data.lineHeight or (compact and 13 or 18),
-        titleHeight = data.titleHeight or (compact and 18 or 28),
-        font = data.font or (compact and 'Luasquare3D2D_Small' or nil),
-        titleFont = data.titleFont or (compact and 'Luasquare3D2D_Line' or nil),
-        title = data.title,
-        backgroundColor = data.backgroundColor or Color(3, 10, 12, 235),
-        borderColor = data.borderColor or Color(30, 163, 216, 230),
-        textColor = data.textColor or Color(205, 235, 240),
-        titleColor = data.titleColor or Color(255, 255, 255),
-        barColor = data.barColor or Color(80, 220, 160)
-    }
-end
-
 local function MAPDEF_powerState(enabled)
     if enabled then return 'ON', Color(110, 255, 150) end
     return 'OFF', Color(255, 95, 95)
@@ -1184,119 +1119,53 @@ local function MAPDEF_pumpLoadMW(...)
     return total
 end
 
-local function MAPDEF_graphChartHeight(screenHeight)
-    local compact = screenHeight <= 16
-    local padding = compact and 6 or 10
-    local lineHeight = compact and 13 or 18
-    return math.max(math.floor(screenHeight / MAPDEF_panelScale - padding * 2 - lineHeight - 6), 32)
-end
-
-local function MAPDEF_registerGraphScreen(name, target, width, height, getter)
-    LUASQUARE_3D2D.RegisterDisplay(name, MAPDEF_panelBase({
-        target = target,
-        width = width,
-        height = height
-    }))
-
-    LUASQUARE_3D2D.BindDisplay(name, function()
-        return {getter(MAPDEF_graphChartHeight(height))}
-    end)
-end
-
 -- =========================================
--- 3D2D PANEL DISPLAYS REGISTER
+-- SOURCE-DRIVEN 3D2D DATA PROVIDERS
 -- =========================================
 
-LUASQUARE_3D2D.RegisterDisplay('fw_flow_panel', MAPDEF_panelBase({
-    title = 'FEEDWATER',
-    target = 'tar_display_feedwater',
-    width = 58,
-    height = 33
-}
-))
-LUASQUARE_3D2D.BindDisplay('fw_flow_panel', function()
+LUASQUARE_3D2D.RegisterDataProvider('rbmk.fw_flow', function()
     local separatorLevel = LUASQUARE_STEAMSEPARATOR.GetLevelPercent('main_steam_separator')
     return {
-        {
-            type = 'columns',
-            height = 64,
-            columns = {
-                MAPDEF_pumpColumn('FW PUMP A', 'feedwater_pump_a'),
-                MAPDEF_pumpColumn('FW PUMP B', 'feedwater_pump_b'),
-            }
+        row1 = {
+            MAPDEF_pumpColumn('FW PUMP A', 'feedwater_pump_a'),
+            MAPDEF_pumpColumn('FW PUMP B', 'feedwater_pump_b')
         },
-        {
-            type = 'columns',
-            height = 64,
-            columns = {
-                MAPDEF_levelTargetColumn('SEP TARGET', separatorLevel, MAPDEF_feedwaterTargetPercent),
-                MAPDEF_separatorColumn('SEPARATOR', 'main_steam_separator')
-            }
+        row2 = {
+            MAPDEF_levelTargetColumn('SEP TARGET', separatorLevel, MAPDEF_feedwaterTargetPercent),
+            MAPDEF_separatorColumn('SEPARATOR', 'main_steam_separator')
         },
-        {
-            type = 'columns',
-            height = 64,
-            columns = {
-                MAPDEF_pumpColumn('MCP A', 'main_circulation_pump_a'),
-                MAPDEF_pumpColumn('MCP B', 'main_circulation_pump_b')
-            }
+        row3 = {
+            MAPDEF_pumpColumn('MCP A', 'main_circulation_pump_a'),
+            MAPDEF_pumpColumn('MCP B', 'main_circulation_pump_b')
         }
     }
 end)
 
-LUASQUARE_3D2D.RegisterDisplay('condensate_pump_status_panel', MAPDEF_panelBase({
-    title = 'COOLING LOOP',
-    target = 'tar_display_coolingloop',
-    width = 54,
-    height = 33
-}))
-LUASQUARE_3D2D.BindDisplay('condensate_pump_status_panel', function()
+LUASQUARE_3D2D.RegisterDataProvider('rbmk.cooling_loop', function()
     return {
-        {
-            type = 'columns',
-            height = 64,
-            columns = {
-                MAPDEF_pumpColumn('COND PUMP A1', 'condensate_pump_a1'),
-                MAPDEF_pumpColumn('HW MAKEUP', 'hotwell_makeup_pump'),
-                MAPDEF_deaeratorColumn('DEAERATOR', 'main_deaerator'),
-                MAPDEF_networkColumn('HOTWELL', 'hotwell')
-            }
+        row1 = {
+            MAPDEF_pumpColumn('COND PUMP A1', 'condensate_pump_a1'),
+            MAPDEF_pumpColumn('HW MAKEUP', 'hotwell_makeup_pump'),
+            MAPDEF_deaeratorColumn('DEAERATOR', 'main_deaerator'),
+            MAPDEF_networkColumn('HOTWELL', 'hotwell')
         },
-        {
-            type = 'columns',
-            height = 64,
-            columns = {
-                MAPDEF_pumpColumn('CW PUMP', 'circulating_water_pump_a1'),
-                MAPDEF_pumpColumn('CW MAKEUP', 'cooling_water_makeup_pump'),
-                MAPDEF_networkColumn('CW LOOP', 'cooling_water')
-            }
+        row2 = {
+            MAPDEF_pumpColumn('CW PUMP', 'circulating_water_pump_a1'),
+            MAPDEF_pumpColumn('CW MAKEUP', 'cooling_water_makeup_pump'),
+            MAPDEF_networkColumn('CW LOOP', 'cooling_water')
         },
-        {
-            type = 'columns',
-            height = 64,
-            columns = {
-                MAPDEF_condenserColumn('CONDENSER', 'main_condenser'),
-                MAPDEF_coolingTowerColumn('COOLING TWR A', 'main_cooling_tower'),
-            }
+        row3 = {
+            MAPDEF_condenserColumn('CONDENSER', 'main_condenser'),
+            MAPDEF_coolingTowerColumn('COOLING TWR A', 'main_cooling_tower')
         },
-        {
-            type = 'columns',
-            height = 64,
-            columns = {
-                MAPDEF_valveColumn('HOTWELL DRN', 'hotwell_drain_valve'),
-                MAPDEF_valveColumn('RECIRC DRN', 'recirc_drain_valve')
-            }
+        row4 = {
+            MAPDEF_valveColumn('HOTWELL DRN', 'hotwell_drain_valve'),
+            MAPDEF_valveColumn('RECIRC DRN', 'recirc_drain_valve')
         }
     }
 end)
 
-LUASQUARE_3D2D.RegisterDisplay('deaerator_status_panel', MAPDEF_panelBase({
-    title = 'DEAERATOR',
-    target = 'tar_display_deaerator',
-    width = 44,
-    height = 39
-}))
-LUASQUARE_3D2D.BindDisplay('deaerator_status_panel', function()
+LUASQUARE_3D2D.RegisterDataProvider('rbmk.deaerator', function()
     local deaerator = LUASQUARE_DEAERATOR.GetDeaerator('main_deaerator') or {}
     local level = 0
     if (deaerator.maxAmount or 0) > 0 then level = math.Clamp((deaerator.amount or 0) / deaerator.maxAmount, 0, 1) end
@@ -1304,53 +1173,45 @@ LUASQUARE_3D2D.BindDisplay('deaerator_status_panel', function()
     if (deaerator.hardMaxPressure or 0) > 0 then pressureFraction = math.Clamp((deaerator.pressure or 0) / deaerator.hardMaxPressure, 0, 1) end
     local temperatureFraction = math.Clamp(((deaerator.temperature or 20) - 20) / math.max((deaerator.highTemperature or 120) - 20, 1), 0, 1)
     return {
-        { type = 'value', label = 'Mode', value = deaerator.autoRegulator and 'AUTO' or 'MAN' },
-        { type = 'bar', label = 'Level', fraction = level, height = 5, warn = deaerator.flooded },
-        { type = 'value', label = 'Pressure', value = deaerator.pressure or 0, decimals = 2, unit = 'bar', warn = (deaerator.pressure or 0) >= (deaerator.highPressure or 10) },
-        { type = 'bar', fraction = pressureFraction, height = 5 },
-        { type = 'value', label = 'Vapor Space', value = deaerator.steamAmount or 0, decimals = 0, unit = 'LPS' },
-        { type = 'value', label = 'Temperature', value = deaerator.temperature or 0, decimals = 0, unit = 'C', warn = (deaerator.temperature or 0) >= (deaerator.highTemperature or 120) },
-        { type = 'bar', fraction = temperatureFraction, height = 5 },
-        { type = 'value', label = 'Steam Valve', value = (deaerator.steamValve or 0) * 100, decimals = 0, unit = '%' },
-        { type = 'value', label = 'Vapor Relief', value = (deaerator.reliefValve or 0) * 100, decimals = 0, unit = '%' },
-        { type = 'value', label = 'Water Overflow', value = (deaerator.overflowValve or 0) * 100, decimals = 0, unit = '%' },
-        { type = 'value', label = 'Overflow Flow', value = deaerator.lastOverflowFlow or 0, decimals = 0, unit = '/s' },
-        { type = 'value', label = 'LPS Draw', value = deaerator.lastSteamUsed or 0, decimals = 0, unit = '/s' }
+        mode = deaerator.autoRegulator and 'AUTO' or 'MAN',
+        level = level,
+        flooded = deaerator.flooded and true or false,
+        pressure = deaerator.pressure or 0,
+        pressureHigh = (deaerator.pressure or 0) >= (deaerator.highPressure or 10),
+        pressureFraction = pressureFraction,
+        steamAmount = deaerator.steamAmount or 0,
+        temperature = deaerator.temperature or 0,
+        temperatureHigh = (deaerator.temperature or 0) >= (deaerator.highTemperature or 120),
+        temperatureFraction = temperatureFraction,
+        steamValvePercent = (deaerator.steamValve or 0) * 100,
+        reliefValvePercent = (deaerator.reliefValve or 0) * 100,
+        overflowValvePercent = (deaerator.overflowValve or 0) * 100,
+        overflowFlow = deaerator.lastOverflowFlow or 0,
+        steamUsed = deaerator.lastSteamUsed or 0
     }
 end)
 
-LUASQUARE_3D2D.RegisterDisplay('rpv_status_panel', MAPDEF_panelBase({
-    title = 'RPV STATUS',
-    pos = 'tar_display_rpv',
-    width = 34,
-    height = 53,
-}))
-LUASQUARE_3D2D.BindDisplay('rpv_status_panel', function()
+LUASQUARE_3D2D.RegisterDataProvider('rbmk.rpv', function()
     local waterFraction = 0
     if RBMK.MaxWater and RBMK.MaxWater > 0 then waterFraction = math.Clamp((RBMK.Water or 0) / RBMK.MaxWater, 0, 1) end
     local pressureFraction = 0
     if RBMK.RPVMaxPressure and RBMK.RPVMaxPressure > 0 then pressureFraction = math.Clamp((RBMK.RPVPressure or 0) / RBMK.RPVMaxPressure, 0, 1) end
-
     return {
-        { type = 'value', label = 'MWth', value = RBMK.LastThermalMW or 0, decimals = 0 },
-        { type = 'value', label = 'RPV Pressure', value = RBMK.RPVPressure or 0, decimals = 1, unit = 'bar', warn = pressureFraction > 0.85 },
-        { type = 'bar', fraction = pressureFraction, height = 5 },
-        { type = 'bar', label = 'Core Hold-up', fraction = waterFraction, height = 5 },
-        { type = 'value', label = 'Core Flow', value = RBMK.LastEffectiveCoreFlow or 0, decimals = 0, unit = '/s', warn = (RBMK.LastDryoutRisk or 0) > 0.6 },
-        { type = 'value', label = 'Natural Flow', value = RBMK.LastNaturalCirculationFlow or 0, decimals = 0, unit = '/s' },
-        { type = 'value', label = 'Quality', value = (RBMK.LastSteamQuality or 0) * 100, decimals = 1, unit = '%' },
-        { type = 'value', label = 'Void', value = (RBMK.LastVoidFraction or 0) * 100, decimals = 1, unit = '%' },
-        { type = 'bar', label = 'Dryout Risk', fraction = RBMK.LastDryoutRisk or 0, height = 5, warn = (RBMK.LastDryoutRisk or 0) > 0.6 }
+        thermalMW = RBMK.LastThermalMW or 0,
+        pressure = RBMK.RPVPressure or 0,
+        pressureFraction = pressureFraction,
+        pressureWarn = pressureFraction > 0.85,
+        waterFraction = waterFraction,
+        coreFlow = RBMK.LastEffectiveCoreFlow or 0,
+        naturalFlow = RBMK.LastNaturalCirculationFlow or 0,
+        qualityPercent = (RBMK.LastSteamQuality or 0) * 100,
+        voidPercent = (RBMK.LastVoidFraction or 0) * 100,
+        dryoutRisk = RBMK.LastDryoutRisk or 0,
+        dryoutWarn = (RBMK.LastDryoutRisk or 0) > 0.6
     }
 end)
 
-LUASQUARE_3D2D.RegisterDisplay('tg1_status_panel', MAPDEF_panelBase({
-    title = 'TURBINE A',
-    target = 'tar_display_tg1',
-    width = 44,
-    height = 33
-}))
-LUASQUARE_3D2D.BindDisplay('tg1_status_panel', function()
+LUASQUARE_3D2D.RegisterDataProvider('rbmk.tg1', function()
     local data = LUASQUARE_TURBINE.GetTurbine('tg1') or {}
     local generator = LUASQUARE_POWERGENERATOR.GetGenerator('tg1_generator') or {}
     local grid = LUASQUARE_POWERGRID.GetGrid('generator_grid') or {}
@@ -1359,181 +1220,91 @@ LUASQUARE_3D2D.BindDisplay('tg1_status_panel', function()
     local vibration = data.vibration or 0
     local tripVibration = math.max(data.tripVibration or 1, 0.0001)
     return {
-        { type = 'value', label = 'RPM', value = data.rpm or 0, decimals = 2 , unit = 'RPM'},
-        { type = 'value', label = 'Grid Frequency', value = grid.frequency or 0, decimals = 2, unit = 'Hz' },
-        { type = 'value', label = 'Sync Error', value = generator.lastPhaseError or 0, decimals = 1, unit = 'deg' },
-        { type = 'value', label = 'Turbine Valve', value = valve * 100, decimals = 1 },
-        { type = 'bar', fraction = valve, height = 5 },
-        { type = 'value', label = 'Bypass Valve', value = bypassValve * 100, decimals = 1 },
-        { type = 'bar', fraction = bypassValve, height = 5 },
-        { type = 'value', label = 'Exhaust Pressure', value = data.exhaustPressure or 0, decimals = 2, unit = 'bar', warn = (data.exhaustPressure or 0) >= (data.exhaustTripPressure or 0) },
-        { type = 'bar', fraction = (data.exhaustPressure or 0) / math.max(data.exhaustHardMaxPressure or 1, 0.0001), height = 5 },
-        { type = 'value', label = 'LPS To Deaerator', value = data.lastExhaustExtracted or 0, decimals = 0, unit = '/s' },
-        { type = 'value', label = 'Vibration', value = (vibration / tripVibration) * 100, decimals = 2, unit = '%'},
-        { type = 'bar', fraction = vibration / tripVibration, height = 5 },
-        { type = 'value', label = 'Generator Output', value = generator.lastAcceptedMW or data.lastMW or 0, decimals = 2, unit = 'MW', warn = (generator.lastAcceptedMW or 0) < 0 },
-        { type = 'value', label = 'Reverse Power', value = generator.lastReverseMW or 0, decimals = 2, unit = 'MW', warn = (generator.lastReverseMW or 0) > (generator.reversePowerTripMW or 0) },
+        rpm = data.rpm or 0,
+        frequency = grid.frequency or 0,
+        phaseError = generator.lastPhaseError or 0,
+        valve = valve,
+        valvePercent = valve * 100,
+        bypass = bypassValve,
+        bypassPercent = bypassValve * 100,
+        exhaustPressure = data.exhaustPressure or 0,
+        exhaustWarn = (data.exhaustPressure or 0) >= (data.exhaustTripPressure or 0),
+        exhaustFraction = (data.exhaustPressure or 0) / math.max(data.exhaustHardMaxPressure or 1, 0.0001),
+        extracted = data.lastExhaustExtracted or 0,
+        vibrationFraction = vibration / tripVibration,
+        vibrationPercent = (vibration / tripVibration) * 100,
+        generatorMW = generator.lastAcceptedMW or data.lastMW or 0,
+        reverseFlow = (generator.lastAcceptedMW or 0) < 0,
+        reverseMW = generator.lastReverseMW or 0,
+        reverseWarn = (generator.lastReverseMW or 0) > (generator.reversePowerTripMW or 0)
     }
 end)
 
-MAPDEF_registerGraphScreen('graph_rpv_pres', 'tar_display_graph_rpv_pres', 34, 19, function(graphHeight)
+LUASQUARE_3D2D.RegisterDataProvider('rbmk.graphs', function()
+    local waterPercent = 0
+    if RBMK.MaxWater and RBMK.MaxWater > 0 then
+        waterPercent = math.Clamp((RBMK.Water or 0) / RBMK.MaxWater, 0, 1) * 100
+    end
+    local deaerator = LUASQUARE_DEAERATOR.GetDeaerator('main_deaerator') or {}
+    local deaeratorPercent = 0
+    if (deaerator.maxAmount or 0) > 0 then
+        deaeratorPercent = math.Clamp((deaerator.amount or 0) / deaerator.maxAmount, 0, 1) * 100
+    end
+    local steamline = LUASQUARE_FLUID.GetNetwork('main_steam') or {}
     return {
-        type = 'graph',
-        id = 'rpv_pressure',
-        label = 'RPV PRESS',
-        value = RBMK.RPVPressure or 0,
-        min = 0,
-        max = RBMK.CatastrophicPressure or 140,
-        seconds = 60,
-        height = graphHeight,
-        decimals = 0,
-        unit = 'bar',
-        color = Color(120, 220, 255),
-        thresholds = {
+        rpvPressure = RBMK.RPVPressure or 0,
+        catastrophicPressure = RBMK.CatastrophicPressure or 140,
+        rpvThresholds = {
             { value = RBMK.RPVMaxPressure or 70, label = 'MAX', color = Color(255, 210, 70) },
             { value = RBMK.BlowoutPressure or 85, label = 'VENT', color = Color(255, 130, 80) },
             { value = RBMK.CatastrophicPressure or 140, label = 'FAIL', color = Color(255, 90, 90) }
-        }
+        },
+        waterPercent = waterPercent,
+        steamlinePressure = steamline.pressure or 0,
+        steamlineMaxPressure = steamline.maxPressure or 150,
+        deaeratorPercent = deaeratorPercent,
+        averageXenon = RBMK.AverageXenon or 0
     }
 end)
 
-MAPDEF_registerGraphScreen('graph_rpv_waterlevel', 'tar_display_graph_rpv_waterlevel', 34, 19, function(graphHeight)
-    local waterPercent = 0
-    if RBMK.MaxWater and RBMK.MaxWater > 0 then waterPercent = math.Clamp((RBMK.Water or 0) / RBMK.MaxWater, 0, 1) * 100 end
-    return {
-        type = 'graph',
-        id = 'rpv_waterlevel',
-        label = 'RPV WATER',
-        value = waterPercent,
-        min = 0,
-        max = 100,
-        seconds = 60,
-        height = graphHeight,
-        decimals = 0,
-        unit = '%',
-        color = Color(80, 180, 255),
-        thresholds = {
-            { value = 10, label = 'LOW', color = Color(255, 95, 95) },
-            { value = 80, label = 'NOM', color = Color(110, 255, 150) }
-        }
-    }
-end)
-
-MAPDEF_registerGraphScreen('graph_steamlinepres', 'tar_display_graph_steamlinepres', 34, 19, function(graphHeight)
-    local steamline = LUASQUARE_FLUID.GetNetwork('main_steam') or {}
-    return {
-        type = 'graph',
-        id = 'steamline_pressure',
-        label = 'STEAMLINE PRESS',
-        value = steamline.pressure or 0,
-        min = 0,
-        max = steamline.maxPressure or 150,
-        seconds = 60,
-        height = graphHeight,
-        decimals = 0,
-        unit = 'bar',
-        color = Color(255, 220, 90)
-    }
-end)
-
-MAPDEF_registerGraphScreen('graph_deaeratorlevel', 'tar_display_graph_deaeratorlevel', 34, 19, function(graphHeight)
-    local deaerator = LUASQUARE_DEAERATOR.GetDeaerator('main_deaerator') or {}
-    local level = 0
-    if (deaerator.maxAmount or 0) > 0 then level = math.Clamp((deaerator.amount or 0) / deaerator.maxAmount, 0, 1) * 100 end
-    return {
-        type = 'graph',
-        id = 'deaerator_level',
-        label = 'DEAERATOR LEVEL',
-        value = level,
-        min = 0,
-        max = 100,
-        seconds = 60,
-        height = graphHeight,
-        decimals = 0,
-        unit = '%',
-        color = Color(110, 255, 150),
-        thresholds = {
-            { value = 20, label = 'LOW', color = Color(255, 210, 70) },
-            { value = 70, label = 'OVF', color = Color(255, 130, 80) }
-        }
-    }
-end)
-
-MAPDEF_registerGraphScreen('graph_avgxenon', 'tar_display_graph_avgxenon', 19, 12, function(graphHeight)
-    return {
-        type = 'graph',
-        id = 'average_xenon',
-        label = 'AVG XENON',
-        value = RBMK.AverageXenon or 0,
-        min = 0,
-        max = 100,
-        seconds = 60,
-        height = graphHeight,
-        decimals = 0,
-        unit = '%',
-        color = Color(190, 130, 255),
-        yTicks = 2,
-        xTicks = 2
-    }
-end)
-
-LUASQUARE_3D2D.RegisterDisplay('electrical_status_panel', MAPDEF_panelBase({
-    title = 'ELECTRICALS',
-    target = 'tar_display_electricals',
-    width = 58,
-    height = 38,
-    lineHeight = 16
-}))
-LUASQUARE_3D2D.BindDisplay('electrical_status_panel', function()
+LUASQUARE_3D2D.RegisterDataProvider('rbmk.electrical', function()
     local stationGrid = LUASQUARE_POWERGRID.GetGrid('station_grid') or {}
     local load = stationGrid.lastLoadMW or 0
     local available = stationGrid.lastAvailableMW or 0
     local loadFraction = 0
     if available > 0 then loadFraction = math.Clamp(load / available, 0, 1.5) end
     local overload = load > math.max(available, 0.0001) * (stationGrid.overloadTripFraction or 1.15)
-
     return {
-        { type = 'value', label = 'Station Load', value = load, decimals = 1, unit = 'MW', warn = overload },
-        { type = 'value', label = 'Export Demand', value = (LUASQUARE_POWERGRID.GetGrid('export_grid') or {}).currentDemandMW or 0, decimals = 1, unit = 'MW' },
-        { type = 'bar', label = 'Load / Capacity', fraction = loadFraction, height = 5, warn = overload },
-        {
-            type = 'columns',
-            height = 64,
-            columns = {
-                MAPDEF_gridColumn('GEN BUS', 'generator_grid'),
-                MAPDEF_gridColumn('STATION', 'station_grid'),
-                MAPDEF_gridColumn('STARTUP', 'startup_grid'),
-                MAPDEF_gridColumn('EXPORT', 'export_grid')
-            }
+        load = load,
+        exportDemand = (LUASQUARE_POWERGRID.GetGrid('export_grid') or {}).currentDemandMW or 0,
+        loadFraction = loadFraction,
+        overload = overload,
+        row1 = {
+            MAPDEF_gridColumn('GEN BUS', 'generator_grid'),
+            MAPDEF_gridColumn('STATION', 'station_grid'),
+            MAPDEF_gridColumn('STARTUP', 'startup_grid'),
+            MAPDEF_gridColumn('EXPORT', 'export_grid')
         },
-        {
-            type = 'columns',
-            height = 64,
-            columns = {
-                MAPDEF_transformerColumn('START XFMR', 'startup_station_transformer'),
-                MAPDEF_transformerColumn('GEN XFMR', 'station_generator_transformer'),
-                MAPDEF_transformerColumn('EXPORT XFMR', 'generator_export_transformer'),
-                MAPDEF_gridColumn('CTRL UPS', 'control_room_grid')
-            }
+        row2 = {
+            MAPDEF_transformerColumn('START XFMR', 'startup_station_transformer'),
+            MAPDEF_transformerColumn('GEN XFMR', 'station_generator_transformer'),
+            MAPDEF_transformerColumn('EXPORT XFMR', 'generator_export_transformer'),
+            MAPDEF_gridColumn('CTRL UPS', 'control_room_grid')
         },
-        {
-            type = 'columns',
-            height = 64,
-            columns = {
-                MAPDEF_generatorColumn('TG1 GEN', 'tg1_generator'),
-                MAPDEF_generatorColumn('EDG1 GEN', 'edg1_generator'),
-                MAPDEF_dieselColumn('EDG1', 'edg1'),
-                {
-                    label = 'PUMP LOAD',
-                    value = string.format('%.1fMW', MAPDEF_pumpLoadMW('feedwater_pump_a', 'feedwater_pump_b', 'main_circulation_pump_a', 'main_circulation_pump_b', 'condensate_pump_a1', 'circulating_water_pump_a1')),
-                    sub = 'FW + COND + CW',
-                    color = Color(205, 235, 240),
-                    valueColor = Color(110, 255, 150)
-                }
+        row3 = {
+            MAPDEF_generatorColumn('TG1 GEN', 'tg1_generator'),
+            MAPDEF_generatorColumn('EDG1 GEN', 'edg1_generator'),
+            MAPDEF_dieselColumn('EDG1', 'edg1'),
+            {
+                label = 'PUMP LOAD',
+                value = string.format('%.1fMW', MAPDEF_pumpLoadMW('feedwater_pump_a', 'feedwater_pump_b', 'main_circulation_pump_a', 'main_circulation_pump_b', 'condensate_pump_a1', 'circulating_water_pump_a1')),
+                sub = 'FW + COND + CW',
+                color = Color(205, 235, 240),
+                valueColor = Color(110, 255, 150)
             }
         }
     }
-end)
+end, {interval = 0.2})
 
 -- =========================================
 -- OPERATOR INTERFACES

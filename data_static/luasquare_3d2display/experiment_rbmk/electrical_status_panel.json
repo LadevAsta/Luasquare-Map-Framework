@@ -1,0 +1,13 @@
+{
+  "schema": "luasquare.3d2display/v1", "id": "electrical_status_panel", "buildMode": "simple",
+  "target": "tar_display_electricals", "unitWidth": 58, "unitHeight": 38, "scale": 0.1,
+  "title": "ELECTRICALS", "themeGroup": "rbmk", "padding": 10, "lineHeight": 16, "titleHeight": 28,
+  "lines": [
+    {"type": "value", "label": "Station Load", "value": {"provider": "rbmk.electrical", "path": "load"}, "decimals": 1, "unit": "MW", "warn": {"provider": "rbmk.electrical", "path": "overload"}},
+    {"type": "value", "label": "Export Demand", "value": {"provider": "rbmk.electrical", "path": "exportDemand"}, "decimals": 1, "unit": "MW"},
+    {"type": "bar", "label": "Load / Capacity", "fraction": {"provider": "rbmk.electrical", "path": "loadFraction"}, "height": 5, "warn": {"provider": "rbmk.electrical", "path": "overload"}},
+    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.electrical", "path": "row1"}},
+    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.electrical", "path": "row2"}},
+    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.electrical", "path": "row3"}}
+  ]
+}

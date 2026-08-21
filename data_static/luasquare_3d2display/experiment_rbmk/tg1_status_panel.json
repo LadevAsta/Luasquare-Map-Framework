@@ -1,0 +1,21 @@
+{
+  "schema": "luasquare.3d2display/v1", "id": "tg1_status_panel", "buildMode": "simple",
+  "target": "tar_display_tg1", "unitWidth": 44, "unitHeight": 33, "scale": 0.1,
+  "title": "TURBINE A", "themeGroup": "rbmk", "padding": 10, "lineHeight": 18, "titleHeight": 28,
+  "lines": [
+    {"type": "value", "label": "RPM", "value": {"provider": "rbmk.tg1", "path": "rpm"}, "decimals": 2, "unit": "RPM"},
+    {"type": "value", "label": "Grid Frequency", "value": {"provider": "rbmk.tg1", "path": "frequency"}, "decimals": 2, "unit": "Hz"},
+    {"type": "value", "label": "Sync Error", "value": {"provider": "rbmk.tg1", "path": "phaseError"}, "decimals": 1, "unit": "deg"},
+    {"type": "value", "label": "Turbine Valve", "value": {"provider": "rbmk.tg1", "path": "valvePercent"}, "decimals": 1, "unit": "%"},
+    {"type": "bar", "fraction": {"provider": "rbmk.tg1", "path": "valve"}, "height": 5},
+    {"type": "value", "label": "Bypass Valve", "value": {"provider": "rbmk.tg1", "path": "bypassPercent"}, "decimals": 1, "unit": "%"},
+    {"type": "bar", "fraction": {"provider": "rbmk.tg1", "path": "bypass"}, "height": 5},
+    {"type": "value", "label": "Exhaust Pressure", "value": {"provider": "rbmk.tg1", "path": "exhaustPressure"}, "decimals": 2, "unit": "bar", "warn": {"provider": "rbmk.tg1", "path": "exhaustWarn"}},
+    {"type": "bar", "fraction": {"provider": "rbmk.tg1", "path": "exhaustFraction"}, "height": 5},
+    {"type": "value", "label": "LPS To Deaerator", "value": {"provider": "rbmk.tg1", "path": "extracted"}, "decimals": 0, "unit": "/s"},
+    {"type": "value", "label": "Vibration", "value": {"provider": "rbmk.tg1", "path": "vibrationPercent"}, "decimals": 2, "unit": "%"},
+    {"type": "bar", "fraction": {"provider": "rbmk.tg1", "path": "vibrationFraction"}, "height": 5},
+    {"type": "value", "label": "Generator Output", "value": {"provider": "rbmk.tg1", "path": "generatorMW"}, "decimals": 2, "unit": "MW", "warn": {"provider": "rbmk.tg1", "path": "reverseFlow"}},
+    {"type": "value", "label": "Reverse Power", "value": {"provider": "rbmk.tg1", "path": "reverseMW"}, "decimals": 2, "unit": "MW", "warn": {"provider": "rbmk.tg1", "path": "reverseWarn"}}
+  ]
+}

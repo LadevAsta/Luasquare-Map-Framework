@@ -1,0 +1,6 @@
+{
+  "schema": "luasquare.3d2display/v1", "id": "graph_deaeratorlevel", "buildMode": "simple",
+  "target": "tar_display_graph_deaeratorlevel", "unitWidth": 34, "unitHeight": 19, "scale": 0.1,
+  "themeGroup": "rbmk", "padding": 10, "lineHeight": 18,
+  "lines": [{"type": "graph", "id": "deaerator_level", "label": "DEAERATOR LEVEL", "value": {"provider": "rbmk.graphs", "path": "deaeratorPercent"}, "min": 0, "max": 100, "seconds": 60, "height": 144, "decimals": 0, "unit": "%", "color": [110, 255, 150, 255], "thresholds": [{"value": 20, "label": "LOW", "color": [255, 210, 70, 255]}, {"value": 70, "label": "OVF", "color": [255, 130, 80, 255]}]}]
+}

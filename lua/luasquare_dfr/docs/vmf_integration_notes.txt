@@ -6,6 +6,7 @@ Purpose:
 
 Bootstrap calls:
     include('luasquare_dfr/init.lua')
+    include('luasquare_module/3d2display/engine.lua')
 
     -- Optional but recommended for testing the current gm_darkfusion_v2 armature targetnames.
     DFR.RegisterDefaultReactorMachineLayout()
@@ -17,8 +18,20 @@ Bootstrap calls:
     DFR.RegisterManualStartupControls()
     DFR.RegisterPreAnnihilationProcedure()
 
-    -- Existing telemetry registration can remain map-owned.
+    -- Registers named display providers/actions before the display runtime starts.
+    DFR.RegisterDefaultTelemetryDisplays()
+    LUASQUARE_3D2D.Start()
     DFR.Start()
+
+3D2D display sources:
+    The gm_darkfusion_v2 addon owns its packed JSON under:
+        data_static/luasquare_3d2display/gm_darkfusion_v2/
+    DISPLAY160x80_r_1 is the Simple startup screen.
+    DISPLAY512x256_mainscreen_m is the Complex reference display with shared
+    Facility, Core, Startup, and Catalyzers pages. Its tabs and named actions use
+    crosshair raycasting plus Use and are revalidated by the server.
+    Packed sources are read-only. Editor drafts export under Garry's Mod data/
+    and must be copied into the map addon before GMAD packing.
 
     RegisterDefaultReactorMachineLayout schedules a forced retraction ten seconds
     later so newly spawned tracktrains settle at their retracted endpoints.

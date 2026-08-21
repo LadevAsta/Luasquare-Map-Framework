@@ -13,7 +13,7 @@ Luasquare began as an RBMK-style reactor experiment, but it is now a broader map
 | --- | --- |
 | RBMK simulation | Grid-based reactor layouts; four-direction neutron-flux propagation; fuel, xenon, heat, control rods, automatic regulation, vessel water/steam, recirculation, pressure, integrity, leaks, blowouts, SCRAM, and failure handling |
 | Balance of plant | Fluid networks, pumps, valves, heat exchangers, steam separators, condensers, deaerators, cooling towers, turbines, generators, diesel generators, electrical grids, breakers, and transformers |
-| Map modules | 3D2D displays and graphs, skin-based seven-segment displays, gauges, numeric keypads, annunciators, control bindings, Source entity bindings, and movable-machinery helpers |
+| Map modules | Source-driven Simple/Complex 3D2D displays, graphs, themes, raycast interaction and editor; skin-based seven-segment displays; gauges; numeric keypads; annunciators; control bindings; Source entity bindings; and movable-machinery helpers |
 | Dark Fusion Reactor | A staged reactor framework with startup controls, resource state, VMF bindings, machinery, independently animated core visuals, reusable timelines, six-catalyzer sequencing, telemetry, debug controls, and a guarded simulation tick |
 | Development tools | Client-side RBMK and plant overlays, DFR admin controls in the spawn menu, bundled annunciator/display assets, and asset-generation scripts |
 | Reference content | The playable `experiment_rbmk` BSP, its editable VMF source, an LRBMKP-400 layout, and a complete map-specific RBMK bootstrap |
@@ -37,6 +37,7 @@ garrysmod/
 `-- addons/
     `-- luasquare_map_framework/
         |-- lua/
+        |-- data_static/
         |-- maps/
         |-- materials/
         |-- models/
@@ -77,7 +78,7 @@ include('luasquare_module/cleanup.lua')
 if LUASQUARE_MY_MAP_SIM_INITIALIZED then return end
 
 include('luasquare_module/seg7display.lua')
-include('luasquare_module/3d2display.lua')
+include('luasquare_module/3d2display/engine.lua')
 include('luasquare_module/annunciator/annunciator.lua')
 include('luasquare_powerplant/init.lua')
 include('luasquare_rbmk/init.lua')
@@ -119,21 +120,76 @@ Keep VMF targetnames and map coordinates in the map's bootstrap. Reusable behavi
 
 For a real integration example, see [`lua/luasquare_rbmk/bootstrapper/experiment_rbmk.lua`](lua/luasquare_rbmk/bootstrapper/experiment_rbmk.lua). The reactor grid itself is defined separately in [`lua/luasquare_rbmk/layouts/LRBMKP-400.lua`](lua/luasquare_rbmk/layouts/LRBMKP-400.lua).
 
-## Displays and Hammer naming
+## Source-driven 3D2D displays
 
-The 3D2D module can derive panel dimensions from an `info_target` name:
+Display layout is declarative JSON, while live values and actions remain named, server-authoritative Lua registrations. Include the engine, register every provider/action referenced by the current map, and call `Start()` after those registrations:
+
+```lua
+include('luasquare_module/3d2display/engine.lua')
+
+LUASQUARE_3D2D.RegisterDataProvider('plant.status', function()
+    return {powerMW = PLANT.PowerMW or 0, online = PLANT.Online and true or false}
+end, {interval = 0.2})
+
+LUASQUARE_3D2D.RegisterAction('plant.scram', {
+    cooldown = 1,
+    callback = function(actor, display, page, element, context)
+        return PLANT.SCRAM(actor)
+    end
+})
+
+LUASQUARE_3D2D.Start()
+```
+
+Store one display per file under:
+
+```text
+data_static/luasquare_3d2display/<map>/<display_id>.json
+```
+
+Theme packs are shared from `data_static/luasquare_3d2display/_themes/*.json`. `data_static` is packable by GMAD and sources are read through Garry's Mod's `GAME` search path, allowing a map addon to own its layouts while this addon owns the runtime.
+
+The current schema is `luasquare.3d2display/v1`. Simple displays contain the existing ordered `lines`; Complex displays contain stable pages and layered elements (`LinePanel`, `Material`, `SolidRectangle`, and `Annunciator`). Provider references are explicit objects:
+
+```json
+{
+  "provider": "plant.status",
+  "path": "powerMW",
+  "default": 0
+}
+```
+
+Sources cannot contain Lua or console commands. Actions similarly reference only IDs registered through `RegisterAction`. Conditions support `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `truthy`, `all`, `any`, and `not`; the first matching variant wins. See [the 3D2D authoring guide](lua/luasquare_module/3d2display/README.md) and the [RBMK JSON examples](data_static/luasquare_3d2display/experiment_rbmk).
+
+The runtime can derive physical panel dimensions from an `info_target` name:
 
 ```text
 DISPLAY512x256_reactor_status
 ```
 
-`512x256` is the surface size in Hammer units, not the canvas resolution. At the default `0.1` scale, that surface produces a `5120x2560` canvas. Place the target at the upper-left corner of the panel, with local X following the panel width and local Z pointing away from the display surface. Explicit dimensions and scale in the bootstrap override the name metadata.
+`512x256` is the surface size in Hammer units, not the canvas resolution. At the default `0.1` scale, that surface produces a `5120x2560` canvas. Place the target at the upper-left corner of the panel, with local X following the panel width and local Z pointing away from the display surface. Explicit source metrics override the targetname metadata.
+
+Complex displays share their selected page between players. Opt-in interaction projects the player's crosshair onto the display plane; pressing Use selects a tab or invokes a named action. The server repeats range, plane, line-of-sight, active-page, visibility, cooldown, and action authorization checks.
+
+Static compiled layouts are sent as compressed, revisioned chunks. Subsequent traffic contains changed provider values, page/theme state, annunciators, and graph samples rather than a full display table. Server graph history initializes late joiners, while material animation uses a synchronized epoch without continuous frame traffic.
+
+### In-game display editor
+
+Open `Spawn Menu -> Options -> Luasquare -> 3D2D Display Editor`. It is available to single-player or admins and provides source/page/element hierarchy, Simple line ordering, Complex drag/resize placement, grid and sibling snapping, layer editing, material/frame/condition fields, undo/redo, validation, 2D preview, theme simulation, and temporary runtime replacement.
+
+Packed `data_static` sources open read-only. **Save draft** writes canonical JSON to the exact path shown by the editor:
+
+```text
+garrysmod/data/luasquare_3d2display/drafts/<map>/<display_id>.json
+```
+
+Copy the finished draft into the map addon's matching `data_static` directory before packing. Clearing preview, disconnecting, cleanup, or reloading sources restores the packed definition.
 
 The framework also includes:
 
 - Skin-driven pseudo seven-segment models with digits, blank, and minus states.
 - Source-entity gauges driven by registered getter functions.
-- Server-authored 3D2D text, bar, and graph displays replicated to clients.
+- Source-authored 3D2D text, bars, graphs, materials, pages, and annunciators backed by server data providers.
 - Alarm annunciators with active, acknowledged, muted, reset, and re-alarm behavior.
 
 ## Debugging
@@ -146,7 +202,7 @@ Spawn Menu -> Options -> Luasquare
 
 The **RBMK Framework** and **Powerplant Framework** panels control client-side world overlays and filters. Registered components need `monitorPos`, a named monitor target, or reactor world-position data to appear in the appropriate overlay.
 
-The **Dark Fusion Reactor** panel exposes development controls for state changes, binding validation, machinery, core radii and animation, timelines, and individual catalyzer inspection. These commands are restricted to single-player, admins, and the server console. They are test tools, not player-facing reactor controls. The DFR remains a work in progress.
+The **Dark Fusion Reactor** panel exposes development controls for state changes, binding validation, machinery, core radii and animation, timelines, and individual catalyzer inspection. The **3D2D Display Editor** creates and previews JSON display sources. Both are restricted to single-player/admin use. They are development tools, not player-facing reactor controls. The DFR remains a work in progress.
 
 ## Repository layout
 
@@ -157,6 +213,7 @@ lua/
 |-- luasquare_powerplant/    Fluid, thermal, turbine, generator, and grid systems
 |-- luasquare_rbmk/          RBMK core simulation, layouts, and example bootstrap
 `-- luasquare_dfr/           DFR runtime, reactor, procedure, presentation, and superstructure modules
+data_static/                 Packable JSON display and theme sources
 maps/                        Compiled reference map and editable VMF source
 materials/, models/, sound/ Bundled control-room and environmental assets
 tools/                       Annunciator model/material generation scripts

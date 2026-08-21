@@ -1,0 +1,7 @@
+{
+  "schema": "luasquare.3d2display/v1",
+  "id": "gmad_fixture",
+  "buildMode": "simple",
+  "target": "DISPLAY16x8_gmad_fixture",
+  "lines": [{"type": "text", "text": "GMAD JSON fixture"}]
+}

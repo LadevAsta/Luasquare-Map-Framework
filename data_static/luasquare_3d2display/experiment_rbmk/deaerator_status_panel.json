@@ -1,0 +1,19 @@
+{
+  "schema": "luasquare.3d2display/v1", "id": "deaerator_status_panel", "buildMode": "simple",
+  "target": "tar_display_deaerator", "unitWidth": 44, "unitHeight": 39, "scale": 0.1,
+  "title": "DEAERATOR", "themeGroup": "rbmk", "padding": 10, "lineHeight": 18, "titleHeight": 28,
+  "lines": [
+    {"type": "value", "label": "Mode", "value": {"provider": "rbmk.deaerator", "path": "mode"}},
+    {"type": "bar", "label": "Level", "fraction": {"provider": "rbmk.deaerator", "path": "level"}, "warn": {"provider": "rbmk.deaerator", "path": "flooded"}, "height": 5},
+    {"type": "value", "label": "Pressure", "value": {"provider": "rbmk.deaerator", "path": "pressure"}, "decimals": 2, "unit": "bar", "warn": {"provider": "rbmk.deaerator", "path": "pressureHigh"}},
+    {"type": "bar", "fraction": {"provider": "rbmk.deaerator", "path": "pressureFraction"}, "height": 5},
+    {"type": "value", "label": "Vapor Space", "value": {"provider": "rbmk.deaerator", "path": "steamAmount"}, "decimals": 0, "unit": "LPS"},
+    {"type": "value", "label": "Temperature", "value": {"provider": "rbmk.deaerator", "path": "temperature"}, "decimals": 0, "unit": "C", "warn": {"provider": "rbmk.deaerator", "path": "temperatureHigh"}},
+    {"type": "bar", "fraction": {"provider": "rbmk.deaerator", "path": "temperatureFraction"}, "height": 5},
+    {"type": "value", "label": "Steam Valve", "value": {"provider": "rbmk.deaerator", "path": "steamValvePercent"}, "decimals": 0, "unit": "%"},
+    {"type": "value", "label": "Vapor Relief", "value": {"provider": "rbmk.deaerator", "path": "reliefValvePercent"}, "decimals": 0, "unit": "%"},
+    {"type": "value", "label": "Water Overflow", "value": {"provider": "rbmk.deaerator", "path": "overflowValvePercent"}, "decimals": 0, "unit": "%"},
+    {"type": "value", "label": "Overflow Flow", "value": {"provider": "rbmk.deaerator", "path": "overflowFlow"}, "decimals": 0, "unit": "/s"},
+    {"type": "value", "label": "LPS Draw", "value": {"provider": "rbmk.deaerator", "path": "steamUsed"}, "decimals": 0, "unit": "/s"}
+  ]
+}

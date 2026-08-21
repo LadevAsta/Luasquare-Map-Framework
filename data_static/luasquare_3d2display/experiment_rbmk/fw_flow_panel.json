@@ -1,0 +1,10 @@
+{
+  "schema": "luasquare.3d2display/v1", "id": "fw_flow_panel", "buildMode": "simple",
+  "target": "tar_display_feedwater", "unitWidth": 58, "unitHeight": 33, "scale": 0.1,
+  "title": "FEEDWATER", "themeGroup": "rbmk", "padding": 10, "lineHeight": 18, "titleHeight": 28,
+  "lines": [
+    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.fw_flow", "path": "row1"}},
+    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.fw_flow", "path": "row2"}},
+    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.fw_flow", "path": "row3"}}
+  ]
+}
