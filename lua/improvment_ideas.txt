@@ -64,3 +64,12 @@ Implementation note:
     supplied through named server registrations. Interaction is crosshair raycasting plus
     Use rather than mouse capture. Packed files remain read-only in the editor; draft export
     goes to data/luasquare_3d2display/drafts/<map>/ for manual copying into the map addon.
+
+
+Optimize 3d2d Graph Renderer.
+- Reference client history without copying it.
+- Replace front-removal with a head-index/ring buffer.
+- Decimate samples to at most one or two points per horizontal pixel.
+- Cache graph geometry or render it to a fixed-size render target only when a sample or style changes.
+- Keep the cached result as one textured draw during normal frames.
+- Avoid rebuilding bounds when explicit min and max are configured.

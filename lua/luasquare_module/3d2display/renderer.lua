@@ -30,19 +30,23 @@ local function lineColor(display, line)
     return line.color or display.textColor or color_white
 end
 
+local function drawLineText(_, _, text, font, x, y, color, alignX, alignY)
+    return draw.SimpleText(tostring(text or ''), font, x, y, color, alignX, alignY)
+end
+
 local function drawTextLine(display, line, x, y, width)
     local alignment = line.align == 'center' and TEXT_ALIGN_CENTER
         or (line.align == 'right' and TEXT_ALIGN_RIGHT or TEXT_ALIGN_LEFT)
     local drawX = alignment == TEXT_ALIGN_CENTER and x + width * 0.5
         or (alignment == TEXT_ALIGN_RIGHT and x + width or x)
-    draw.SimpleText(tostring(line.text or line.label or ''), line.font or display.font or 'Luasquare3D2D_Line',
+    drawLineText(display, line, tostring(line.text or line.label or ''), line.font or display.font or 'Luasquare3D2D_Line',
         drawX, y, lineColor(display, line), alignment, TEXT_ALIGN_TOP)
 end
 
 local function drawValueLine(display, line, x, y, width)
     local font = line.font or display.font or 'Luasquare3D2D_Line'
-    draw.SimpleText(tostring(line.label or ''), font, x, y, lineColor(display, line), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-    draw.SimpleText(formatValue(line.value, line.decimals, line.unit), font, x + width, y,
+    drawLineText(display, line, tostring(line.label or ''), font, x, y, lineColor(display, line), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+    drawLineText(display, line, formatValue(line.value, line.decimals, line.unit), font, x + width, y,
         line.valueColor or lineColor(display, line), TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
 end
 
@@ -60,11 +64,12 @@ local function drawColumnsLine(display, line, x, y, width, lineHeight)
         surface.DrawRect(left, y, math.max(columnWidth, 1), columnHeight)
         surface.SetDrawColor(column.borderColor or display.borderColor)
         surface.DrawOutlinedRect(left, y, math.max(columnWidth, 1), columnHeight, 1)
-        draw.SimpleText(tostring(column.label or ''), font, left + 6, y + 5, column.color or display.textColor, TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-        draw.SimpleText(tostring(column.value or '--'), column.valueFont or display.titleFont, center, y + 24,
-            column.valueColor or column.color or display.titleColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
-        draw.SimpleText(tostring(column.sub or ''), column.subFont or 'Luasquare3D2D_Small', center, y + columnHeight - 18,
-            column.subColor or display.textColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+        drawLineText(display, line, tostring(column.label or ''), font, left + 6, y + 5, column.color or display.textColor,
+            TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 'text_center')
+        drawLineText(display, line, tostring(column.value or '--'), column.valueFont or display.titleFont, center, y + 24,
+            column.valueColor or column.color or display.titleColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 'text_center')
+        drawLineText(display, line, tostring(column.sub or ''), column.subFont or 'Luasquare3D2D_Small', center, y + columnHeight - 18,
+            column.subColor or display.textColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 'text_center')
     end
 end
 
@@ -93,9 +98,9 @@ local function drawPhaseLine(display, line, x, y, width, lineHeight)
     local fraction = range ~= 0 and math.Clamp((value - minimum) / range, 0, 1) or 0.5
     local barY = y + math.floor(lineHeight * 0.9)
     local height = tonumber(line.height) or 10
-    draw.SimpleText(tostring(line.label or line.text or 'PHASE'), font, x, y,
+    drawLineText(display, line, tostring(line.label or line.text or 'PHASE'), font, x, y,
         lineColor(display, line), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
-    draw.SimpleText(formatValue(value, line.decimals, line.unit), font, x + width, y,
+    drawLineText(display, line, formatValue(value, line.decimals, line.unit), font, x + width, y,
         line.valueColor or display.textColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
     surface.SetDrawColor(line.backgroundColor or display.barBackgroundColor)
     surface.DrawRect(x, barY, width, height)
@@ -128,10 +133,12 @@ local function drawGraphLine(display, line, x, y, width, lineHeight)
     local chartHeight = tonumber(line.height) or math.max(lineHeight * 5, 90)
     local chartY = y
     if line.label or line.text then
-        draw.SimpleText(tostring(line.label or line.text), font, x, y, lineColor(display, line), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP)
+        drawLineText(display, line, tostring(line.label or line.text), font, x, y, lineColor(display, line),
+            TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, 'text_center')
         local first = (line.series or {})[1] or {}
-        draw.SimpleText(formatValue(first.value or line.value, line.decimals or first.decimals, line.unit or first.unit),
-            font, x + width, y, first.color or line.valueColor or display.textColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP)
+        drawLineText(display, line, formatValue(first.value or line.value, line.decimals or first.decimals, line.unit or first.unit),
+            font, x + width, y, first.color or line.valueColor or display.textColor,
+            TEXT_ALIGN_RIGHT, TEXT_ALIGN_TOP, 'text_center')
         chartY = y + lineHeight
     end
     surface.SetDrawColor(line.backgroundColor or display.barBackgroundColor)
@@ -165,8 +172,9 @@ local function drawGraphLine(display, line, x, y, width, lineHeight)
             surface.SetDrawColor(threshold.color or Color(255, 210, 70))
             surface.DrawLine(plotX, ty, plotX + plotWidth, ty)
             if threshold.label then
-                draw.SimpleText(tostring(threshold.label), line.axisFont or 'Luasquare3D2D_Small',
-                    plotX + plotWidth - 2, ty - 1, threshold.color or display.textColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM)
+                drawLineText(display, line, tostring(threshold.label), line.axisFont or 'Luasquare3D2D_Small',
+                    plotX + plotWidth - 2, ty - 1, threshold.color or display.textColor,
+                    TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, 'text_center')
             end
         end
     end
@@ -191,16 +199,16 @@ local function drawGraphLine(display, line, x, y, width, lineHeight)
             local fraction = index / yTicks
             local value = maximum - (maximum - minimum) * fraction
             local ty = plotY + plotHeight * fraction
-            draw.SimpleText(formatValue(value, line.decimals, line.unit), axisFont, plotX - 3, ty,
-                axisColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+            drawLineText(display, line, formatValue(value, line.decimals, line.unit), axisFont, plotX - 3, ty,
+                axisColor, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER, 'text_center')
         end
     end
     if showXAxis then
         for index = 0, xTicks do
             local fraction = index / xTicks
             local remaining = -math.floor(seconds * (1 - fraction) + 0.5)
-            draw.SimpleText(tostring(remaining) .. 's', axisFont, plotX + plotWidth * fraction,
-                plotY + plotHeight + 2, axisColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+            drawLineText(display, line, tostring(remaining) .. 's', axisFont, plotX + plotWidth * fraction,
+                plotY + plotHeight + 2, axisColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP, 'text_center')
         end
     end
     surface.SetDrawColor(line.borderColor or display.borderColor)

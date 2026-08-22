@@ -273,6 +273,7 @@ local function normalizeLine(source, path, diagnostics)
         addDiagnostic(diagnostics, 'error', path .. '.type', 'unknown line type: ' .. line.type)
     end
     line.id = DISPLAY.NormalizeId(line.id or string.gsub(path, '[^%w]+', '_'))
+    line.fontScale = nil
     line.variants = normalizeVariants(line.variants, path .. '.variants', diagnostics)
     if line.visibleWhen ~= nil then validateCondition(line.visibleWhen, path .. '.visibleWhen', diagnostics) end
     walkDynamic(line, path, diagnostics)
@@ -337,6 +338,8 @@ local function normalizeElement(source, path, order, diagnostics)
     element.width = number(element.width or element.w, 64, 1, 100000)
     element.height = number(element.height or element.h, 32, 1, 100000)
     element.z = math.floor(number(element.z, 0, -10000, 10000))
+    element.fontScale = nil
+    element.titleFontScale = nil
     element.order = order
     element.variants = normalizeVariants(element.variants, path .. '.variants', diagnostics)
     if element.visibleWhen ~= nil then validateCondition(element.visibleWhen, path .. '.visibleWhen', diagnostics) end
@@ -484,6 +487,7 @@ local function compileDisplay(source, origin, diagnostics)
         lineHeight = number(source.lineHeight, 16, 1, 4096),
         titleHeight = number(source.titleHeight, 28, 0, 4096),
         tabHeight = number(source.tabHeight, 24, 8, 4096),
+        showPageTabs = source.showPageTabs ~= false,
         drawBackground = source.drawBackground ~= false,
         drawBorder = source.drawBorder ~= false,
         font = source.font,

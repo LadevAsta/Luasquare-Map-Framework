@@ -40,7 +40,15 @@ local function encode(payload)
     return util.Compress(json)
 end
 
+local function hasBroadcastRecipients()
+    return #_G.player.GetHumans() > 0
+end
+
 local function sendChunked(message, payload, recipient, maximumBytes)
+    -- Map bootstrap and cleanup can publish state before the listen-server
+    -- host has a player entity. There is nothing to deliver in that window;
+    -- the normal initial snapshot supplies the complete state after joining.
+    if recipient == nil and not hasBroadcastRecipients() then return true end
     local compressed = encode(payload)
     if not compressed then return false end
     if #compressed > (maximumBytes or MAX_SNAPSHOT_BYTES) then
@@ -68,6 +76,7 @@ function DISPLAY.SendSnapshot(player)
 end
 
 function DISPLAY.BroadcastSnapshot()
+    if not hasBroadcastRecipients() then return true end
     return sendChunked(DISPLAY.Net.Snapshot, DISPLAY.GetSnapshot(), nil, MAX_SNAPSHOT_BYTES)
 end
 
@@ -80,6 +89,7 @@ function DISPLAY.BroadcastDelta(delta)
     if not hasEntries(delta.providers) and not hasEntries(delta.pages)
         and not hasEntries(delta.themes) and not hasEntries(delta.annunciators)
         and #(delta.graphSamples or {}) == 0 then return false end
+    if not hasBroadcastRecipients() then return true end
     local sent = sendChunked(DISPLAY.Net.Delta, delta, nil, MAX_DELTA_BYTES)
     if not sent then DISPLAY.BroadcastSnapshot() end
     return sent

@@ -249,7 +249,8 @@ function DISPLAY.PointInRect(x, y, rect)
 end
 
 function DISPLAY.GetTabRects(display)
-    if not display or display.buildMode ~= 'complex' or #(display.pages or {}) <= 1 then
+    if not display or display.showPageTabs == false
+        or display.buildMode ~= 'complex' or #(display.pages or {}) <= 1 then
         return {}
     end
     local tabs = {}

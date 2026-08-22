@@ -134,7 +134,14 @@ Complex elements use canvas-space `x`, `y`, `width`, `height`, and integer `z`. 
 - `SolidRectangle`: background or decoration.
 - `Annunciator`: named `LUASQUARE_ANNUNCIATOR` alarm state.
 
-Multiple pages produce a built-in tab strip. Page state is shared and server-authoritative.
+Multiple pages produce a built-in tab strip. Set `showPageTabs` to `false` to
+hide the strip and remove its raycast hit regions while retaining page changes
+through `SetDisplayPage`, cycle helpers, or Hammer buttons. Page state is shared
+and server-authoritative.
+
+Per-display, panel, title, and individual-line font scaling is currently
+unsupported. Text renders at the registered Garry's Mod font size. Legacy
+`fontScale` and `titleFontScale` source fields are accepted but ignored.
 
 ## Conditions and variants
 
@@ -232,4 +239,21 @@ Cycling wraps by default. Pass `false` as the third argument of the next or
 previous helper to clamp at the first/last page. Raycast interaction remains
 opt-in even when a display contains multiple pages or named actions.
 
-The spawnmenu editor is under `Options -> Luasquare -> 3D2D Display Editor`. Packed sources open read-only. Save a draft to edit, then use Preview to temporarily replace the selected runtime display while retaining its physical target, transform, and dimensions. Restore clears it explicitly; disconnect, cleanup, runtime stop, or source reload also restores packed state.
+The spawnmenu editor is under `Options -> Luasquare -> 3D2D Display Editor`.
+Packed sources open read-only. Save a draft to edit. The editor preserves tree
+expansion and synchronizes viewport selection, cycles through overlapping
+elements from the highest layer downward, and provides context-menu clipboard,
+layer, duplication, and deletion operations. Grid size and sibling snapping are
+stored with each source.
+
+The structured inspector includes provider/action selection, color and theme
+tokens, VMT browsing and frame ordering, material tint, basic variants, and
+interaction controls. Advanced JSON remains available for nested or extension
+data. The Preview window temporarily replaces a runtime display while retaining
+its physical placement; Restore clears it explicitly.
+Disconnect, cleanup, runtime stop, or source reload also restores packed state.
+
+The Themes window opens packed theme packs read-only and saves editable drafts
+under `data/luasquare_3d2display/drafts/_themes/`. Its working theme is simulated
+only in the editor viewport. Copy the completed JSON into
+`data_static/luasquare_3d2display/_themes/` before packing.

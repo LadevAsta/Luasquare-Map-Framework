@@ -19,7 +19,8 @@ local clientFiles = {
     'luasquare_module/3d2display/elements.lua',
     'luasquare_module/3d2display/network_client.lua',
     'luasquare_module/3d2display/interaction_client.lua',
-    'luasquare_module/3d2display/editor.lua'
+    'luasquare_module/3d2display/editor.lua',
+    'luasquare_module/3d2display/theme_editor.lua'
 }
 
 if SERVER then

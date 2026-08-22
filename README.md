@@ -175,7 +175,7 @@ Static compiled layouts are sent as compressed, revisioned chunks. Subsequent tr
 
 ### In-game display editor
 
-Open `Spawn Menu -> Options -> Luasquare -> 3D2D Display Editor`. It is available to single-player or admins and provides source/page/element hierarchy, Simple line ordering, Complex drag/resize placement, grid and sibling snapping, layer editing, material/frame/condition fields, undo/redo, validation, 2D preview, theme simulation, and temporary runtime replacement.
+Open `Spawn Menu -> Options -> Luasquare -> 3D2D Display Editor`. It is available to single-player or admins and provides synchronized hierarchy/viewport selection, overlap cycling, context-menu clipboard and layer operations, Complex drag/resize placement, independent grid and sibling snapping, structured color/material/provider/action/variant controls, undo/redo, validation, theme simulation, and temporary runtime replacement. Optional per-line/title font scaling and hidden page tabs are supported by the same v1 source schema.
 
 Packed `data_static` sources open read-only. **Save draft** writes canonical JSON to the exact path shown by the editor:
 
@@ -184,6 +184,11 @@ garrysmod/data/luasquare_3d2display/drafts/<map>/<display_id>.json
 ```
 
 Copy the finished draft into the map addon's matching `data_static` directory before packing. Clearing preview, disconnecting, cleanup, or reloading sources restores the packed definition.
+
+The editor's Themes window creates reusable theme-pack drafts under
+`garrysmod/data/luasquare_3d2display/drafts/_themes/`. Packed theme sources are
+read-only until saved as drafts; the window validates them and simulates the
+working colors in the display viewport without changing the server runtime.
 
 The framework also includes:
 
