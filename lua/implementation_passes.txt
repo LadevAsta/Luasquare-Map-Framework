@@ -92,13 +92,20 @@ Update 3d2d Function, Editor function & UI.
 - Editor viewport
     - The resizing knob thing at the bottom right should have highest priority and override hitstack. clicking/dragging the knob will always be resizing rather than selecting something else.
     - Clicking or dragging the highlighted border of the element should have higher priority and override hitstack, dragging will ensure the element will be moved rather than selecting something else. 
+- Display functions
+    - Definable customizable Exposed variable for other component to modify in runtime. (Such as timeline)
+        - Elements can choose to use these exposed variable for their own properties (RGBA coloring).
+        - Used with condition, element visual animation.
+    - Is it possible to rotate displayed material? If it is, make it so that editor can rotate and element visual animation to be able to rotate it in degrees/s.
+    - Is it possible for 3d2d to even modify source material proxies?
 
 Switch Timeline Engine architecture to JSON based.
     - Clean-Discard the existing system.
-    - New system should utilize timeline defined in JSON. Repeatable component such as catalyzer.lua that want to utilizes timeline will load 'default' timeline file(s), unless a custom one is told to it at bootstrap.
+    - New system should utilize timeline defined in JSON. Repeatable component such as catalyzer.lua that really want to utilize timeline will load 'default' timeline file(s), unless a custom one is told to it at bootstrap.
     - Timeline json can be created, edited and saved in data. Using in-game editor that may also preview. Accessible in singleplayer only.
     - In-game editor should :
-        - Query and list available components.
+        - Query and list available components. (Machinery, Reactor machine, Catalyzers, A 3d2d display, Direct source map entities such as button)
+        - Query and list subcomponent if its a luasquare component (eg. Catalyzer's )
         - Have a scrollable timeline with multiple addable tracks. A track can be muted during preview.
         - Drag and drop an animatable component, clicking component on the timeline open inspector that lets you choose its action when playhead hit it.
         - Ability to play a synced sound alongside the choreography preview. (eg. music intended to be synced)
@@ -106,6 +113,30 @@ Switch Timeline Engine architecture to JSON based.
         - Some component(or subcomponent in the component) have enable/disable state, they may be resized on the timeline to extend/shrink duration. (eg. show for a duration then hide env_sprite class on a component)
         - Some component(or subcomponent in the component) can have setvalue. In the case of setvalue, timeline may interpolate the set value (linear, etc) from first value to second value at the end of the component. The callback during interpolation is per timeline-tick.
     - Technical limitation is to be discussed in planning pass (Such as whether or not the game can 'pause' a sound or change it effective volume while its playing).
+
+Implement Luasquare SoundscapeAndRegulatedSoundwave.
+    - Soundscape controller
+        - This system directly interface with map's named env_soundscape.
+        - State-based system. When a state is told, it switch there and disable all connected soundscapes and enable soundscape for that state.
+        - Affect all env_soundscape with same name.
+    - Subtitler.
+        - Subtitler will draw a box and text on player's hud when this player heard a sound somewhere that have defined a subtitle with this system.
+        - Box and text will fade in and animated with subtle 'slide up'.
+        - The text will fade away after the sound is stopped (query sound duration before showing and fading.)
+        - Box will fade away and animated with subtle 'slide down' when there are no text displayed.
+        - If there are another subtitled sound coming up while another text is taking place in the subtitle box, it pushes up the previous text and expand box as needed.
+        - There can only be client-configurable 3 subtitle text on the box, the oldest text above limit is fade away immediately.
+        - Think of it being very similar to Half-Life-2 subtitles.
+        - Some subtitle text can be special (Being red text, bold text, overridden font and size, animated glitchy effect.)
+        - Subtitle can have speaker's name, show as [speaker's name]: [defined line]
+    - Regulated Soundwave (AKA. Background Music controller)
+        - This system can be told by other component to play/pause/regulate/stop background music to the player's ear. Sound will be affected by both game's volume setting and its own volume slider.
+        - Not only limited to music type of sounds, also support sounds that is intended to play globally as well similarly to ambient_generic. (Sound that physically exist, affected by DSP unlike music.)
+        - Can also be used to handle any localized sound at a position on demand although this is not the main use.
+        - Active subtitled sound will immediately reduce 'music' volume by a percentage. (Behavior can be disabled optionally)
+        - Music played via Regulated Soundwave system may be different from how sound from ambient_generic are handled? (The ones thats not affected by DSP)
+            - So they could get paused properly or even speed up or slow down while they are playing if possible.
+        - Sound that is considered a Music pauses when the system detect that the server is paused or singleplayer game pause, to prevent most-probable accidental auditory timeline desyncs.
 
 
 Seperate Singleplayer/Admin game experience and Development environment.
