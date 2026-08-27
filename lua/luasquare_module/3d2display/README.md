@@ -13,7 +13,15 @@ LUASQUARE_3D2D.RegisterDataProvider('example.reactor', function()
         power = REACTOR.PowerMW,
         pressure = REACTOR.PressureBar
     }
-end, {interval = 0.2})
+end, {
+    interval = 0.2,
+    label = 'Example reactor',
+    fields = {
+        {path = 'state', type = 'string', label = 'State'},
+        {path = 'power', type = 'number', label = 'Power'},
+        {path = 'pressure', type = 'number', label = 'Pressure'}
+    }
+})
 
 LUASQUARE_3D2D.RegisterAction('example.scram', {
     label = 'SCRAM reactor',
@@ -56,6 +64,10 @@ Copy approved drafts into the map addon's `data_static` tree before running GMAD
   "target": "DISPLAY64x32_reactor_status",
   "scale": 0.1,
   "themeGroup": "plant",
+  "variables": {
+    "alert_level": {"type": "number", "default": 0, "min": 0, "max": 100, "decimals": 1},
+    "alert_color": {"type": "color", "default": "@accent"}
+  },
   "title": "REACTOR STATUS",
   "lines": [
     {
@@ -143,7 +155,7 @@ Per-display, panel, title, and individual-line font scaling is currently
 unsupported. Text renders at the registered Garry's Mod font size. Legacy
 `fontScale` and `titleFontScale` source fields are accepted but ignored.
 
-## Conditions and variants
+## Conditions and display variables
 
 A condition is a provider/path binding with `op` and optional `value`:
 
@@ -158,20 +170,46 @@ A condition is a provider/path binding with `op` and optional `value`:
 
 Operators are `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, and `truthy`. Compose conditions with `all`, `any`, or `not`.
 
-`visibleWhen` controls base visibility. `variants` are checked in source order and only the first matching `set` is applied:
+Use an ordered `conditions` array on an element or line. Every rule is evaluated.
+Its `apply` branch is used when true and its optional `otherwise` branch when
+false. Later rules override earlier rules for the same property, and every
+render begins from the immutable base definition:
 
 ```json
 {
-  "variants": [
+  "conditions": [
     {
-      "when": {"provider": "example.reactor", "path": "trip", "op": "truthy"},
-      "set": {"borderColor": "@critical", "flashSeconds": 0.5}
+      "id": "critical_pressure",
+      "when": {"provider": "example.reactor", "path": "pressure", "op": "gte", "value": 70},
+      "apply": {"borderColor": "@critical", "flashEnabled": true},
+      "otherwise": {"flashEnabled": false}
     }
   ]
 }
 ```
 
-Variants may change visibility, material/frames, animation timing, tint, or colors. Material paths are normalized and reject traversal, URLs, absolute paths, and unsupported characters.
+Legacy `variants` and `visibleWhen` remain loadable and produce migration
+warnings. The editor converts them to `conditions`, and saved drafts contain
+only the new representation. Conditions may change visibility, material/frames,
+animation controls, tint, or colors. Material paths are normalized and reject
+traversal, URLs, absolute paths, and unsupported characters.
+
+Bindings may read a variable owned by the current display:
+
+```json
+{"variable": "alert_level"}
+```
+
+Variable types are `number`, `boolean`, `string`, `enum`, and `color`. Number
+declarations support `min`, `max`, and `decimals`; enums require `choices`;
+colors accept a theme token or RGBA. Values are server-authoritative. Rebuilding
+a display restores its declared defaults. The editor offers local simulation
+controls which do not mutate runtime state.
+
+Server Lua updates values with `SetDisplayVariable(displayId, name, value)` or
+the batched `SetDisplayVariables(displayId, values)`. Numeric values are clamped
+and rounded from declaration metadata. Invalid types, enum choices, colors, or
+names return `false, reason`; clients receive read-only bounded deltas.
 
 ## Themes
 
@@ -182,8 +220,8 @@ Variants may change visibility, material/frames, animation timing, tint, or colo
   "group": "plant",
   "defaultTheme": "normal",
   "themes": {
-    "normal": {"text": [220,245,255,255], "background": [4,12,16,230], "border": [80,190,220,255], "accent": [70,220,160,255]},
-    "emergency": {"text": [255,225,220,255], "background": [28,3,3,240], "border": [255,75,65,255], "accent": [255,120,70,255]}
+    "normal": {"text": [220,245,255,255], "background": [4,12,16,230], "border": [80,190,220,255], "accent": [70,220,160,255], "critical": [255,90,90,255]},
+    "emergency": {"text": [255,225,220,255], "background": [28,3,3,240], "border": [255,75,65,255], "accent": [255,120,70,255], "critical": [255,255,255,255]}
   }
 }
 ```
@@ -200,8 +238,18 @@ Reference tokens as `@text`, `@title`, `@background`, `@panel`, `@border`, `@acc
 - `flashSeconds`: half-cycle duration.
 - `flashMinimum`: dim alpha multiplier.
 - `animationEpoch`: optional server epoch; otherwise zero is shared.
+- `animationDisabled`: master switch for flash, explicit frames, and animated rotation.
+- `flashEnabled` and `frameAnimationEnabled`: conditionable animation switches.
+- `rotationDegrees`: static clockwise material rotation.
+- `rotationAnimationEnabled`: conditionable rotation-animation switch.
+- `rotationSpeedDegreesPerSecond`: synchronized animated rotation speed.
 
-Material bytes are never networked. Clients load installed assets and choose frames from synchronized server time.
+Flash periods below `0.02` seconds and frame periods below `0.2` seconds are
+disabled. With `loop=false`, an
+explicit frame sequence holds its final frame. Rotation is centered on the
+Material element, and both interaction and editor picking use the rotated hit
+shape. Material bytes are never networked. Clients load installed assets and
+choose frames and rotation from synchronized server time.
 
 ## Interaction security
 
@@ -224,6 +272,8 @@ Primary server APIs:
 - `RegisterThemePack`, `SetThemeGroup`
 - `CompileSource`, `LoadSource`, `LoadMapSources`, `ReloadSources`
 - `BuildDisplay`, `RemoveDisplay`, `SetDisplayPage`, `GetDisplayPage`
+- `SetDisplayVariable`, `SetDisplayVariables`, `ResetDisplayVariable`, `ResetDisplayVariables`
+- `GetDisplayVariable`, `GetDisplayVariables`, `GetDisplayVariableDefinitions`
 - `CycleDisplayPage`, `NextDisplayPage`, `PreviousDisplayPage`, `GetSnapshot`
 - `Start`, `Stop`
 
@@ -246,12 +296,24 @@ elements from the highest layer downward, and provides context-menu clipboard,
 layer, duplication, and deletion operations. Grid size and sibling snapping are
 stored with each source.
 
-The structured inspector includes provider/action selection, color and theme
-tokens, VMT browsing and frame ordering, material tint, basic variants, and
-interaction controls. Advanced JSON remains available for nested or extension
+The structured inspector is split into persistent functional categories. It
+includes provider fields discovered from declarations and bounded live samples,
+actions, theme/custom colors, VMT browsing, animation and rotation, ordered
+conditions, exposed-variable declarations and local simulation, and interaction
+controls. Advanced JSON remains available for nested conditions or extension
 data. The Preview window temporarily replaces a runtime display while retaining
 its physical placement; Restore clears it explicitly.
+
+Conditions open in a dedicated working-copy window with separate source,
+true-effect, false-effect, and Advanced JSON tabs. Apply validates the complete
+source and records one undo step; closing the window discards its working copy.
+Exposed-variable declarations and their editor-only simulation values use a
+separate working-copy manager with the same validate/apply/cancel behavior.
 Disconnect, cleanup, runtime stop, or source reload also restores packed state.
+
+Live provider-path discovery visits at most eight table levels and exposes at
+most 512 leaf paths per provider. Declared `fields` remain available before a
+sample exists, and manual path entry remains available for capped data.
 
 The Themes window opens packed theme packs read-only and saves editable drafts
 under `data/luasquare_3d2display/drafts/_themes/`. Its working theme is simulated

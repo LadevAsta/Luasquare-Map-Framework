@@ -129,7 +129,13 @@ include('luasquare_module/3d2display/engine.lua')
 
 LUASQUARE_3D2D.RegisterDataProvider('plant.status', function()
     return {powerMW = PLANT.PowerMW or 0, online = PLANT.Online and true or false}
-end, {interval = 0.2})
+end, {
+    interval = 0.2,
+    fields = {
+        {path = 'powerMW', type = 'number', label = 'Power'},
+        {path = 'online', type = 'boolean', label = 'Online'}
+    }
+})
 
 LUASQUARE_3D2D.RegisterAction('plant.scram', {
     cooldown = 1,
@@ -159,7 +165,7 @@ The current schema is `luasquare.3d2display/v1`. Simple displays contain the exi
 }
 ```
 
-Sources cannot contain Lua or console commands. Actions similarly reference only IDs registered through `RegisterAction`. Conditions support `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `truthy`, `all`, `any`, and `not`; the first matching variant wins. See [the 3D2D authoring guide](lua/luasquare_module/3d2display/README.md) and the [RBMK JSON examples](data_static/luasquare_3d2display/experiment_rbmk).
+Sources cannot contain Lua or console commands. Actions similarly reference only IDs registered through `RegisterAction`. Ordered `conditions` support `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `truthy`, `all`, `any`, and `not`; all rules compose and later effects win. Displays can declare typed server-authoritative variables and bind properties or condition operands with `{"variable":"name"}`. Material elements support synchronized frame, flash, and centered rotation animation. See [the 3D2D authoring guide](lua/luasquare_module/3d2display/README.md) and the [RBMK JSON examples](data_static/luasquare_3d2display/experiment_rbmk).
 
 The runtime can derive physical panel dimensions from an `info_target` name:
 

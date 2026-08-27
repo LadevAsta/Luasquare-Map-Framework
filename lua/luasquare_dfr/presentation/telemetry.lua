@@ -176,9 +176,34 @@ function DFR.RegisterDefaultTelemetryDisplays(options)
     end
     options = options or {}
     local interval = tonumber(options.interval) or 0.2
-    LUASQUARE_3D2D.RegisterDataProvider('dfr.facility', facilityProvider, {interval = interval})
+    LUASQUARE_3D2D.RegisterDataProvider('dfr.facility', facilityProvider, {
+        interval = interval,
+        label = 'DFR Facility',
+        fields = {
+            {path = 'state', type = 'string', label = 'Reactor state'},
+            {path = 'running', type = 'boolean', label = 'Runtime active'},
+            {path = 'halted', type = 'boolean', label = 'Runtime halted'},
+            {path = 'fuelReady', type = 'boolean', label = 'Fuel ready'},
+            {path = 'matter', type = 'number', label = 'Matter reserve'},
+            {path = 'antimatter', type = 'number', label = 'Antimatter reserve'},
+            {path = 'integrity', type = 'number', label = 'Superstructure integrity'},
+            {path = 'outputGW', type = 'number', label = 'Output (GW)'}
+        }
+    })
     LUASQUARE_3D2D.RegisterDataProvider('dfr.core_visuals', coreVisualSnapshot, {interval = interval})
-    LUASQUARE_3D2D.RegisterDataProvider('dfr.startup', startupProvider, {interval = interval})
+    LUASQUARE_3D2D.RegisterDataProvider('dfr.startup', startupProvider, {
+        interval = interval,
+        label = 'DFR Startup',
+        fields = {
+            {path = 'stabilizerActive', type = 'boolean', label = 'Stabilizer active'},
+            {path = 'stabilizerPowerGW', type = 'number', label = 'Stabilizer power (GW)'},
+            {path = 'containment', type = 'number', label = 'Containment command'},
+            {path = 'stability', type = 'number', label = 'Field stability'},
+            {path = 'directorActive', type = 'boolean', label = 'Director active'},
+            {path = 'precision', type = 'number', label = 'Director precision'},
+            {path = 'procedure', type = 'string', label = 'Procedure status'}
+        }
+    })
     LUASQUARE_3D2D.RegisterDataProvider('dfr.catalyzers', catalyzerProvider, {
         interval = tonumber(options.catalyzerInterval) or 1
     })

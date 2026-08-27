@@ -14,6 +14,7 @@ local function interactionDisplay(runtimeDisplay, player)
         display.ang = Angle(0, player:EyeAngles().y - 90, 90)
     end
     display.activePage = runtimeDisplay.activePage
+    display.variableValues = DISPLAY.DeepCopy(runtimeDisplay.variables or {})
     return display
 end
 
@@ -47,9 +48,9 @@ local function hitTarget(display, x, y)
     if not page then return nil end
     for index = #page.elements, 1, -1 do
         local element = page.elements[index]
-        local resolved = DISPLAY.ApplyVariants(element, DISPLAY.ProviderValues)
+        local resolved = DISPLAY.ApplyConditions(element, DISPLAY.ProviderValues, display.variableValues)
         if resolved.visible ~= false and resolved.action
-            and DISPLAY.PointInRect(x, y, resolved) then
+            and DISPLAY.PointInElement(x, y, resolved, CurTime()) then
             return {kind = 'element', id = resolved.id, page = page, element = resolved}
         end
     end

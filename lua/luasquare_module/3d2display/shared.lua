@@ -60,39 +60,49 @@ function DISPLAY.GetPath(root, path)
     local value = root
     for segment in string.gmatch(tostring(path), '[^%.]+') do
         if type(value) ~= 'table' then return nil end
-        value = value[segment]
+        local nextValue = value[segment]
+        if nextValue == nil then
+            local numeric = tonumber(segment)
+            if numeric and numeric == math.floor(numeric) then nextValue = value[numeric] end
+        end
+        value = nextValue
         if value == nil then return nil end
     end
     return value
 end
 
 function DISPLAY.IsBinding(value)
-    return type(value) == 'table' and value.provider ~= nil
+    return type(value) == 'table' and (value.provider ~= nil or value.variable ~= nil)
 end
 
-function DISPLAY.ResolveBinding(binding, providerValues)
+function DISPLAY.ResolveBinding(binding, providerValues, variableValues)
     if not DISPLAY.IsBinding(binding) then return binding end
-    local provider = providerValues and providerValues[tostring(binding.provider)]
-    local value = DISPLAY.GetPath(provider, binding.path)
+    local root
+    if binding.variable ~= nil then
+        root = variableValues and variableValues[DISPLAY.NormalizeId(binding.variable)]
+    else
+        root = providerValues and providerValues[tostring(binding.provider)]
+    end
+    local value = DISPLAY.GetPath(root, binding.path)
     if value == nil then value = binding.default end
     return value
 end
 
-function DISPLAY.ResolveDynamic(value, providerValues)
+function DISPLAY.ResolveDynamic(value, providerValues, variableValues)
     if DISPLAY.IsBinding(value) then
-        return DISPLAY.DeepCopy(DISPLAY.ResolveBinding(value, providerValues))
+        return DISPLAY.DeepCopy(DISPLAY.ResolveBinding(value, providerValues, variableValues))
     end
     if type(value) ~= 'table' then return value end
     local out = {}
     for key, item in pairs(value) do
-        out[key] = DISPLAY.ResolveDynamic(item, providerValues)
+        out[key] = DISPLAY.ResolveDynamic(item, providerValues, variableValues)
     end
     return out
 end
 
 local conditionOperators = {
-    eq = function(a, b) return a == b end,
-    ne = function(a, b) return a ~= b end,
+    eq = function(a, b) return DISPLAY.DeepEqual(a, b) end,
+    ne = function(a, b) return not DISPLAY.DeepEqual(a, b) end,
     gt = function(a, b) return tonumber(a) and tonumber(b) and tonumber(a) > tonumber(b) or false end,
     gte = function(a, b) return tonumber(a) and tonumber(b) and tonumber(a) >= tonumber(b) or false end,
     lt = function(a, b) return tonumber(a) and tonumber(b) and tonumber(a) < tonumber(b) or false end,
@@ -100,49 +110,104 @@ local conditionOperators = {
     truthy = function(a) return a and true or false end
 }
 
-function DISPLAY.EvaluateCondition(condition, providerValues)
+function DISPLAY.EvaluateCondition(condition, providerValues, variableValues)
     if condition == nil then return true end
     if type(condition) == 'boolean' then return condition end
     if type(condition) ~= 'table' then return false end
 
     if type(condition.all) == 'table' then
         for _, child in ipairs(condition.all) do
-            if not DISPLAY.EvaluateCondition(child, providerValues) then return false end
+            if not DISPLAY.EvaluateCondition(child, providerValues, variableValues) then return false end
         end
         return true
     end
     if type(condition.any) == 'table' then
         for _, child in ipairs(condition.any) do
-            if DISPLAY.EvaluateCondition(child, providerValues) then return true end
+            if DISPLAY.EvaluateCondition(child, providerValues, variableValues) then return true end
         end
         return false
     end
     if condition['not'] ~= nil then
-        return not DISPLAY.EvaluateCondition(condition['not'], providerValues)
+        return not DISPLAY.EvaluateCondition(condition['not'], providerValues, variableValues)
     end
 
-    local value = DISPLAY.ResolveBinding(condition, providerValues)
+    local value = DISPLAY.ResolveBinding(condition, providerValues, variableValues)
     local operation = string.lower(tostring(condition.op or 'truthy'))
     local callback = conditionOperators[operation]
     if not callback then return false end
-    return callback(value, condition.value)
+    local comparison = DISPLAY.ResolveDynamic(condition.value, providerValues, variableValues)
+    return callback(value, comparison)
 end
 
-function DISPLAY.ApplyVariants(item, providerValues)
-    local out = DISPLAY.ResolveDynamic(item, providerValues)
+function DISPLAY.ApplyConditions(item, providerValues, variableValues)
+    local out = DISPLAY.ResolveDynamic(item, providerValues, variableValues)
+    local animationDisabled = item.animationDisabled and true or false
+    out.conditions = nil
     out.variants = nil
+    out.visibleWhen = nil
     if item.visibleWhen ~= nil then
-        out.visible = DISPLAY.EvaluateCondition(item.visibleWhen, providerValues)
+        out.visible = DISPLAY.EvaluateCondition(item.visibleWhen, providerValues, variableValues)
     end
+    -- Raw editor sources can still contain legacy variants before the compiler
+    -- rewrites them. They intentionally use the new ordered multi-match rules.
     for _, variant in ipairs(item.variants or {}) do
-        if DISPLAY.EvaluateCondition(variant.when, providerValues) then
+        if DISPLAY.EvaluateCondition(variant.when, providerValues, variableValues) then
             for key, value in pairs(variant.set or {}) do
-                out[key] = DISPLAY.ResolveDynamic(value, providerValues)
+                out[key] = DISPLAY.ResolveDynamic(value, providerValues, variableValues)
             end
-            break
         end
     end
+    for _, condition in ipairs(item.conditions or {}) do
+        local matched = DISPLAY.EvaluateCondition(condition.when, providerValues, variableValues)
+        local effects = matched and condition.apply or condition.otherwise
+        for key, value in pairs(effects or {}) do
+            if key ~= 'animationDisabled' then
+                out[key] = DISPLAY.ResolveDynamic(value, providerValues, variableValues)
+            end
+        end
+    end
+    out.animationDisabled = animationDisabled
     return out
+end
+
+-- Compatibility for callers and third-party extensions using the old helper.
+DISPLAY.ApplyVariants = DISPLAY.ApplyConditions
+
+function DISPLAY.GetElementRotation(element, currentTime, previewAnimations)
+    local rotation = tonumber(element and element.rotationDegrees) or 0
+    if not element or element.type ~= 'material' or element.animationDisabled
+        or element.rotationAnimationEnabled == false or previewAnimations == false then
+        return rotation
+    end
+    local speed = tonumber(element.rotationSpeedDegreesPerSecond) or 0
+    if speed == 0 then return rotation end
+    local epoch = tonumber(element.animationEpoch) or 0
+    return (rotation + speed * ((tonumber(currentTime) or 0) - epoch)) % 360
+end
+
+function DISPLAY.PointInElement(x, y, element, currentTime, previewAnimations)
+    if type(element) ~= 'table' then return false end
+    local left = tonumber(element.x) or 0
+    local top = tonumber(element.y) or 0
+    local width = tonumber(element.width or element.w) or 0
+    local height = tonumber(element.height or element.h) or 0
+    if element.type ~= 'material' then
+        return DISPLAY.PointInRect(x, y, {x = left, y = top, width = width, height = height})
+    end
+    local rotation = DISPLAY.GetElementRotation(element, currentTime, previewAnimations)
+    if rotation % 360 == 0 then
+        return DISPLAY.PointInRect(x, y, {x = left, y = top, width = width, height = height})
+    end
+    local centerX = left + width * 0.5
+    local centerY = top + height * 0.5
+    local radians = math.rad(-rotation)
+    local cosine = math.cos(radians)
+    local sine = math.sin(radians)
+    local offsetX = x - centerX
+    local offsetY = y - centerY
+    local localX = offsetX * cosine - offsetY * sine
+    local localY = offsetX * sine + offsetY * cosine
+    return math.abs(localX) <= width * 0.5 and math.abs(localY) <= height * 0.5
 end
 
 function DISPLAY.ColorTable(value, fallback)

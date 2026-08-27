@@ -86,7 +86,7 @@ local function hasEntries(value)
 end
 
 function DISPLAY.BroadcastDelta(delta)
-    if not hasEntries(delta.providers) and not hasEntries(delta.pages)
+    if not hasEntries(delta.providers) and not hasEntries(delta.variables) and not hasEntries(delta.pages)
         and not hasEntries(delta.themes) and not hasEntries(delta.annunciators)
         and #(delta.graphSamples or {}) == 0 then return false end
     if not hasBroadcastRecipients() then return true end

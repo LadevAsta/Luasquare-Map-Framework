@@ -40,7 +40,11 @@ local function resolveColors(display, value, parentKey)
 end
 
 local function resolveItem(display, item)
-    local resolved = DISPLAY.ApplyVariants(item, DISPLAY.ClientState.Providers or {})
+    local resolved = DISPLAY.ApplyConditions(
+        item,
+        DISPLAY.ClientState.Providers or {},
+        display.variableValues or {}
+    )
     return resolveColors(display, resolved)
 end
 
@@ -50,10 +54,14 @@ local function getMaterial(path)
     return materialCache[path]
 end
 
-local function currentMaterial(element)
+local function currentMaterial(element, previewAnimations)
     local frames = element.frames or {}
     if #frames > 0 then
-        local frameSeconds = math.max(tonumber(element.frameSeconds) or 0.1, 0.02)
+        local frameSeconds = tonumber(element.frameSeconds) or 0
+        if element.animationDisabled or element.frameAnimationEnabled == false
+            or previewAnimations == false or frameSeconds < 0.2 then
+            return frames[1] or element.material
+        end
         local epoch = tonumber(element.animationEpoch) or 0
         local index = math.floor((DISPLAY.GetSynchronizedTime() - epoch) / frameSeconds)
         if element.loop == false then index = math.min(math.max(index, 0), #frames - 1) end
@@ -62,21 +70,24 @@ local function currentMaterial(element)
     return element.material
 end
 
-local function flashAlpha(element, alpha)
+local function flashAlpha(element, alpha, previewAnimations)
+    if element.animationDisabled or element.flashEnabled == false or previewAnimations == false then return alpha end
     local seconds = tonumber(element.flashSeconds)
-    if not seconds or seconds <= 0 then return alpha end
+    if not seconds or seconds < 0.02 then return alpha end
     local phase = math.floor(DISPLAY.GetSynchronizedTime() / seconds) % 2
     return phase == 0 and alpha or math.floor(alpha * (tonumber(element.flashMinimum) or 0.2))
 end
 
-local function drawMaterial(element, x, y, width, height)
-    local material = getMaterial(currentMaterial(element))
+local function drawMaterial(element, x, y, width, height, previewAnimations)
+    local material = getMaterial(currentMaterial(element, previewAnimations))
     if not material or material:IsError() then return end
     local tint = asColor(element.tint or element.color, {r = 255, g = 255, b = 255, a = 255})
-    tint.a = flashAlpha(element, tint.a)
+    tint.a = flashAlpha(element, tint.a, previewAnimations)
     surface.SetMaterial(material)
     surface.SetDrawColor(tint)
-    surface.DrawTexturedRect(x, y, width, height)
+    local rotation = DISPLAY.GetElementRotation(element, DISPLAY.GetSynchronizedTime(), previewAnimations)
+    if rotation % 360 == 0 then surface.DrawTexturedRect(x, y, width, height)
+    else surface.DrawTexturedRectRotated(x + width * 0.5, y + height * 0.5, width, height, rotation) end
 end
 
 local function graphHistoryKey(displayId, pageId, elementId, line, lineIndex, series, seriesIndex)
@@ -128,7 +139,7 @@ local function drawLines(display, lines, x, y, width, height, pageId, elementId,
     end
 end
 
-local function drawLinePanel(display, element, pageId)
+local function drawLinePanel(display, element, pageId, previewAnimations)
     local x, y = element.x, element.y
     local width, height = element.width, element.height
     if element.backgroundMaterial then
@@ -137,19 +148,19 @@ local function drawLinePanel(display, element, pageId)
             tint = element.backgroundTint,
             flashSeconds = element.flashSeconds,
             flashMinimum = element.flashMinimum
-        }, x, y, width, height)
+        }, x, y, width, height, previewAnimations)
     end
     if element.drawBackground ~= false then
         local sourceColor = element.backgroundColor or themed(display, '@panel')
         local background = Color(sourceColor.r, sourceColor.g, sourceColor.b, sourceColor.a)
-        background.a = flashAlpha(element, background.a)
+        background.a = flashAlpha(element, background.a, previewAnimations)
         surface.SetDrawColor(background)
         surface.DrawRect(x, y, width, height)
     end
     if element.drawBorder ~= false then
         local sourceColor = element.borderColor or display.borderColor
         local border = Color(sourceColor.r, sourceColor.g, sourceColor.b, sourceColor.a)
-        border.a = flashAlpha(element, border.a)
+        border.a = flashAlpha(element, border.a, previewAnimations)
         surface.SetDrawColor(border)
         surface.DrawOutlinedRect(x, y, width, height, math.max(tonumber(element.borderWidth) or 1, 1))
     end
@@ -190,7 +201,7 @@ local annunciatorColors = {
     missing = '@inactive'
 }
 
-local function drawAnnunciator(display, element)
+local function drawAnnunciator(display, element, previewAnimations)
     local alarm = (DISPLAY.ClientState.Annunciators or {})[element.alarm]
         or {state = 'missing', label = element.alarm or 'MISSING'}
     local state = tostring(alarm.state or 'inactive')
@@ -198,7 +209,7 @@ local function drawAnnunciator(display, element)
     local flash = DISPLAY.DeepCopy(element)
     if flash.flashSeconds == nil and state == 'active' then flash.flashSeconds = 0.25 end
     if flash.flashSeconds == nil and state == 'reset' then flash.flashSeconds = 0.75 end
-    background.a = flashAlpha(flash, background.a)
+    background.a = flashAlpha(flash, background.a, previewAnimations)
     surface.SetDrawColor(background)
     surface.DrawRect(element.x, element.y, element.width, element.height)
     surface.SetDrawColor(element.borderColor or display.borderColor)
@@ -244,20 +255,23 @@ local function drawTabs(display)
     end
 end
 
-function DISPLAY.RenderElement(display, source, pageId)
+function DISPLAY.RenderElement(display, source, pageId, renderOptions)
     local element = resolveItem(display, source)
     if element.visible == false then return end
+    local animationKey = tostring(pageId or 'simple') .. ':' .. tostring(element.id)
+    local previewAnimations = not renderOptions or not renderOptions.animationPreview
+        or renderOptions.animationPreview[animationKey] ~= false
     if element.type == 'solid_rectangle' then
         local color = element.color or element.backgroundColor or display.barColor
-        color.a = flashAlpha(element, color.a)
+        color.a = flashAlpha(element, color.a, previewAnimations)
         surface.SetDrawColor(color)
         surface.DrawRect(element.x, element.y, element.width, element.height)
     elseif element.type == 'material' then
-        drawMaterial(element, element.x, element.y, element.width, element.height)
+        drawMaterial(element, element.x, element.y, element.width, element.height, previewAnimations)
     elseif element.type == 'line_panel' then
-        drawLinePanel(display, element, pageId)
+        drawLinePanel(display, element, pageId, previewAnimations)
     elseif element.type == 'annunciator' then
-        drawAnnunciator(display, element)
+        drawAnnunciator(display, element, previewAnimations)
     end
 
     if DISPLAY.Hover and DISPLAY.Hover.displayId == display.id
@@ -267,8 +281,14 @@ function DISPLAY.RenderElement(display, source, pageId)
     end
 end
 
-local function resolveDisplayStyle(source)
+local function resolveDisplayStyle(source, variableValues)
     local display = DISPLAY.DeepCopy(source)
+    local structural = {pages = true, lines = true, variables = true, variableValues = true}
+    for key, value in pairs(source) do
+        if not structural[key] then
+            display[key] = DISPLAY.ResolveDynamic(value, DISPLAY.ClientState.Providers or {}, variableValues or {})
+        end
+    end
     display.font = display.font or 'Luasquare3D2D_Line'
     display.titleFont = display.titleFont or 'Luasquare3D2D_Title'
     display.textColor = themed(display, display.textColor, {r = 220, g = 245, b = 255, a = 255})
@@ -280,8 +300,10 @@ local function resolveDisplayStyle(source)
     return display
 end
 
-function DISPLAY.DrawDisplayCanvas(source)
-    local display = resolveDisplayStyle(source)
+function DISPLAY.DrawDisplayCanvas(source, renderOptions)
+    local variableValues = renderOptions and renderOptions.variableValues or source.variableValues or {}
+    local display = resolveDisplayStyle(source, variableValues)
+    display.variableValues = variableValues
     local width = display.width or 256
     local height = display.height or 128
     if display.drawBackground then
@@ -296,7 +318,7 @@ function DISPLAY.DrawDisplayCanvas(source)
     if display.buildMode == 'complex' then
         local page = DISPLAY.GetActivePage(display)
         if page then
-            for _, element in ipairs(page.elements or {}) do DISPLAY.RenderElement(display, element, page.id) end
+            for _, element in ipairs(page.elements or {}) do DISPLAY.RenderElement(display, element, page.id, renderOptions) end
         end
         drawTabs(display)
         return

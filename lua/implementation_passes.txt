@@ -80,7 +80,7 @@ Update 3d2d Function, Editor function & UI.
         - Option related to element visual animation (flash, frame, loop) should be in the visual animation category too and have a preview checkbox to preview the animation in editor.
             - Checkbox to disable all animation altogether for the element.
             - Explain 'loop'? what is looping.
-            - Frame second and Flash seconds should accept 0 or value lower than 0.2 which will disable these animation behavior for the element.
+            - Frame second and Flash seconds should accept 0 or value lower than 0.02 which will disable these animation behavior for the element.
     - Condition should integrate with visual animation properly. Without guesswork.
         - 'if this is true, enable this element visibility, else it is not visible'
         - 'If this is true, enable this element's flash animation, else it is not flashing'

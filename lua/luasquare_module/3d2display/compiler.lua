@@ -21,7 +21,7 @@ local allowedConditionOps = {
     eq = true, ne = true, gt = true, gte = true,
     lt = true, lte = true, truthy = true
 }
-local allowedVariantFields = {
+local allowedConditionEffectFields = {
     visible = true,
     material = true,
     backgroundMaterial = true,
@@ -44,8 +44,28 @@ local allowedVariantFields = {
     warnColor = true,
     criticalColor = true,
     warn = true,
-    critical = true
+    critical = true,
+    flashEnabled = true,
+    frameAnimationEnabled = true,
+    rotationAnimationEnabled = true,
+    rotationDegrees = true,
+    rotationSpeedDegreesPerSecond = true
 }
+local booleanConditionEffects = {
+    visible = true, loop = true, flashEnabled = true,
+    frameAnimationEnabled = true, rotationAnimationEnabled = true
+}
+local numberConditionEffects = {
+    frameSeconds = true, animationEpoch = true, flashSeconds = true,
+    flashMinimum = true, rotationDegrees = true, rotationSpeedDegreesPerSecond = true
+}
+local colorConditionEffects = {
+    tint = true, color = true, textColor = true, titleColor = true,
+    valueColor = true, backgroundColor = true, borderColor = true,
+    barColor = true, barBackgroundColor = true, fillColor = true,
+    warnColor = true, criticalColor = true
+}
+local currentVariableDefinitions
 
 local function addDiagnostic(diagnostics, level, path, message)
     table.insert(diagnostics, {
@@ -111,6 +131,22 @@ local function knownAction(id)
 end
 
 local function validateBinding(binding, path, diagnostics)
+    if binding.variable ~= nil and binding.provider ~= nil then
+        addDiagnostic(diagnostics, 'error', path, 'binding cannot reference both a provider and a display variable')
+        return
+    end
+    if binding.variable ~= nil then
+        local name = DISPLAY.NormalizeId(binding.variable)
+        if not name then
+            addDiagnostic(diagnostics, 'error', path, 'variable binding requires a non-empty name')
+        elseif not currentVariableDefinitions or not currentVariableDefinitions[name] then
+            addDiagnostic(diagnostics, 'error', path, 'unknown display variable: ' .. tostring(binding.variable))
+        end
+        if binding.path ~= nil and type(binding.path) ~= 'string' then
+            addDiagnostic(diagnostics, 'error', path .. '.path', 'binding path must be a string')
+        end
+        return
+    end
     if type(binding.provider) ~= 'string' or binding.provider == '' then
         addDiagnostic(diagnostics, 'error', path, 'binding provider must be a non-empty string')
         return
@@ -123,10 +159,27 @@ local function validateBinding(binding, path, diagnostics)
     end
 end
 
+local function dynamicNumber(value, fallback, minimum, maximum, path, diagnostics)
+    if DISPLAY.IsBinding(value) then
+        validateBinding(value, path, diagnostics)
+        return DISPLAY.DeepCopy(value)
+    end
+    return number(value, fallback, minimum, maximum)
+end
+
+local walkDynamic
+
 local function validateCondition(condition, path, diagnostics)
     if condition == nil or type(condition) == 'boolean' then return end
     if type(condition) ~= 'table' then
         addDiagnostic(diagnostics, 'error', path, 'condition must be an object or boolean')
+        return
+    end
+    local compositeCount = (condition.all ~= nil and 1 or 0)
+        + (condition.any ~= nil and 1 or 0)
+        + (condition['not'] ~= nil and 1 or 0)
+    if compositeCount > 1 then
+        addDiagnostic(diagnostics, 'error', path, 'condition may use only one of all, any, or not')
         return
     end
     if condition.all or condition.any then
@@ -149,9 +202,12 @@ local function validateCondition(condition, path, diagnostics)
     if not allowedConditionOps[operation] then
         addDiagnostic(diagnostics, 'error', path .. '.op', 'unsupported condition operator: ' .. operation)
     end
+    if condition.value ~= nil then
+        walkDynamic(condition.value, path .. '.value', diagnostics)
+    end
 end
 
-local function walkDynamic(value, path, diagnostics, seen)
+walkDynamic = function(value, path, diagnostics, seen)
     if type(value) ~= 'table' then return end
     seen = seen or {}
     if seen[value] then return end
@@ -212,53 +268,118 @@ local function normalizeMaterialArray(frames, path, diagnostics)
     return frames
 end
 
-local function normalizeVariants(source, path, diagnostics)
-    local variants = {}
+local function normalizeConditions(source, path, diagnostics)
+    local conditions = {}
+    local conditionIds = {}
     if source ~= nil and not isArray(source) then
-        addDiagnostic(diagnostics, 'error', path, 'variants must be an array')
-        return variants
+        addDiagnostic(diagnostics, 'error', path, 'conditions must be an array')
+        return conditions
     end
-    for index, variant in ipairs(source or {}) do
-        if type(variant) ~= 'table' or type(variant.set) ~= 'table' then
-            addDiagnostic(diagnostics, 'error', path .. '[' .. index .. ']', 'variant requires when and set objects')
+    for index, condition in ipairs(source or {}) do
+        if type(condition) ~= 'table' or type(condition.apply) ~= 'table' then
+            addDiagnostic(diagnostics, 'error', path .. '[' .. index .. ']', 'condition requires when and apply objects')
         else
-            validateCondition(variant.when, path .. '[' .. index .. '].when', diagnostics)
-            walkDynamic(variant.set, path .. '[' .. index .. '].set', diagnostics)
-            local normalized = DISPLAY.DeepCopy(variant)
-            for field in pairs(normalized.set) do
-                if not allowedVariantFields[field] then
-                    addDiagnostic(
-                        diagnostics,
-                        'error',
-                        path .. '[' .. index .. '].set.' .. tostring(field),
-                        'variant cannot override this field'
-                    )
+            if condition.when == nil then
+                addDiagnostic(diagnostics, 'error', path .. '[' .. index .. '].when', 'condition requires a when object')
+            else
+                validateCondition(condition.when, path .. '[' .. index .. '].when', diagnostics)
+            end
+            walkDynamic(condition.apply, path .. '[' .. index .. '].apply', diagnostics)
+            if condition.otherwise ~= nil and type(condition.otherwise) ~= 'table' then
+                addDiagnostic(diagnostics, 'error', path .. '[' .. index .. '].otherwise', 'otherwise must be an object')
+            else
+                walkDynamic(condition.otherwise, path .. '[' .. index .. '].otherwise', diagnostics)
+            end
+            local normalized = DISPLAY.DeepCopy(condition)
+            normalized.id = DISPLAY.NormalizeId(normalized.id or ('condition_' .. index))
+            if not normalized.id then
+                addDiagnostic(diagnostics, 'error', path .. '[' .. index .. '].id', 'condition requires a stable id')
+            elseif conditionIds[normalized.id] then
+                addDiagnostic(diagnostics, 'error', path .. '[' .. index .. '].id', 'duplicate condition id: ' .. normalized.id)
+            else
+                conditionIds[normalized.id] = true
+            end
+            for branchName, branch in pairs({apply = normalized.apply, otherwise = normalized.otherwise}) do
+                for field, value in pairs(branch or {}) do
+                    if not allowedConditionEffectFields[field] or field == 'animationDisabled' then
+                        addDiagnostic(
+                            diagnostics,
+                            'error',
+                            path .. '[' .. index .. '].' .. branchName .. '.' .. tostring(field),
+                            'condition cannot override this field'
+                        )
+                    elseif booleanConditionEffects[field] and not DISPLAY.IsBinding(value)
+                        and type(value) ~= 'boolean' then
+                        addDiagnostic(diagnostics, 'error', path .. '[' .. index .. '].' .. branchName .. '.' .. field,
+                            'condition effect must be boolean')
+                    elseif numberConditionEffects[field] and not DISPLAY.IsBinding(value)
+                        and type(value) ~= 'number' then
+                        addDiagnostic(diagnostics, 'error', path .. '[' .. index .. '].' .. branchName .. '.' .. field,
+                            'condition effect must be numeric')
+                    elseif colorConditionEffects[field] and not DISPLAY.IsBinding(value)
+                        and type(value) ~= 'string' and type(value) ~= 'table' then
+                        addDiagnostic(diagnostics, 'error', path .. '[' .. index .. '].' .. branchName .. '.' .. field,
+                            'condition color must be a theme token or RGBA value')
+                    elseif colorConditionEffects[field] and type(value) == 'string'
+                        and string.sub(value, 1, 1) ~= '@' then
+                        addDiagnostic(diagnostics, 'error', path .. '[' .. index .. '].' .. branchName .. '.' .. field,
+                            'condition color string must be a theme token')
+                    end
                 end
             end
-            for _, field in ipairs({'material', 'backgroundMaterial'}) do
-                if normalized.set[field] ~= nil then
-                    normalized.set[field] = normalizeMaterialPath(
-                        normalized.set[field],
-                        path .. '[' .. index .. '].set.' .. field,
-                        diagnostics
-                    )
+            for _, branchName in ipairs({'apply', 'otherwise'}) do
+                local branch = normalized[branchName]
+                for _, field in ipairs({'material', 'backgroundMaterial'}) do
+                    if branch and branch[field] ~= nil and not DISPLAY.IsBinding(branch[field]) then
+                        branch[field] = normalizeMaterialPath(
+                            branch[field],
+                            path .. '[' .. index .. '].' .. branchName .. '.' .. field,
+                            diagnostics
+                        )
+                    end
+                end
+                if branch and branch.frames ~= nil then
+                    if DISPLAY.IsBinding(branch.frames) then
+                        addDiagnostic(diagnostics, 'error', path .. '[' .. index .. '].' .. branchName .. '.frames', 'material frames must be source literals')
+                    else
+                        branch.frames = normalizeMaterialArray(
+                            branch.frames,
+                            path .. '[' .. index .. '].' .. branchName .. '.frames',
+                            diagnostics
+                        )
+                    end
                 end
             end
-            if normalized.set.frames ~= nil then
-                if DISPLAY.IsBinding(normalized.set.frames) then
-                    addDiagnostic(diagnostics, 'error', path .. '[' .. index .. '].set.frames', 'material frames must be source literals')
-                else
-                    normalized.set.frames = normalizeMaterialArray(
-                        normalized.set.frames,
-                        path .. '[' .. index .. '].set.frames',
-                        diagnostics
-                    )
-                end
-            end
-            table.insert(variants, normalized)
+            table.insert(conditions, normalized)
         end
     end
-    return variants
+    return conditions
+end
+
+local function migratedConditions(source, path, diagnostics)
+    local conditions = DISPLAY.DeepCopy(source.conditions or {})
+    if source.variants ~= nil then
+        addDiagnostic(diagnostics, 'warning', path .. '.variants', 'legacy variants migrated to ordered conditions')
+        for index, variant in ipairs(source.variants or {}) do
+            if type(variant) == 'table' then
+                table.insert(conditions, {
+                    id = variant.id or ('legacy_variant_' .. index),
+                    when = DISPLAY.DeepCopy(variant.when),
+                    apply = DISPLAY.DeepCopy(variant.set or {})
+                })
+            end
+        end
+    end
+    if source.visibleWhen ~= nil then
+        addDiagnostic(diagnostics, 'warning', path .. '.visibleWhen', 'legacy visibleWhen migrated to a visibility condition')
+        table.insert(conditions, 1, {
+            id = 'legacy_visibility',
+            when = DISPLAY.DeepCopy(source.visibleWhen),
+            apply = {visible = true},
+            otherwise = {visible = false}
+        })
+    end
+    return normalizeConditions(conditions, path .. '.conditions', diagnostics)
 end
 
 local function normalizeLine(source, path, diagnostics)
@@ -274,8 +395,9 @@ local function normalizeLine(source, path, diagnostics)
     end
     line.id = DISPLAY.NormalizeId(line.id or string.gsub(path, '[^%w]+', '_'))
     line.fontScale = nil
-    line.variants = normalizeVariants(line.variants, path .. '.variants', diagnostics)
-    if line.visibleWhen ~= nil then validateCondition(line.visibleWhen, path .. '.visibleWhen', diagnostics) end
+    line.conditions = migratedConditions(line, path, diagnostics)
+    line.variants = nil
+    line.visibleWhen = nil
     walkDynamic(line, path, diagnostics)
     return line
 end
@@ -302,7 +424,8 @@ local function normalizeMaterialFields(element, path, diagnostics)
     for _, field in ipairs({'material', 'backgroundMaterial'}) do
         local value = element[field]
         if value then
-            element[field] = normalizeMaterialPath(value, path .. '.' .. field, diagnostics)
+            if DISPLAY.IsBinding(value) then validateBinding(value, path .. '.' .. field, diagnostics)
+            else element[field] = normalizeMaterialPath(value, path .. '.' .. field, diagnostics) end
         end
     end
     if element.frames ~= nil then
@@ -313,11 +436,11 @@ local function normalizeMaterialFields(element, path, diagnostics)
             normalizeMaterialArray(element.frames, path .. '.frames', diagnostics)
         end
     end
-    element.frameSeconds = number(element.frameSeconds, nil, 0.02, 60)
+    element.frameSeconds = dynamicNumber(element.frameSeconds, nil, 0, 60, path .. '.frameSeconds', diagnostics)
     if not element.frameSeconds and tonumber(element.fps) then
         element.frameSeconds = 1 / number(element.fps, 1, 0.01, 50)
     end
-    element.flashSeconds = number(element.flashSeconds, nil, 0.02, 60)
+    element.flashSeconds = dynamicNumber(element.flashSeconds, nil, 0, 60, path .. '.flashSeconds', diagnostics)
 end
 
 local function normalizeElement(source, path, order, diagnostics)
@@ -338,11 +461,18 @@ local function normalizeElement(source, path, order, diagnostics)
     element.width = number(element.width or element.w, 64, 1, 100000)
     element.height = number(element.height or element.h, 32, 1, 100000)
     element.z = math.floor(number(element.z, 0, -10000, 10000))
+    element.animationDisabled = element.animationDisabled and true or false
+    element.rotationDegrees = dynamicNumber(element.rotationDegrees, 0, -360000, 360000,
+        path .. '.rotationDegrees', diagnostics)
+    element.rotationSpeedDegreesPerSecond = dynamicNumber(element.rotationSpeedDegreesPerSecond, 0, -10000, 10000,
+        path .. '.rotationSpeedDegreesPerSecond', diagnostics)
+    element.animationEpoch = dynamicNumber(element.animationEpoch, 0, nil, nil, path .. '.animationEpoch', diagnostics)
     element.fontScale = nil
     element.titleFontScale = nil
     element.order = order
-    element.variants = normalizeVariants(element.variants, path .. '.variants', diagnostics)
-    if element.visibleWhen ~= nil then validateCondition(element.visibleWhen, path .. '.visibleWhen', diagnostics) end
+    element.conditions = migratedConditions(element, path, diagnostics)
+    element.variants = nil
+    element.visibleWhen = nil
     if element.action then
         element.action = DISPLAY.NormalizeId(element.action)
         if not knownAction(element.action) then
@@ -446,6 +576,116 @@ local function resolveAnchor(source)
     return preset[1], preset[2]
 end
 
+local function rgbaChannelsNumeric(value)
+    if (value[1] == nil and value.r == nil) or (value[2] == nil and value.g == nil)
+        or (value[3] == nil and value.b == nil) then return false end
+    for index = 1, 4 do
+        if value[index] ~= nil and type(value[index]) ~= 'number' then return false end
+    end
+    for _, channel in ipairs({'r', 'g', 'b', 'a'}) do
+        if value[channel] ~= nil and type(value[channel]) ~= 'number' then return false end
+    end
+    return true
+end
+
+local function normalizeVariableDefinitions(source, diagnostics)
+    local definitions = {}
+    if source ~= nil and type(source) ~= 'table' then
+        addDiagnostic(diagnostics, 'error', '$.variables', 'variables must be an object')
+        return definitions
+    end
+    if source ~= nil and isArray(source) and #source > 0 then
+        addDiagnostic(diagnostics, 'error', '$.variables', 'variables must be keyed by name, not an array')
+        return definitions
+    end
+    local supported = {number = true, boolean = true, string = true, enum = true, color = true}
+    for sourceName, sourceDefinition in pairs(source or {}) do
+        local name = DISPLAY.NormalizeId(sourceName)
+        local path = '$.variables.' .. tostring(sourceName)
+        if not name then
+            addDiagnostic(diagnostics, 'error', path, 'variable requires a stable name')
+        elseif definitions[name] then
+            addDiagnostic(diagnostics, 'error', path, 'duplicate normalized variable name: ' .. name)
+        elseif type(sourceDefinition) ~= 'table' then
+            addDiagnostic(diagnostics, 'error', path, 'variable definition must be an object')
+        else
+            local definition = DISPLAY.DeepCopy(sourceDefinition)
+            definition.type = string.lower(tostring(definition.type or ''))
+            definition.name = name
+            if not supported[definition.type] then
+                addDiagnostic(diagnostics, 'error', path .. '.type', 'unsupported variable type: ' .. definition.type)
+            elseif definition.type == 'number' then
+                if definition.default ~= nil and type(definition.default) ~= 'number' then
+                    addDiagnostic(diagnostics, 'error', path .. '.default', 'number default must be numeric')
+                end
+                if definition.min ~= nil and type(definition.min) ~= 'number' then
+                    addDiagnostic(diagnostics, 'error', path .. '.min', 'number min must be numeric')
+                end
+                if definition.max ~= nil and type(definition.max) ~= 'number' then
+                    addDiagnostic(diagnostics, 'error', path .. '.max', 'number max must be numeric')
+                end
+                definition.min = number(definition.min, nil)
+                definition.max = number(definition.max, nil)
+                definition.decimals = math.floor(number(definition.decimals, 3, 0, 8))
+                if definition.min and definition.max and definition.min > definition.max then
+                    addDiagnostic(diagnostics, 'error', path, 'number min cannot exceed max')
+                end
+                definition.default = number(definition.default, 0, definition.min, definition.max)
+                local power = 10 ^ definition.decimals
+                if definition.default >= 0 then
+                    definition.default = math.floor(definition.default * power + 0.5) / power
+                else
+                    definition.default = math.ceil(definition.default * power - 0.5) / power
+                end
+            elseif definition.type == 'boolean' then
+                if definition.default ~= nil and type(definition.default) ~= 'boolean' then
+                    addDiagnostic(diagnostics, 'error', path .. '.default', 'boolean default must be true or false')
+                end
+                definition.default = definition.default and true or false
+            elseif definition.type == 'string' then
+                if definition.default ~= nil and type(definition.default) ~= 'string' then
+                    addDiagnostic(diagnostics, 'error', path .. '.default', 'string default must be text')
+                end
+                definition.default = tostring(definition.default or '')
+            elseif definition.type == 'enum' then
+                if not isArray(definition.choices) or #definition.choices == 0 then
+                    addDiagnostic(diagnostics, 'error', path .. '.choices', 'enum requires at least one choice')
+                    definition.choices = {}
+                end
+                for choiceIndex, choice in ipairs(definition.choices) do
+                    if type(choice) ~= 'string' and type(choice) ~= 'number' and type(choice) ~= 'boolean' then
+                        addDiagnostic(diagnostics, 'error', path .. '.choices[' .. choiceIndex .. ']',
+                            'enum choices must be strings, numbers, or booleans')
+                    end
+                end
+                if definition.default == nil then definition.default = definition.choices[1] end
+                local found = false
+                for _, choice in ipairs(definition.choices) do
+                    if choice == definition.default then found = true break end
+                end
+                if not found then addDiagnostic(diagnostics, 'error', path .. '.default', 'enum default must be one of its choices') end
+            elseif definition.type == 'color' then
+                if type(definition.default) == 'string' then
+                    if string.sub(definition.default, 1, 1) ~= '@' then
+                        addDiagnostic(diagnostics, 'error', path .. '.default', 'color string must be a theme token')
+                    end
+                elseif type(definition.default) == 'table' then
+                    if not rgbaChannelsNumeric(definition.default) then
+                        addDiagnostic(diagnostics, 'error', path .. '.default', 'RGBA channels must be numeric')
+                    end
+                    local color = DISPLAY.ColorTable(definition.default)
+                    definition.default = {color.r, color.g, color.b, color.a}
+                else
+                    addDiagnostic(diagnostics, 'error', path .. '.default', 'color default must be a theme token or RGBA')
+                    definition.default = {255, 255, 255, 255}
+                end
+            end
+            definitions[name] = definition
+        end
+    end
+    return definitions
+end
+
 local function compileDisplay(source, origin, diagnostics)
     local id = DISPLAY.NormalizeId(source.id)
     if not id then addDiagnostic(diagnostics, 'error', '$.id', 'display requires a stable id') end
@@ -456,6 +696,8 @@ local function compileDisplay(source, origin, diagnostics)
     end
     local metrics = resolveMetrics(source, diagnostics)
     local anchorX, anchorY = resolveAnchor(source)
+    local variableDefinitions = normalizeVariableDefinitions(source.variables, diagnostics)
+    currentVariableDefinitions = variableDefinitions
     local compiled = {
         kind = 'display',
         _compiled = true,
@@ -482,7 +724,7 @@ local function compileDisplay(source, origin, diagnostics)
         visible = source.visible ~= false,
         facePlayer = source.facePlayer and true or false,
         renderDistance = number(source.renderDistance, nil, 0, 1000000),
-        title = source.title,
+        title = DISPLAY.DeepCopy(source.title),
         padding = number(source.padding, 8, 0, 4096),
         lineHeight = number(source.lineHeight, 16, 1, 4096),
         titleHeight = number(source.titleHeight, 28, 0, 4096),
@@ -500,15 +742,38 @@ local function compileDisplay(source, origin, diagnostics)
         barBackgroundColor = DISPLAY.DeepCopy(source.barBackgroundColor or '@bar_background'),
         themeGroup = DISPLAY.NormalizeId(source.themeGroup or 'default'),
         interaction = DISPLAY.DeepCopy(source.interaction or {}),
+        variables = variableDefinitions,
         lines = {},
         pages = {}
     }
+    for _, key in ipairs({'title', 'textColor', 'titleColor', 'backgroundColor', 'borderColor',
+        'barColor', 'barBackgroundColor'}) do
+        walkDynamic(compiled[key], '$.' .. key, diagnostics)
+    end
     local knownThemes = DISPLAY.ThemePacks or {}
     if not next(knownThemes) and DISPLAY.ClientState then
         knownThemes = DISPLAY.ClientState.ThemePacks or knownThemes
     end
     if compiled.themeGroup ~= 'default' and not knownThemes[compiled.themeGroup] then
         addDiagnostic(diagnostics, 'error', '$.themeGroup', 'unknown theme group: ' .. tostring(compiled.themeGroup))
+    end
+    local themePack = knownThemes[compiled.themeGroup]
+    if themePack then
+        for name, definition in pairs(variableDefinitions) do
+            local token = definition.type == 'color' and type(definition.default) == 'string'
+                and string.sub(definition.default, 2) or nil
+            if token then
+                local found = false
+                for _, theme in pairs(themePack.themes or {}) do
+                    local tokens = theme.tokens or theme.colors or theme
+                    if tokens[token] ~= nil then found = true break end
+                end
+                if not found then
+                    addDiagnostic(diagnostics, 'error', '$.variables.' .. name .. '.default',
+                        'unknown theme token: @' .. token)
+                end
+            end
+        end
     end
     compiled.interaction.enabled = compiled.interaction.enabled and true or false
     compiled.interaction.distance = number(compiled.interaction.distance, 128, 16, 4096)
@@ -545,6 +810,7 @@ local function compileDisplay(source, origin, diagnostics)
         -- display interactive. Raycasting remains explicitly opt-in through
         -- interaction.enabled; pages can still be driven through server APIs.
     end
+    currentVariableDefinitions = nil
     return compiled
 end
 

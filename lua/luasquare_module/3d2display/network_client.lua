@@ -70,6 +70,15 @@ local function applyDelta(delta)
     DISPLAY.LastDeltaSequence = tonumber(delta.sequence) or DISPLAY.LastDeltaSequence
     DISPLAY.ServerTimeOffset = CurTime() - (tonumber(delta.serverTime) or CurTime())
     for id, value in pairs(delta.providers or {}) do DISPLAY.ClientState.Providers[id] = value end
+    for id, values in pairs(delta.variables or {}) do
+        for _, display in ipairs(DISPLAY.ClientState.Displays or {}) do
+            if display.id == id then
+                display.variableValues = display.variableValues or {}
+                for name, value in pairs(values) do display.variableValues[name] = DISPLAY.DeepCopy(value) end
+                break
+            end
+        end
+    end
     for group, theme in pairs(delta.themes or {}) do DISPLAY.ClientState.ThemeState[group] = theme end
     for id, value in pairs(delta.annunciators or {}) do DISPLAY.ClientState.Annunciators[id] = value end
     for id, page in pairs(delta.pages or {}) do

@@ -68,6 +68,22 @@ local function jsonSafe(value, depth, seen)
     return out
 end
 
+local function normalizeProviderFields(fields)
+    local normalized = {}
+    for _, field in ipairs(type(fields) == 'table' and fields or {}) do
+        if #normalized >= 512 then break end
+        if type(field) == 'table' and type(field.path) == 'string' and field.path ~= '' then
+            table.insert(normalized, {
+                path = field.path,
+                type = tostring(field.type or 'unknown'),
+                label = field.label and tostring(field.label) or nil,
+                notes = field.notes and tostring(field.notes) or nil
+            })
+        end
+    end
+    return normalized
+end
+
 function DISPLAY.RegisterDataProvider(id, getter, options)
     id = DISPLAY.NormalizeId(id)
     if not id or type(getter) ~= 'function' then return false end
@@ -78,7 +94,8 @@ function DISPLAY.RegisterDataProvider(id, getter, options)
         interval = math.max(tonumber(options.interval) or DISPLAY.TickInterval or 0.1, 0.02),
         nextSample = 0,
         label = options.label or id,
-        notes = options.notes
+        notes = options.notes,
+        fields = jsonSafe(normalizeProviderFields(options.fields))
     }
     if DISPLAY.RuntimeStarted then
         DISPLAY.Revision = DISPLAY.Revision + 1
@@ -301,18 +318,166 @@ function DISPLAY.BuildDisplay(compiledDefinition, overrides)
     for key, history in pairs(DISPLAY.GraphHistory) do
         if history.displayId == id then DISPLAY.GraphHistory[key] = nil end
     end
+    local variableValues = {}
+    for name, variable in pairs(definition.variables or {}) do
+        variableValues[name] = DISPLAY.DeepCopy(variable.default)
+    end
     DISPLAY.Displays[id] = {
         id = id,
         definition = definition,
         activePage = definition.defaultPage,
         graphs = collectDisplayGraphs(definition),
+        variables = variableValues,
         builtAt = now()
     }
     DISPLAY.PendingPages = DISPLAY.PendingPages or {}
     DISPLAY.PendingPages[id] = definition.defaultPage
+    if next(variableValues) then
+        DISPLAY.PendingVariables = DISPLAY.PendingVariables or {}
+        DISPLAY.PendingVariables[id] = DISPLAY.DeepCopy(variableValues)
+    end
     DISPLAY.Revision = DISPLAY.Revision + 1
     scheduleSnapshot()
     return true, DISPLAY.Displays[id]
+end
+
+local function queueVariableDelta(displayId, values)
+    if not next(values or {}) then return end
+    DISPLAY.PendingVariables = DISPLAY.PendingVariables or {}
+    local pending = DISPLAY.PendingVariables[displayId] or {}
+    DISPLAY.PendingVariables[displayId] = pending
+    for name, value in pairs(values or {}) do pending[name] = DISPLAY.DeepCopy(value) end
+end
+
+local function themeHasToken(display, token)
+    if type(token) ~= 'string' or string.sub(token, 1, 1) ~= '@' then return false end
+    local pack = DISPLAY.ThemePacks[display.definition.themeGroup or 'default']
+    local key = string.sub(token, 2)
+    for _, theme in pairs(pack and pack.themes or {}) do
+        local tokens = theme.tokens or theme.colors or theme
+        if tokens[key] ~= nil then return true end
+    end
+    return false
+end
+
+local function validateVariableValue(display, name, value)
+    local definition = display.definition.variables and display.definition.variables[name]
+    if not definition then return false, 'undeclared display variable: ' .. tostring(name) end
+    if definition.type == 'number' then
+        if type(value) ~= 'number' or value ~= value or value == math.huge or value == -math.huge then
+            return false, 'variable ' .. name .. ' requires a finite number'
+        end
+        if definition.min then value = math.max(value, definition.min) end
+        if definition.max then value = math.min(value, definition.max) end
+        local power = 10 ^ math.max(math.floor(tonumber(definition.decimals) or 3), 0)
+        if value >= 0 then value = math.floor(value * power + 0.5) / power
+        else value = math.ceil(value * power - 0.5) / power end
+    elseif definition.type == 'boolean' then
+        if type(value) ~= 'boolean' then return false, 'variable ' .. name .. ' requires a boolean' end
+    elseif definition.type == 'string' then
+        if type(value) ~= 'string' then return false, 'variable ' .. name .. ' requires a string' end
+    elseif definition.type == 'enum' then
+        local found = false
+        for _, choice in ipairs(definition.choices or {}) do
+            if DISPLAY.DeepEqual(choice, value) then found = true break end
+        end
+        if not found then return false, 'variable ' .. name .. ' is not an allowed enum choice' end
+    elseif definition.type == 'color' then
+        if type(value) == 'string' then
+            if not themeHasToken(display, value) then return false, 'variable ' .. name .. ' references an unknown theme token' end
+        elseif type(value) == 'table' then
+            if (value[1] == nil and value.r == nil) or (value[2] == nil and value.g == nil)
+                or (value[3] == nil and value.b == nil) then
+                return false, 'variable ' .. name .. ' requires RGB or RGBA channels'
+            end
+            for index = 1, 4 do
+                if value[index] ~= nil and type(value[index]) ~= 'number' then
+                    return false, 'variable ' .. name .. ' requires numeric RGBA channels'
+                end
+            end
+            for _, channel in ipairs({'r', 'g', 'b', 'a'}) do
+                if value[channel] ~= nil and type(value[channel]) ~= 'number' then
+                    return false, 'variable ' .. name .. ' requires numeric RGBA channels'
+                end
+            end
+            local color = DISPLAY.ColorTable(value)
+            value = {color.r, color.g, color.b, color.a}
+        else
+            return false, 'variable ' .. name .. ' requires a theme token or RGBA value'
+        end
+    else
+        return false, 'variable ' .. name .. ' has an unsupported declaration type'
+    end
+    return true, DISPLAY.DeepCopy(value)
+end
+
+function DISPLAY.SetDisplayVariables(displayId, values)
+    displayId = DISPLAY.NormalizeId(displayId)
+    local display = displayId and DISPLAY.Displays[displayId]
+    if not display then return false, 'display not found' end
+    if type(values) ~= 'table' then return false, 'values must be a table' end
+    local validated = {}
+    for sourceName, value in pairs(values) do
+        local name = DISPLAY.NormalizeId(sourceName)
+        local ok, result = validateVariableValue(display, name, value)
+        if not ok then return false, result end
+        validated[name] = result
+    end
+    local changed = false
+    local delta = {}
+    for name, value in pairs(validated) do
+        if not DISPLAY.DeepEqual(display.variables[name], value) then
+            display.variables[name] = value
+            delta[name] = DISPLAY.DeepCopy(value)
+            changed = true
+        end
+    end
+    if changed then
+        queueVariableDelta(displayId, delta)
+    end
+    return true
+end
+
+function DISPLAY.SetDisplayVariable(displayId, name, value)
+    return DISPLAY.SetDisplayVariables(displayId, {[tostring(name or '')] = value})
+end
+
+function DISPLAY.ResetDisplayVariables(displayId)
+    displayId = DISPLAY.NormalizeId(displayId)
+    local display = displayId and DISPLAY.Displays[displayId]
+    if not display then return false, 'display not found' end
+    local values = {}
+    for name, definition in pairs(display.definition.variables or {}) do
+        values[name] = DISPLAY.DeepCopy(definition.default)
+    end
+    display.variables = values
+    queueVariableDelta(displayId, values)
+    return true
+end
+
+function DISPLAY.ResetDisplayVariable(displayId, name)
+    displayId = DISPLAY.NormalizeId(displayId)
+    name = DISPLAY.NormalizeId(name)
+    local display = displayId and DISPLAY.Displays[displayId]
+    local definition = display and display.definition.variables and display.definition.variables[name]
+    if not definition then return false, display and ('undeclared display variable: ' .. tostring(name)) or 'display not found' end
+    return DISPLAY.SetDisplayVariable(displayId, name, DISPLAY.DeepCopy(definition.default))
+end
+
+function DISPLAY.GetDisplayVariable(displayId, name)
+    local display = DISPLAY.Displays[DISPLAY.NormalizeId(displayId)]
+    if not display then return nil end
+    return DISPLAY.DeepCopy(display.variables[DISPLAY.NormalizeId(name)])
+end
+
+function DISPLAY.GetDisplayVariables(displayId)
+    local display = DISPLAY.Displays[DISPLAY.NormalizeId(displayId)]
+    return display and DISPLAY.DeepCopy(display.variables) or nil
+end
+
+function DISPLAY.GetDisplayVariableDefinitions(displayId)
+    local display = DISPLAY.Displays[DISPLAY.NormalizeId(displayId)]
+    return display and DISPLAY.DeepCopy(display.definition.variables or {}) or nil
 end
 
 function DISPLAY.RemoveDisplay(id)
@@ -449,6 +614,7 @@ function DISPLAY.ClearPreview(displayId, reason)
     if not preview then return false end
     DISPLAY.Previews[displayId] = nil
     DISPLAY.BuildDisplay(preview.original)
+    if preview.originalVariables then DISPLAY.SetDisplayVariables(displayId, preview.originalVariables) end
     log('Cleared preview ' .. displayId .. ': ' .. tostring(reason or 'manual'))
     return true
 end
@@ -475,7 +641,8 @@ function DISPLAY.ApplyPreview(source, targetDisplayId, owner)
     if not existing then
         DISPLAY.Previews[targetDisplayId] = {
             owner = owner,
-            original = DISPLAY.DeepCopy(target.definition)
+            original = DISPLAY.DeepCopy(target.definition),
+            originalVariables = DISPLAY.DeepCopy(target.variables)
         }
     end
     local placement = target.definition
@@ -514,6 +681,7 @@ function DISPLAY.ReloadSources()
     DISPLAY.EntityCache = {}
     DISPLAY.PendingPages = {}
     DISPLAY.PendingThemes = {}
+    DISPLAY.PendingVariables = {}
     DISPLAY.Revision = DISPLAY.Revision + 1
     return DISPLAY.LoadMapSources(game.GetMap())
 end
@@ -529,13 +697,14 @@ local function serializeDisplay(display)
     definition.placementValid = explicitPosition or targetFound or not expectsTarget
     if not definition.placementValid then definition.visible = false end
     definition.activePage = display.activePage
+    definition.variableValues = DISPLAY.DeepCopy(display.variables or {})
     return definition
 end
 
 local function providerCatalog()
     local providers = {}
     for id, provider in pairs(DISPLAY.DataProviders) do
-        providers[id] = {id = id, label = provider.label, notes = provider.notes}
+        providers[id] = {id = id, label = provider.label, notes = provider.notes, fields = DISPLAY.DeepCopy(provider.fields or {})}
     end
     return providers
 end
@@ -608,7 +777,12 @@ local function sampleGraphs(currentTime, delta)
         for key, graph in pairs(display.graphs or {}) do
             if currentTime >= (graph.nextSample or 0) then
                 graph.nextSample = currentTime + graph.sampleInterval
-                local value = tonumber(DISPLAY.ResolveBinding(graph.binding, DISPLAY.ProviderValues))
+                local owner = DISPLAY.Displays[graph.displayId]
+                local value = tonumber(DISPLAY.ResolveBinding(
+                    graph.binding,
+                    DISPLAY.ProviderValues,
+                    owner and owner.variables or nil
+                ))
                 if value then
                     local history = DISPLAY.GraphHistory[key]
                     if not history then
@@ -674,6 +848,7 @@ function DISPLAY.Update()
         sequence = DISPLAY.DeltaSequence + 1,
         serverTime = currentTime,
         providers = {},
+        variables = DISPLAY.PendingVariables or {},
         pages = DISPLAY.PendingPages or {},
         themes = DISPLAY.PendingThemes or {},
         annunciators = {},
@@ -681,6 +856,7 @@ function DISPLAY.Update()
     }
     DISPLAY.PendingPages = {}
     DISPLAY.PendingThemes = {}
+    DISPLAY.PendingVariables = {}
     sampleProviders(currentTime, delta)
     sampleGraphs(currentTime, delta)
     sampleAnnunciators(delta)

@@ -21,9 +21,9 @@ local function targetAt(display, x, y)
     if not page then return nil end
     local providers = DISPLAY.ClientState.Providers or {}
     for index = #page.elements, 1, -1 do
-        local element = DISPLAY.ApplyVariants(page.elements[index], providers)
+        local element = DISPLAY.ApplyConditions(page.elements[index], providers, display.variableValues or {})
         if element.visible ~= false and element.action
-            and DISPLAY.PointInRect(x, y, element) then
+            and DISPLAY.PointInElement(x, y, element, DISPLAY.GetSynchronizedTime()) then
             return {kind = 'element', id = element.id}
         end
     end

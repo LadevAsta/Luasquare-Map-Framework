@@ -364,13 +364,18 @@ end
 vgui.Register('LUASQUARE_3D2D_ThemeEditor', ThemePanel, 'DFrame')
 
 function EDITOR.OpenThemeEditor(displayEditor)
-    if IsValid(EDITOR.ThemeFrame) then EDITOR.ThemeFrame:MakePopup() return EDITOR.ThemeFrame end
+    if IsValid(EDITOR.ThemeFrame) then
+        if IsValid(displayEditor) and displayEditor.ActivateSubwindow then displayEditor:ActivateSubwindow(EDITOR.ThemeFrame)
+        else EDITOR.ThemeFrame:MakePopup() EDITOR.ThemeFrame:MoveToFront() end
+        return EDITOR.ThemeFrame
+    end
     local frame = vgui.Create('LUASQUARE_3D2D_ThemeEditor')
     frame.DisplayEditor = displayEditor
     frame.PreviousThemeOverride = displayEditor and displayEditor.Session.themeOverride
     frame.PreviousThemeSimulation = displayEditor and displayEditor.Session.themeSimulation
     EDITOR.ThemeFrame = frame
-    frame:MakePopup()
+    if IsValid(displayEditor) and displayEditor.ActivateSubwindow then displayEditor:ActivateSubwindow(frame)
+    else frame:MakePopup() frame:MoveToFront() end
     frame:Compile()
     return frame
 end
