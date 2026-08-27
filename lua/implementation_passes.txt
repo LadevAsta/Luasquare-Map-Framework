@@ -1,4 +1,4 @@
-Put idea or next working changes here.
+Put idea or figured implementation pass or long next working changes here.
 
 Improve 3d2display placement experience. [prototype implemented]
     Mapper could name their info_target something like 'DISPLAY512x256_dfr_status_panel', and place and orient the info_target correctly so that it resides on canva's upper left corner(already a feature) and the local z gizmo point upward from display's normal and local x gizmo point along the display width.
@@ -73,3 +73,41 @@ Optimize 3d2d Graph Renderer.
 - Cache graph geometry or render it to a fixed-size render target only when a sample or style changes.
 - Keep the cached result as one textured draw during normal frames.
 - Avoid rebuilding bounds when explicit min and max are configured.
+
+Update 3d2d Function, Editor function & UI.
+- inspector
+    - proper foldable advanced json fields, options in element functional categories such as interact action, condition. within inspector.
+        - Option related to element visual animation (flash, frame, loop) should be in the visual animation category too and have a preview checkbox to preview the animation in editor.
+            - Checkbox to disable all animation altogether for the element.
+            - Explain 'loop'? what is looping.
+            - Frame second and Flash seconds should accept 0 or value lower than 0.2 which will disable these animation behavior for the element.
+    - Condition should integrate with visual animation properly. Without guesswork.
+        - 'if this is true, enable this element visibility, else it is not visible'
+        - 'If this is true, enable this element's flash animation, else it is not flashing'
+        - 'If this is greater than or equal to this, change this element's color to this color(either token or custom RGBA), Otherwise, return it to original color if it has changed.'
+    - in addition to knowing and listing providers, inspector should also know and list provider's active path if possible. reducing guesswork and development tabbing-outs.
+    - 'theme token' and 'inherit' are currently overshadowed by RGBA 'choose...'
+    - condition added via 'basic varient' currently cannot not be edited since nothing saves actually. There are no apply button.
+        - displayed 'truthy', 'eq', 'gt', 'lt', etc. operators are unfamilar. Should display actual sign '>=', '==', '<'
+- Editor viewport
+    - The resizing knob thing at the bottom right should have highest priority and override hitstack. clicking/dragging the knob will always be resizing rather than selecting something else.
+    - Clicking or dragging the highlighted border of the element should have higher priority and override hitstack, dragging will ensure the element will be moved rather than selecting something else. 
+
+Switch Timeline Engine architecture to JSON based.
+    - Clean-Discard the existing system.
+    - New system should utilize timeline defined in JSON. Repeatable component such as catalyzer.lua that want to utilizes timeline will load 'default' timeline file(s), unless a custom one is told to it at bootstrap.
+    - Timeline json can be created, edited and saved in data. Using in-game editor that may also preview. Accessible in singleplayer only.
+    - In-game editor should :
+        - Query and list available components.
+        - Have a scrollable timeline with multiple addable tracks. A track can be muted during preview.
+        - Drag and drop an animatable component, clicking component on the timeline open inspector that lets you choose its action when playhead hit it.
+        - Ability to play a synced sound alongside the choreography preview. (eg. music intended to be synced)
+        - Components are resizable in track. Unless the selected subcomponent don't support start/end call or interpolation, at which point it will be a marker rather than a rectangle.
+        - Some component(or subcomponent in the component) have enable/disable state, they may be resized on the timeline to extend/shrink duration. (eg. show for a duration then hide env_sprite class on a component)
+        - Some component(or subcomponent in the component) can have setvalue. In the case of setvalue, timeline may interpolate the set value (linear, etc) from first value to second value at the end of the component. The callback during interpolation is per timeline-tick.
+    - Technical limitation is to be discussed in planning pass (Such as whether or not the game can 'pause' a sound or change it effective volume while its playing).
+
+
+Seperate Singleplayer/Admin game experience and Development environment.
+    - Luasquare shall have development mode toggle. Without development mode, tools are denied access no matter what.
+    - In server, only server owner can toggle it.

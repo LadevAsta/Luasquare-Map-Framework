@@ -78,13 +78,10 @@ fuelcellreceptors require redesign
 FuelEnrichmentTower require redesign
     - No more source I/O.
     - More in-depth fuel cell and creation.
-    - Discuss later.
 
 TrainDeliverySystem
     - Currently use one button to travel and spawn inactive fuel cells (fuel cell that requires enrichment)
-    - New direction is to use a 3D2D to show a screen that you can choose what to acquire at the cost of operation point (money).
-    - Then 'train' appear and once it passes a certain path_track, it trigger a spawn logic in lua system.
-    - Existing Source I/O is compact and can handle the train animation on their own.
+    - New direction is to use to-be-implemented deliverysystem.
 
 MultiFloorElevator
     - Currently run with Source I/O contraption, which is complicated to maintain and display janky result.
