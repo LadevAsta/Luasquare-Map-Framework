@@ -1,0 +1,28 @@
+{
+  "schema": "luasquare.audio/v1",
+  "id": "luasquare_subtitle_styles",
+  "label": "Luasquare shared subtitle presentation",
+  "subtitleStyles": {
+    "facility": {
+      "label": "Facility",
+      "color": [230, 240, 245, 255],
+      "speakerColor": [90, 190, 255, 255],
+      "font": "Roboto",
+      "size": 24,
+      "weight": 600
+    },
+    "facility_emergency": {
+      "label": "Facility Emergency",
+      "color": [255, 215, 90, 255],
+      "speakerColor": [255, 90, 70, 255],
+      "font": "Roboto",
+      "size": 26,
+      "bold": true,
+      "glitch": {
+        "enabled": true,
+        "intensity": 1.25,
+        "interval": 0.05
+      }
+    }
+  }
+}

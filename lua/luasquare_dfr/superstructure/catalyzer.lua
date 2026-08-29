@@ -136,50 +136,92 @@ function DFR.GetCatalyzer(id)
     return DFR.Catalyzers[tonumber(id)]
 end
 
-function Catalyzer:RegisterTimelines()
-    local owner = DFR.CreateTimelineOwner('catalyzer:' .. tostring(self.id), {
-        defaultChannel = 'operation',
-        defaultConflictPolicy = 'reject'
+local CATALYZER_TIMELINE_ROOT = 'data_static/luasquare_timeline/_components/dfr.catalyzer/'
+
+local function registerGroupComponent(unit, group)
+    local componentId = 'catalyzer:' .. unit.id .. ':' .. group.key
+    local actions = {}
+    local enableInput, disableInput
+    if not group.excluded and not group.validationOnly and not group.reserved then
+        if group.class == 'env_sprite' then
+            enableInput, disableInput = 'ShowSprite', 'HideSprite'
+        elseif group.class == 'env_beam' or group.class == 'light' then
+            enableInput, disableInput = 'TurnOn', 'TurnOff'
+        elseif group.class == 'func_rotating' then
+            enableInput, disableInput = 'Start', 'Stop'
+        elseif group.class == 'ambient_generic' then
+            enableInput, disableInput = 'PlaySound', 'StopSound'
+        elseif group.class == 'env_shake' then
+            enableInput, disableInput = 'StartShake', 'StopShake'
+        elseif group.key == 'catalyzer_tip_mdl_impact' then
+            enableInput, disableInput = 'Enable', 'Disable'
+        end
+    end
+    if enableInput then
+        actions.enabled = {
+            kind = 'duration', label = 'Enabled for duration', seekPolicy = 'reject',
+            start = function() return fire(unit, group.key, enableInput) end,
+            finish = function() return fire(unit, group.key, disableInput) end,
+            cancel = function() return fire(unit, group.key, disableInput) end
+        }
+        actions.enable = {
+            kind = 'marker', label = enableInput, seekPolicy = 'reject',
+            execute = function() return fire(unit, group.key, enableInput) end
+        }
+        actions.disable = {
+            kind = 'marker', label = disableInput, seekPolicy = 'apply',
+            execute = function() return fire(unit, group.key, disableInput) end
+        }
+    end
+    DFR.RegisterTimelineComponent(componentId, {
+        type = 'dfr.catalyzer.' .. tostring(group.class or 'binding'),
+        label = 'Catalyzer ' .. unit.id .. ' / ' .. group.key,
+        parent = 'catalyzer:' .. unit.id,
+        context = {unit = unit, group = group},
+        actions = actions,
+        notes = group.excluded and 'Excluded from normal operation'
+            or (group.reserved and 'Reserved for future behavior'
+            or (group.validationOnly and 'Validation only' or nil)),
+        safeReset = disableInput and function() return fire(unit, group.key, disableInput) end or nil
     })
-    self.timelineOwner = owner
-    local id = self.id
-    self:RegisterTimeline('annihilation_fire', {
-        label = 'Catalyzer ' .. tostring(id) .. ' Annihilation Fire',
-        channel = 'operation',
-        conflictPolicy = 'reject',
-        duration = 12,
-        steps = {
-            {
-                id = 'charge_low', at = 0, required = true,
-                action = function() return DFR.SetCatalyzerMode(id, 'CHARGING_LOW') end
-            },
-            {
-                id = 'charge_high', at = 5, required = true,
-                action = function() return DFR.SetCatalyzerMode(id, 'CHARGING_HIGH') end
-            },
-            {
-                id = 'fire', at = 8, required = true,
-                action = function()
-                    if not DFR.IsCatalyzerAvailable(id) then return false end
-                    return DFR.SetCatalyzerMode(id, 'FIRING')
-                end
-            },
-            {
-                id = 'cease_fire', at = 11, required = true,
-                action = function() return DFR.SetCatalyzerMode(id, 'CHARGED') end
-            },
-            {
-                id = 'offline', at = 12, required = true,
-                action = function() return DFR.SetCatalyzerMode(id, 'OFFLINE') end
-            }
-        },
-        onCancel = function() DFR.SetCatalyzerMode(id, 'OFFLINE') end
-    })
-    return true
+    return componentId
 end
 
-function Catalyzer:RegisterTimeline(name, definition)
-    return self.timelineOwner and self.timelineOwner:Register(name, definition) or false
+function Catalyzer:RegisterTimelines(options)
+    options = options or {}
+    local ownerId = 'catalyzer:' .. tostring(self.id)
+    local children = {}
+    for _, group in ipairs(GROUPS) do children[group.key] = registerGroupComponent(self, group) end
+    DFR.RegisterTimelineComponent(ownerId, {
+        type = 'dfr.catalyzer',
+        label = 'Catalyzer ' .. tostring(self.id),
+        children = children,
+        context = self,
+        actions = {
+            set_mode = {
+                kind = 'marker', label = 'Set logical mode', seekPolicy = 'reject',
+                parameters = {{
+                    id = 'mode', label = 'Mode', type = 'enum', default = 'OFFLINE',
+                    choices = {'OFFLINE', 'CHARGING_LOW', 'CHARGING_HIGH', 'FIRING', 'CHARGED'}
+                }},
+                execute = function(_, params)
+                    local mode = string.upper(tostring(params.mode or ''))
+                    if mode == 'FIRING' and not DFR.IsCatalyzerAvailable(self.id) then return false end
+                    return DFR.SetCatalyzerMode(self.id, mode)
+                end
+            }
+        },
+        safeReset = function() return DFR.SetCatalyzerMode(self.id, 'OFFLINE') end
+    })
+    LUASQUARE_TIMELINE.RegisterLifecycleHandler('dfr.catalyzer.cancel', function(_, run)
+        local component = run and LUASQUARE_TIMELINE.Components[run.ownerId]
+        local unit = component and component.context
+        return unit and DFR.SetCatalyzerMode(unit.id, 'OFFLINE') or false
+    end)
+    self.timelineOwner = DFR.GetTimelineOwner(ownerId)
+    local source = options.annihilation_fire or options.annihilationFire
+        or (CATALYZER_TIMELINE_ROOT .. 'annihilation_fire.json')
+    return DFR.BindComponentTimeline(ownerId, 'annihilation_fire', source)
 end
 
 function Catalyzer:StartTimeline(name, context, runOptions)
@@ -325,7 +367,12 @@ function DFR.RegisterDefaultCatalyzers(options)
                     or (group.validationOnly and 'Validation only' or 'Catalyzer operational group'))
             })
         end
-        unit:RegisterTimelines()
+        local sharedTimelines = options.timelineSources or options.timelines or {}
+        local unitTimelines = options.unitTimelineSources and options.unitTimelineSources[id] or {}
+        local selectedTimelines = {}
+        for name, path in pairs(sharedTimelines) do selectedTimelines[name] = path end
+        for name, path in pairs(unitTimelines) do selectedTimelines[name] = path end
+        unit:RegisterTimelines(selectedTimelines)
     end
 
     DFR.RegisterBinding('allcatalyzers_tip_beam_target', {

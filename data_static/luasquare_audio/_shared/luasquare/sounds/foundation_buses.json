@@ -1,0 +1,11 @@
+{
+  "schema": "luasquare.audio/v1",
+  "id": "luasquare_music_buses",
+  "label": "Luasquare shared music buses",
+  "musicBuses": {
+    "background": {
+      "label": "Background music",
+      "volume": 1
+    }
+  }
+}

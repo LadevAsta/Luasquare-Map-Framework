@@ -59,6 +59,7 @@ local function cleanupPresentation()
     DFR.PreAnnihilation.Phase = nil
     DFR.PreAnnihilation.Actor = nil
     if DFR.SetCoreBeamActive then DFR.SetCoreBeamActive('annihilation', false) end
+    DFR.UnlockControlsByOwner(LOCK_OWNER)
 end
 
 function DFR.GetPreAnnihilationUnavailableReason()
@@ -111,102 +112,90 @@ function DFR.GetPreAnnihilationSnapshot()
         or { ownerId = 'procedure:pre_annihilation', definitions = {}, runs = {} }
 end
 
-function DFR.RegisterPreAnnihilationProcedure()
-    local owner = DFR.CreateTimelineOwner('procedure:pre_annihilation', {
-        defaultChannel = 'procedure',
-        defaultConflictPolicy = 'reject'
-    })
-    DFR.PreAnnihilation.TimelineOwner = owner
-    owner:Register(TIMELINE_NAME, {
+function DFR.RegisterPreAnnihilationProcedure(options)
+    options = options or {}
+    local ownerId = 'procedure:pre_annihilation'
+    DFR.RegisterTimelineComponent(ownerId, {
+        type = 'dfr.procedure',
         label = 'Pre-Annihilation Procedure',
-        channel = 'procedure',
-        conflictPolicy = 'reject',
-        lockOwner = LOCK_OWNER,
-        duration = 15,
-        guard = function(context, instance)
-            local stabilizer = DFR.Stabilizer and DFR.Stabilizer.State or {}
-            local director = DFR.DirectorBeam and DFR.DirectorBeam.State or {}
-            if DFR.GetState() ~= DFR.STATE_MANUAL_STARTUP
-                or not stabilizer.active or not director.active then return false end
-            if context.childrenStarted then
-                for _, child in ipairs(instance.children or {}) do
-                    if child.metadata and child.metadata.required
-                        and (child.status == 'failed' or child.status == 'cancelled') then
-                        return false
+        children = {
+            reactor_machine = 'reactor_machine',
+            core_sphere = 'core_visual:core_sphere',
+            core_shield = 'core_visual:core_shield'
+        },
+        actions = {
+            pulse_core = {
+                kind = 'marker', label = 'Pulse core and shield', seekPolicy = 'skip',
+                execute = function()
+                    if DFR.PulseCoreVisual then
+                        DFR.PulseCoreVisual('core_sphere')
+                        DFR.PulseCoreVisual('core_shield')
                     end
+                    return true
                 end
-                return healthyCatalyzerChildren(instance)
-                    >= (DFR.Config.MinimumAvailableCatalyzers or 1)
-            end
-            return true
-        end,
-        onStart = function(context)
-            DFR.PreAnnihilation.Phase = 'PRE_ANNIHILATION'
-            DFR.PreAnnihilation.Actor = DFR.GetActorName(context.actor)
-            lockConflictingControls()
-            if DFR.SetCoreBeamActive then DFR.SetCoreBeamActive('annihilation', false) end
-            return true
-        end,
-        steps = {
-            {
-                id = 'start_catalyzers',
-                at = 0,
-                required = true,
-                action = function(context, instance)
-                    local started = 0
-                    for _, id in ipairs(context.catalyzerIds or {}) do
-                        local unit = DFR.GetCatalyzer(id)
-                        local ok = unit and DFR.TimelineRegistry:StartChild(
-                            instance,
-                            unit.timelineOwner,
-                            'annihilation_fire',
-                            { procedureRunId = instance.runId },
-                            { role = 'catalyzer', unitId = id }
-                        )
-                        if ok then started = started + 1 end
-                    end
-                    context.childrenStarted = true
-                    return started >= (DFR.Config.MinimumAvailableCatalyzers or 1)
-                end
-            },
-            {
-                id = 'core_impact_and_stabilizer_gate',
-                at = 8,
-                required = true,
-                actions = {
-                    function(context, instance)
-                        local machineOwner = DFR.ReactorMachine.TimelineOwner
-                        return DFR.TimelineRegistry:StartChild(
-                            instance,
-                            machineOwner,
-                            'pre_annihilation_gate',
-                            { procedureRunId = instance.runId },
-                            { role = 'reactor_machine', required = true }
-                        )
-                    end,
-                    function()
-                        if DFR.PulseCoreVisual then
-                            DFR.PulseCoreVisual('core_sphere')
-                            DFR.PulseCoreVisual('core_shield')
-                        end
-                        return true
-                    end
-                }
             }
         },
-        onCancel = function() cleanupPresentation() end,
-        onComplete = function(context)
-            cleanupPresentation()
-            local transitioned = DFR.RequestTransition(
-                DFR.STATE_ANNIHILATION_STAGE,
-                'pre-annihilation procedure complete',
-                context.actor
-            )
-            if not transitioned then return false end
-            if DFR.ApplyCoreVisualPreset then DFR.ApplyCoreVisualPreset('annihilation_entry', 0.5) end
-            return true
-        end
+        safeReset = function() cleanupPresentation() return true end
     })
+
+    LUASQUARE_TIMELINE.RegisterTargetResolver('dfr.available_catalyzers', function()
+        local components = {}
+        for _, id in ipairs(availableCatalyzers()) do table.insert(components, 'catalyzer:' .. id) end
+        return components
+    end, {
+        label = 'Available DFR catalyzers',
+        componentType = 'dfr.catalyzer'
+    })
+
+    LUASQUARE_TIMELINE.RegisterLifecycleHandler('dfr.pre_annihilation.start_guard', function()
+        local stabilizer = DFR.Stabilizer and DFR.Stabilizer.State or {}
+        local director = DFR.DirectorBeam and DFR.DirectorBeam.State or {}
+        return DFR.GetState() == DFR.STATE_MANUAL_STARTUP
+            and stabilizer.active and director.active
+            and #availableCatalyzers() >= (DFR.Config.MinimumAvailableCatalyzers or 1)
+    end)
+    LUASQUARE_TIMELINE.RegisterLifecycleHandler('dfr.pre_annihilation.run_guard', function(_, run)
+        local stabilizer = DFR.Stabilizer and DFR.Stabilizer.State or {}
+        local director = DFR.DirectorBeam and DFR.DirectorBeam.State or {}
+        if DFR.GetState() ~= DFR.STATE_MANUAL_STARTUP
+            or not stabilizer.active or not director.active then return false end
+        local state = run.clipStates and run.clipStates.start_catalyzers
+        if not state or not state.started then return true end
+        for _, child in ipairs(run.children or {}) do
+            if child.metadata and child.metadata.required
+                and (child.status == 'failed' or child.status == 'cancelled') then return false end
+        end
+        return healthyCatalyzerChildren(run) >= (DFR.Config.MinimumAvailableCatalyzers or 1)
+    end)
+    LUASQUARE_TIMELINE.RegisterLifecycleHandler('dfr.pre_annihilation.start', function(context)
+        DFR.PreAnnihilation.Phase = 'PRE_ANNIHILATION'
+        DFR.PreAnnihilation.Actor = DFR.GetActorName(context.actor)
+        lockConflictingControls()
+        if DFR.SetCoreBeamActive then DFR.SetCoreBeamActive('annihilation', false) end
+        return true
+    end)
+    LUASQUARE_TIMELINE.RegisterLifecycleHandler('dfr.pre_annihilation.cancel', function()
+        cleanupPresentation()
+        return true
+    end)
+    LUASQUARE_TIMELINE.RegisterLifecycleHandler('dfr.pre_annihilation.complete', function(context, run)
+        cleanupPresentation()
+        if run and run.preview then return true end
+        local transitioned = DFR.RequestTransition(
+            DFR.STATE_ANNIHILATION_STAGE,
+            'pre-annihilation procedure complete',
+            context.actor
+        )
+        if not transitioned then return false end
+        if DFR.ApplyCoreVisualPreset then DFR.ApplyCoreVisualPreset('annihilation_entry', 0.5) end
+        return true
+    end)
+
+    local sourcePath = options.timelineSource or options.sourcePath
+        or ('data_static/luasquare_timeline/' .. game.GetMap() .. '/pre_annihilation.json')
+    local bound = DFR.BindComponentTimeline(ownerId, TIMELINE_NAME, sourcePath)
+    local owner = DFR.GetTimelineOwner(ownerId)
+    DFR.PreAnnihilation.TimelineOwner = owner
 
     DFR.RegisterControl('pre_annihilation_begin', {
         label = 'Begin Pre-Annihilation',
@@ -226,5 +215,5 @@ function DFR.RegisterPreAnnihilationProcedure()
         end,
         callback = function() return DFR.CancelPreAnnihilation('operator cancellation') end
     })
-    return true
+    return bound
 end

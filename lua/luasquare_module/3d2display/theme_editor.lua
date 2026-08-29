@@ -138,6 +138,7 @@ function ThemePanel:Init()
     self.Status = self:Add('DLabel') self.Status:Dock(BOTTOM) self.Status:SetTall(38)
     self.Status:SetWrap(true) self.Status:SetContentAlignment(4) self.Status:DockMargin(6, 2, 6, 2)
     self:Replace(self.Source, self.Origin, false)
+    timer.Simple(0, function() if IsValid(self) and LUASQUARE_EDITOR_THEME then LUASQUARE_EDITOR_THEME.ApplyTree(self) end end)
 end
 
 function ThemePanel:RefreshSources()

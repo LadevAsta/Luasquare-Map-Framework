@@ -297,14 +297,11 @@ function EditorPanel:Init()
     self.Toolbar:SetTall(34)
     self.Toolbar:DockPadding(4, 3, 4, 3)
 
-    self.SourcePicker = self.Toolbar:Add('DComboBox')
+    self.SourcePicker = self.Toolbar:Add('DButton')
     self.SourcePicker:Dock(LEFT)
-    self.SourcePicker:SetWide(250)
-    self.SourcePicker:SetValue('Open packed source or draft…')
-    self.SourcePicker.OnSelect = function(_, _, _, data)
-        if self._refreshingSourcePicker then return end
-        self:OpenEntry(data)
-    end
+    self.SourcePicker:SetWide(62)
+    self.SourcePicker:SetText('File...')
+    self.SourcePicker.DoClick = function() self:OpenSourceWindow() end
 
     local function toolButton(label, callback, width)
         local button = self.Toolbar:Add('DButton')
@@ -368,6 +365,12 @@ function EditorPanel:Init()
     self.PreviewButton:SetWide(76)
     self.PreviewButton:SetText('Preview')
     self.PreviewButton.DoClick = function() self:OpenPreviewWindow() end
+    self.SourcePathLabel = self.Toolbar:Add('DLabel')
+    self.SourcePathLabel:Dock(FILL)
+    self.SourcePathLabel:DockMargin(6, 0, 4, 0)
+    self.SourcePathLabel:SetContentAlignment(4)
+    self.SourcePathLabel:SetTextColor(Color(215, 215, 215))
+    self.SourcePathLabel:SetZPos(10000)
 
     self.Body = self:Add('DHorizontalDivider')
     self.Body:Dock(FILL)
@@ -424,14 +427,98 @@ function EditorPanel:Init()
 
     self:RefreshSources()
     self:ReplaceSource(self.Session.source, self.Session.origin, false)
+    timer.Simple(0, function() if IsValid(self) and LUASQUARE_EDITOR_THEME then LUASQUARE_EDITOR_THEME.ApplyTree(self) end end)
 end
 
 function EditorPanel:RefreshSources()
-    self._refreshingSourcePicker = true
-    self.SourcePicker:Clear()
-    for _, entry in ipairs(listSources()) do self.SourcePicker:AddChoice(entry.label, entry) end
-    self.SourcePicker:SetValue(self.Session.origin or 'Open packed source or draft...')
-    self._refreshingSourcePicker = false
+    if IsValid(self.SourcePicker) then self.SourcePicker:SetText('File...') end
+    if IsValid(self.SourcePathLabel) then
+        local origin = tostring(self.Session.origin or 'New source')
+        self.SourcePathLabel:SetText(origin)
+        self.SourcePathLabel:SetTooltip(origin)
+    end
+    if IsValid(self.SourceWindow) then self:PopulateSourceWindow() end
+end
+
+function EditorPanel:PopulateSourceWindow()
+    if not IsValid(self.SourceWindowList) then return end
+    local filter = string.lower(IsValid(self.SourceWindowSearch) and self.SourceWindowSearch:GetValue() or '')
+    self.SourceWindowList:Clear()
+    for _, entry in ipairs(listSources()) do
+        local path = tostring(entry.path)
+        if filter == '' or string.find(string.lower(path), filter, 1, true) then
+            local line = self.SourceWindowList:AddLine(entry.readOnly and 'Packed' or 'Draft',
+                string.GetFileFromFilename(path), path)
+            line.SourceEntry = entry
+            line:SetTooltip(path)
+        end
+    end
+end
+
+function EditorPanel:OpenSourceWindow()
+    if IsValid(self.SourceWindow) then self:ActivateSubwindow(self.SourceWindow) return end
+    local frame = vgui.Create('DFrame')
+    self.SourceWindow = frame
+    frame:SetTitle('3D2D Display Sources')
+    frame:SetSize(math.min(ScrW() - 80, 900), math.min(ScrH() - 80, 600))
+    frame.OnRemove = function()
+        if IsValid(self) then
+            self.Subwindows[frame] = nil
+            self.SourceWindow = nil
+        end
+    end
+    local search = frame:Add('DTextEntry')
+    self.SourceWindowSearch = search
+    search:Dock(TOP)
+    search:DockMargin(6, 6, 6, 4)
+    search:SetPlaceholderText('Search complete source path...')
+    search.OnChange = function() self:PopulateSourceWindow() end
+    local list = frame:Add('DListView')
+    self.SourceWindowList = list
+    list:Dock(FILL)
+    list:DockMargin(6, 0, 6, 4)
+    list:SetMultiSelect(false)
+    list:AddColumn('Kind'):SetFixedWidth(70)
+    list:AddColumn('File'):SetFixedWidth(220)
+    list:AddColumn('Complete path')
+    local function loadSelected()
+        local selected = list:GetSelectedLine()
+        local line = selected and list:GetLine(selected)
+        if not line or not line.SourceEntry then return end
+        local entry = line.SourceEntry
+        self:ConfirmDiscard(function()
+            local source, message = readSource(entry)
+            if source then
+                self:ReplaceSource(source, entry.path, entry.readOnly)
+                if IsValid(frame) then frame:Close() end
+            else
+                Derma_Message(message, 'Open failed', 'OK')
+            end
+        end)
+    end
+    list.DoDoubleClick = loadSelected
+    local buttons = frame:Add('DPanel')
+    buttons:Dock(BOTTOM)
+    buttons:SetTall(36)
+    local function button(label, callback)
+        local control = buttons:Add('DButton')
+        control:Dock(LEFT)
+        control:DockMargin(6, 4, 0, 4)
+        control:SetWide(110)
+        control:SetText(label)
+        control.DoClick = callback
+    end
+    button('New', function()
+        self:ConfirmDiscard(function()
+            self:ReplaceSource(defaultSource(), 'New source', false)
+            if IsValid(frame) then frame:Close() end
+        end)
+    end)
+    button('Load selected', loadSelected)
+    button('Save draft', function() self:SaveDraft() self:PopulateSourceWindow() end)
+    button('Close', function() frame:Close() end)
+    self:PopulateSourceWindow()
+    self:ActivateSubwindow(frame)
 end
 
 function EditorPanel:RefreshThemes()
@@ -606,12 +693,12 @@ function EditorPanel:ActivateSubwindow(frame)
     if not IsValid(frame) then return end
     frame:SetDeleteOnClose(true)
     frame:Center()
-    if frame.SetDrawOnTop then frame:SetDrawOnTop(true) end
     self.SubwindowSerial = (self.SubwindowSerial or 0) + 1
     self.Subwindows[frame] = self.SubwindowSerial
     self.ActiveSubwindow = frame
     frame:MakePopup()
     frame:MoveToFront()
+    timer.Simple(0, function() if IsValid(frame) and LUASQUARE_EDITOR_THEME then LUASQUARE_EDITOR_THEME.ApplyTree(frame) end end)
 end
 
 function EditorPanel:Think()
@@ -1275,7 +1362,7 @@ function EditorPanel:OpenMaterialPicker(callback, initial)
         searchStatus:SetText(string.format('%d match(es); showing %d%s', total, #matches, suffix))
     end
     search.OnValueChange = function() refreshSearch() end
-    frame.Think = function()
+    content.Think = function()
         if frame._materialIndexRevision == index.revision then return end
         if RealTime() < (frame._nextMaterialSearchRefresh or 0) then return end
         frame._nextMaterialSearchRefresh = RealTime() + 0.2
@@ -3347,11 +3434,4 @@ end)
 
 hook.Add('LUASQUARE_3D2D_SnapshotUpdated', 'LUASQUARE_3D2D_EditorRefreshTargets', function()
     if IsValid(EDITOR.Frame) then EDITOR.Frame:RefreshSources() end
-end)
-
-hook.Add('PopulateToolMenu', 'LUASQUARE_3D2D_EditorMenu', function()
-    spawnmenu.AddToolMenuOption('Options', 'Luasquare', 'Luasquare3D2DEditor', '3D2D Display Editor', '', '', function(panel)
-        panel:Help('Build JSON-backed Simple and Complex displays. Packed sources open read-only; Save draft writes a canonical JSON file under data/.')
-        panel:Button('Open display editor').DoClick = EDITOR.Open
-    end)
 end)

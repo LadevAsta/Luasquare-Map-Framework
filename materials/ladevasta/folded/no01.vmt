@@ -1,4 +1,7 @@
 "UnlitGeneric"
 {
 	"$basetexture" "ladevasta/folded/no01"
+	"$nolod" 1
+	"$vertexalpha" 1
+	"$vertexcolor" 1
 }

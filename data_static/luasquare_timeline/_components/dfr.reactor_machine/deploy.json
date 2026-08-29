@@ -1,0 +1,20 @@
+{
+  "schema": "luasquare.timeline/v1",
+  "id": "dfr_reactor_machine_deploy",
+  "label": "Deploy Reactor Machine",
+  "channel": "movement",
+  "conflictPolicy": "replace",
+  "duration": 3,
+  "lifecycle": {"onCancel": "dfr.reactor_machine.cancel"},
+  "tracks": [
+    {
+      "id": "shafts",
+      "label": "Reactor shafts",
+      "target": "self",
+      "clips": [
+        {"id": "primary_shafts", "kind": "marker", "at": 0, "action": "deploy_primary_shafts", "required": true},
+        {"id": "stabilizer_shaft", "kind": "marker", "at": 3, "action": "deploy_stabilizer_shaft", "required": true}
+      ]
+    }
+  ]
+}

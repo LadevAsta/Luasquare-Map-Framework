@@ -1,0 +1,20 @@
+{
+  "schema": "luasquare.timeline/v1",
+  "id": "dfr_reactor_machine_stabilizer_shutdown",
+  "label": "Stabilizer Shutdown",
+  "channel": "stabilizer",
+  "conflictPolicy": "replace",
+  "duration": 3,
+  "lifecycle": {"onCancel": "dfr.reactor_machine.cancel"},
+  "tracks": [
+    {
+      "id": "stabilizer",
+      "label": "Stabilizer",
+      "target": "self",
+      "clips": [
+        {"id": "close_arms", "kind": "marker", "at": 0, "action": "close_stabilizer_arms", "required": true},
+        {"id": "stop_rotor", "kind": "marker", "at": 3, "action": "stop_stabilizer_rotor", "required": true}
+      ]
+    }
+  ]
+}

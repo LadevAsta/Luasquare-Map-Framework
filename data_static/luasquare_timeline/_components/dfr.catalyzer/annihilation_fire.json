@@ -1,0 +1,23 @@
+{
+  "schema": "luasquare.timeline/v1",
+  "id": "dfr_catalyzer_annihilation_fire",
+  "label": "Catalyzer Annihilation Fire",
+  "channel": "operation",
+  "conflictPolicy": "reject",
+  "duration": 12,
+  "lifecycle": {"onCancel": "dfr.catalyzer.cancel"},
+  "tracks": [
+    {
+      "id": "operation",
+      "label": "Catalyzer operation",
+      "target": "self",
+      "clips": [
+        {"id": "charge_low", "kind": "marker", "at": 0, "action": "set_mode", "required": true, "params": {"mode": "CHARGING_LOW"}},
+        {"id": "charge_high", "kind": "marker", "at": 5, "action": "set_mode", "required": true, "params": {"mode": "CHARGING_HIGH"}},
+        {"id": "fire", "kind": "marker", "at": 8, "action": "set_mode", "required": true, "params": {"mode": "FIRING"}},
+        {"id": "cease_fire", "kind": "marker", "at": 11, "action": "set_mode", "required": true, "params": {"mode": "CHARGED"}},
+        {"id": "offline", "kind": "marker", "at": 12, "action": "set_mode", "required": true, "params": {"mode": "OFFLINE"}}
+      ]
+    }
+  ]
+}

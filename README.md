@@ -13,8 +13,8 @@ Luasquare began as an RBMK-style reactor experiment, but it is now a broader map
 | --- | --- |
 | RBMK simulation | Grid-based reactor layouts; four-direction neutron-flux propagation; fuel, xenon, heat, control rods, automatic regulation, vessel water/steam, recirculation, pressure, integrity, leaks, blowouts, SCRAM, and failure handling |
 | Balance of plant | Fluid networks, pumps, valves, heat exchangers, steam separators, condensers, deaerators, cooling towers, turbines, generators, diesel generators, electrical grids, breakers, and transformers |
-| Map modules | Source-driven Simple/Complex 3D2D displays, graphs, themes, raycast interaction and editor; skin-based seven-segment displays; gauges; numeric keypads; annunciators; control bindings; Source entity bindings; and movable-machinery helpers |
-| Dark Fusion Reactor | A staged reactor framework with startup controls, resource state, VMF bindings, machinery, independently animated core visuals, reusable timelines, six-catalyzer sequencing, telemetry, debug controls, and a guarded simulation tick |
+| Map modules | Source-driven Simple/Complex 3D2D displays; JSON choreography timelines and editor; synchronized music, PA, ambient audio, soundscapes, and subtitles; graphs, themes, raycast interaction; skin-based seven-segment displays; gauges; numeric keypads; annunciators; control bindings; Source entity bindings; and movable-machinery helpers |
+| Dark Fusion Reactor | A staged reactor framework with startup controls, resource state, VMF bindings, machinery, independently animated core visuals, component-owned JSON timelines, six-catalyzer sequencing, telemetry, debug controls, and a guarded simulation tick |
 | Development tools | Client-side RBMK and plant overlays, DFR admin controls in the spawn menu, bundled annunciator/display assets, and asset-generation scripts |
 | Reference content | The playable `experiment_rbmk` BSP, its editable VMF source, an LRBMKP-400 layout, and a complete map-specific RBMK bootstrap |
 
@@ -79,6 +79,8 @@ if LUASQUARE_MY_MAP_SIM_INITIALIZED then return end
 
 include('luasquare_module/seg7display.lua')
 include('luasquare_module/3d2display/engine.lua')
+include('luasquare_module/timeline/engine.lua')
+include('luasquare_module/audio/engine.lua')
 include('luasquare_module/annunciator/annunciator.lua')
 include('luasquare_powerplant/init.lua')
 include('luasquare_rbmk/init.lua')
@@ -196,6 +198,22 @@ The editor's Themes window creates reusable theme-pack drafts under
 read-only until saved as drafts; the window validates them and simulates the
 working colors in the display viewport without changing the server runtime.
 
+## JSON choreography timelines
+
+Timeline timing and composition are authored as `luasquare.timeline/v1` JSON. Server Lua registers trusted components, typed actions, lifecycle handlers, dynamic target resolvers, and live-preview cleanup. Sources cannot contain Lua, console commands, raw targetnames, or arbitrary EntFire inputs.
+
+Reusable component sources live under `data_static/luasquare_timeline/_components/`; map procedures live under `data_static/luasquare_timeline/<map>/`. The DFR reactor-machine, six reusable catalyzer instances, and pre-annihilation procedure use these sources. A bootstrap can replace an individual default by passing an explicit source path when registering that component.
+
+Open `Spawn Menu -> Options -> Luasquare -> Editors -> Timeline Editor` in single-player to create tracks, drag registered components into choreography, resize duration/interpolation clips, mute tracks during preview, and synchronize a local reference sound with the playhead. Packed sources are read-only; drafts are saved under `garrysmod/data/luasquare_timeline/drafts/`.
+
+Simulation preview never contacts map entities. Confirmed live preview is server-authoritative, refuses occupied production channels, and returns every touched component to its declared safe state when it ends. See [the timeline authoring guide](lua/luasquare_module/timeline/README.md).
+
+## Source-driven audio
+
+`LUASQUARE_AUDIO` loads shared sounds, timed subtitle sequences/styles, music buses, and reusable PA lines recursively from category folders under `data_static/luasquare_audio/_shared/`. Only PA channels and soundscape bindings live under the current map. Music uses seekable client audio channels; global, PA, and ambient playback retains Source channels and DSP, while positional `source` sounds require a channel or runtime emitter.
+
+Playback and PA ordering remain server-authoritative. One PA line can schedule overlapping registered sounds, and one sound can drive a multi-chunk subtitle group. Catalogs are compressed and chunked once, while music state changes and subtitle timing events use bounded messages. The Sound Registry, Subtitle Sequence, and PA editors provide client-local previews and canonical drafts. Audio packs also become typed timeline components after both engines load. See [the audio authoring guide](lua/luasquare_module/audio/README.md).
+
 The framework also includes:
 
 - Skin-driven pseudo seven-segment models with digits, blank, and minus states.
@@ -213,7 +231,7 @@ Spawn Menu -> Options -> Luasquare
 
 The **RBMK Framework** and **Powerplant Framework** panels control client-side world overlays and filters. Registered components need `monitorPos`, a named monitor target, or reactor world-position data to appear in the appropriate overlay.
 
-The **Dark Fusion Reactor** panel exposes development controls for state changes, binding validation, machinery, core radii and animation, timelines, and individual catalyzer inspection. The **3D2D Display Editor** creates and previews JSON display sources. Both are restricted to single-player/admin use. They are development tools, not player-facing reactor controls. The DFR remains a work in progress.
+The **Dark Fusion Reactor** panel exposes development controls for state changes, binding validation, machinery, core radii and animation, timelines, and individual catalyzer inspection. JSON authoring tools are grouped under the **Editors** page, including 3D2D, timeline, sound registry, subtitle sequence, and PA editors. These are development tools, not player-facing reactor controls. The DFR remains a work in progress.
 
 ## Repository layout
 
@@ -224,7 +242,7 @@ lua/
 |-- luasquare_powerplant/    Fluid, thermal, turbine, generator, and grid systems
 |-- luasquare_rbmk/          RBMK core simulation, layouts, and example bootstrap
 `-- luasquare_dfr/           DFR runtime, reactor, procedure, presentation, and superstructure modules
-data_static/                 Packable JSON display and theme sources
+data_static/                 Packable JSON display, theme, timeline, and audio sources
 maps/                        Compiled reference map and editable VMF source
 materials/, models/, sound/ Bundled control-room and environmental assets
 tools/                       Annunciator model/material generation scripts
@@ -236,7 +254,7 @@ Most public APIs are organized in global namespaces:
 - `LUASQUARE_FLUID`, `LUASQUARE_PUMP`, `LUASQUARE_VALVE`
 - `LUASQUARE_TURBINE`, `LUASQUARE_POWERGENERATOR`, `LUASQUARE_POWERGRID`
 - `LUASQUARE_3D2D`, `LUASQUARE_SEG7`, `LUASQUARE_GAUGE`, `LUASQUARE_ANNUNCIATOR`
-- `LUASQUARE_SOURCEBINDING`, `LUASQUARE_CONTROLBINDING`, `LUASQUARE_MACHINERY`
+- `LUASQUARE_SOURCEBINDING`, `LUASQUARE_CONTROLBINDING`, `LUASQUARE_MACHINERY`, `LUASQUARE_TIMELINE`, `LUASQUARE_AUDIO`
 - `DFR`
 
 Registration tables in the Lua source are currently the API reference. Many modules also contain a commented example near the end of the file.

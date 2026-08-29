@@ -228,6 +228,10 @@ function DFR.RegisterDefaultTelemetryDisplays(options)
         end
     })
 
+    if DFR.Register3D2DDisplayTimelineComponents then
+        DFR.Register3D2DDisplayTimelineComponents()
+    end
+
     DFR.Log('Default telemetry providers and display actions registered')
     return true
 end

@@ -1,0 +1,19 @@
+{
+  "schema": "luasquare.timeline/v1",
+  "id": "dfr_reactor_machine_retract",
+  "label": "Retract Reactor Machine",
+  "channel": "movement",
+  "conflictPolicy": "replace",
+  "duration": 0,
+  "lifecycle": {"onCancel": "dfr.reactor_machine.cancel"},
+  "tracks": [
+    {
+      "id": "machine",
+      "label": "Reactor machine",
+      "target": "self",
+      "clips": [
+        {"id": "safe_retract", "kind": "marker", "at": 0, "action": "safe_retract", "required": true}
+      ]
+    }
+  ]
+}

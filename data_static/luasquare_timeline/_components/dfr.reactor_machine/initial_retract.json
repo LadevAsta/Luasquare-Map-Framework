@@ -1,0 +1,21 @@
+{
+  "schema": "luasquare.timeline/v1",
+  "id": "dfr_reactor_machine_initial_retract",
+  "label": "Initial Delayed Retraction",
+  "channel": "bootstrap",
+  "conflictPolicy": "replace",
+  "cancelChildrenOnComplete": false,
+  "duration": 10,
+  "lifecycle": {"onCancel": "dfr.reactor_machine.cancel"},
+  "tracks": [
+    {
+      "id": "bootstrap",
+      "label": "Bootstrap",
+      "target": "self",
+      "clips": [
+        {"id": "prime", "kind": "marker", "at": 10, "action": "prime_initial_retract", "required": true},
+        {"id": "retract", "kind": "timeline", "at": 10, "timeline": "retract", "required": true, "minimumSuccess": 1, "metadata": {"role": "movement"}}
+      ]
+    }
+  ]
+}

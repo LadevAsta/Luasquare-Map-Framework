@@ -338,6 +338,7 @@ function DISPLAY.BuildDisplay(compiledDefinition, overrides)
     end
     DISPLAY.Revision = DISPLAY.Revision + 1
     scheduleSnapshot()
+    hook.Run('LUASQUARE_3D2D_DisplayBuilt', id, DISPLAY.Displays[id])
     return true, DISPLAY.Displays[id]
 end
 
@@ -671,6 +672,7 @@ function DISPLAY.ApplyPreview(source, targetDisplayId, owner)
 end
 
 function DISPLAY.ReloadSources()
+    hook.Run('LUASQUARE_3D2D_DisplaysClearing')
     DISPLAY.ClearAllPreviews('source reload')
     DISPLAY.Sources = {}
     DISPLAY.Displays = {}

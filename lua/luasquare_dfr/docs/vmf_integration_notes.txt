@@ -42,8 +42,8 @@ Bootstrap calls:
 
 Cleanup lifecycle:
     The map lua_run should enable "Run Code on Spawn".
-    PreCleanupMap first cancels shared timeline registries so each owner can run
-    its local cleanup, then clears Luasquare timers, declarations, loader flags,
+    PreCleanupMap first cancels the shared JSON timeline runtime so each component
+    can run its named cancellation handler, then clears Luasquare timers, declarations, loader flags,
     and registries before map entities are recreated. The respawned lua_run
     includes the map bootstrap again and builds a fresh runtime.
 
@@ -117,7 +117,9 @@ Reactor-machine timelines:
     pre_annihilation_gate
         Opens the stabilizer arms immediately and closes them after three seconds.
 
-    These timelines are owned by the reactor_machine timeline owner. Procedures
+    These timelines are one-file JSON sources under
+    data_static/luasquare_timeline/_components/dfr.reactor_machine/ and are bound
+    to the reactor_machine component. Procedures
     and controls start them through DFR.StartReactorMachineTimeline rather than
     reproducing their individual machinery inputs.
 
@@ -160,8 +162,10 @@ Catalyzers:
     allcatalyzers_tip_beam_target is validation-only.
     Explosion, damage-fire particle, destructible, and dark-beam groups are never
     used by the normal pre-annihilation procedure.
-    Every unit owns an independent timeline scope, allowing all six units to run
-    the local annihilation_fire timeline simultaneously without ID collisions.
+    Every unit binds the reusable
+    data_static/luasquare_timeline/_components/dfr.catalyzer/annihilation_fire.json
+    source to an independent component owner, allowing all six units to run the
+    local annihilation_fire timeline simultaneously without ID collisions.
     The future names dark_fusion_catalysis, active_fuel_cycle_fire, and
     passive_fuel_cycle_initial_fire are reserved but are not registered yet.
 
@@ -358,6 +362,10 @@ Pre-annihilation procedure:
     A failed unit is taken offline while the procedure continues above the
     configured catalyzer quorum. Parent cancellation cascades to all active child
     timelines; components perform their own cleanup.
+    Timing and child composition are loaded from
+    data_static/luasquare_timeline/gm_darkfusion_v2/pre_annihilation.json. State guards,
+    quorum checks, control locks, and the final state transition remain trusted
+    named Lua lifecycle handlers.
 
 Available display screens:
     DISPLAY512x256_mainscreen_m

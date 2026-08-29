@@ -10,7 +10,11 @@ DFR.MachineryRegistry = LUASQUARE_MACHINERY.CreateRegistry('DFR', {
 DFR.Machinery = DFR.MachineryRegistry.Machines
 
 function DFR.RegisterMachinery(id, data)
-    return DFR.MachineryRegistry:RegisterMachine(id, data)
+    local result = DFR.MachineryRegistry:RegisterMachine(id, data)
+    if result and DFR.RegisterMachineryTimelineComponent then
+        DFR.RegisterMachineryTimelineComponent(id, DFR.MachineryRegistry:GetMachine(id))
+    end
+    return result
 end
 
 function DFR.RegisterMachineryPath(id, data)

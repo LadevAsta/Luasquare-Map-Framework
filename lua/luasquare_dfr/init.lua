@@ -9,7 +9,8 @@ DFR.Version = DFR.Version or 'foundation-0.1'
 include('luasquare_module/sourcebinding.lua')
 include('luasquare_module/controlbinding.lua')
 include('luasquare_module/machinery.lua')
-include('luasquare_module/timeline.lua')
+include('luasquare_module/timeline/engine.lua')
+include('luasquare_module/audio/engine.lua')
 
 include('luasquare_dfr/config.lua')
 include('luasquare_dfr/runtime/debug.lua')

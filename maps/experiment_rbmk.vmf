@@ -2,7 +2,7 @@ versioninfo
 {
 	"editorversion" "400"
 	"editorbuild" "8871"
-	"mapversion" "603"
+	"mapversion" "608"
 	"formatversion" "100"
 	"prefab" "0"
 }
@@ -95,7 +95,7 @@ bgimages_plus
 world
 {
 	"id" "1"
-	"mapversion" "603"
+	"mapversion" "608"
 	"classname" "worldspawn"
 	"detailmaterial" "detail/detailsprites"
 	"detailvbsp" "detail.vbsp"
@@ -36818,9 +36818,9 @@ entity
 				"v" "73.0909 -366 565.229"
 				"v" "73.0909 -364 565.229"
 			}
-			"material" "VGUI/ENTITIES/LUCI_LADEVASTA_ENEMY"
-			"uaxis" "[0 1 0 0.015625] 0.00195312"
-			"vaxis" "[-0.866025 0 -0.5 979.58] 0.00195312"
+			"material" "LADEVASTA/FOLDED/NO01VL"
+			"uaxis" "[0 1 0 -74.875] -0.0078"
+			"vaxis" "[-0.866025 0 -0.5 30.0156] 0.0156"
 			"rotation" "0"
 			"lightmapscale" "16"
 			"smoothing_groups" "0"
@@ -37845,9 +37845,9 @@ entity
 				"v" "73.0909 -370 565.229"
 				"v" "73.0909 -368 565.229"
 			}
-			"material" "VGUI/ENTITIES/LUCI_LADEVASTA_FRIENDLY"
-			"uaxis" "[0 1 0 -692] -0.002"
-			"vaxis" "[-0.866025 0 -0.5 912.626] 0.002"
+			"material" "LADEVASTA/FOLDED/NO02VL"
+			"uaxis" "[0 1 0 -75.6953] -0.0078"
+			"vaxis" "[-0.866025 0 -0.5 30.0156] 0.0156"
 			"rotation" "0"
 			"lightmapscale" "16"
 			"smoothing_groups" "0"
@@ -40316,9 +40316,9 @@ entity
 				"v" "74 -320 564"
 				"v" "74 -312 564"
 			}
-			"material" "VGUI/ENTITIES/LUCI_LADEVASTA_ENEMY"
-			"uaxis" "[0 1 0 959.167] -0.0078"
-			"vaxis" "[-1 0 0 272] 0.0078"
+			"material" "LADEVASTA/FOLDED/NO01"
+			"uaxis" "[0 1 0 16.2051] 0.0312"
+			"vaxis" "[-1 0 0 32] 0.0625"
 			"rotation" "0"
 			"lightmapscale" "16"
 			"smoothing_groups" "0"
@@ -79526,9 +79526,9 @@ entity
 				"v" "73.0909 -353 565.229"
 				"v" "73.0909 -351 565.229"
 			}
-			"material" "VGUI/ENTITIES/LUCI_LADEVASTA_FRIENDLY"
-			"uaxis" "[0 1 0 -384] -0.002"
-			"vaxis" "[-0.866025 0 -0.5 912.626] 0.002"
+			"material" "LADEVASTA/FOLDED/NO02VL"
+			"uaxis" "[0 1 0 -200.203] -0.0078"
+			"vaxis" "[-0.866 0 -0.5 29.8965] 0.0156"
 			"rotation" "0"
 			"lightmapscale" "16"
 			"smoothing_groups" "0"
@@ -79832,9 +79832,9 @@ entity
 				"v" "73.0909 -349 565.229"
 				"v" "73.0909 -347 565.229"
 			}
-			"material" "VGUI/ENTITIES/LUCI_LADEVASTA_ENEMY"
-			"uaxis" "[0 1 0 512.016] 0.00195312"
-			"vaxis" "[-0.866025 0 -0.5 979.58] 0.00195312"
+			"material" "LADEVASTA/FOLDED/NO01VL"
+			"uaxis" "[0 1 0 -199.383] -0.0078"
+			"vaxis" "[-0.866 0 -0.5 29.8965] 0.0156"
 			"rotation" "0"
 			"lightmapscale" "16"
 			"smoothing_groups" "0"
@@ -97185,9 +97185,9 @@ entity
 				"v" "73.0909 -632 565.229"
 				"v" "73.0909 -630 565.229"
 			}
-			"material" "VGUI/ENTITIES/LUCI_LADEVASTA_ENEMY"
-			"uaxis" "[0 1 0 0.358887] 0.00195312"
-			"vaxis" "[-0.866025 0 -0.5 979.58] 0.00195312"
+			"material" "LADEVASTA/FOLDED/NO01VL"
+			"uaxis" "[0 1 0 -129.438] -0.0078"
+			"vaxis" "[-0.866025 0 -0.5 30.0156] 0.0156"
 			"rotation" "0"
 			"lightmapscale" "16"
 			"smoothing_groups" "0"
@@ -98409,9 +98409,9 @@ entity
 				"v" "73.0909 -636 565.229"
 				"v" "73.0909 -634 565.229"
 			}
-			"material" "VGUI/ENTITIES/LUCI_LADEVASTA_FRIENDLY"
-			"uaxis" "[0 1 0 -571.998] -0.002"
-			"vaxis" "[-0.866025 0 -0.5 912.626] 0.002"
+			"material" "LADEVASTA/FOLDED/NO02VL"
+			"uaxis" "[0 1 0 -130.258] -0.0078"
+			"vaxis" "[-0.866025 0 -0.5 30.0156] 0.0156"
 			"rotation" "0"
 			"lightmapscale" "16"
 			"smoothing_groups" "0"
@@ -99791,9 +99791,9 @@ entity
 				"v" "73.0909 -833 565.229"
 				"v" "73.0909 -831 565.229"
 			}
-			"material" "VGUI/ENTITIES/LUCI_LADEVASTA_ENEMY"
-			"uaxis" "[0 1 0 -511.374] 0.00195312"
-			"vaxis" "[-0.866025 0 -0.5 979.58] 0.00195312"
+			"material" "LADEVASTA/FOLDED/NO01VL"
+			"uaxis" "[0 1 0 -42.6719] -0.0078"
+			"vaxis" "[-0.866025 0 -0.5 30.0156] 0.0156"
 			"rotation" "0"
 			"lightmapscale" "16"
 			"smoothing_groups" "0"
@@ -101015,9 +101015,9 @@ entity
 				"v" "73.0909 -837 565.229"
 				"v" "73.0909 -835 565.229"
 			}
-			"material" "VGUI/ENTITIES/LUCI_LADEVASTA_FRIENDLY"
-			"uaxis" "[0 1 0 304.011] -0.002"
-			"vaxis" "[-0.866025 0 -0.5 912.626] 0.002"
+			"material" "LADEVASTA/FOLDED/NO02VL"
+			"uaxis" "[0 1 0 -43.4844] -0.0078"
+			"vaxis" "[-0.866025 0 -0.5 30.0156] 0.0156"
 			"rotation" "0"
 			"lightmapscale" "16"
 			"smoothing_groups" "0"
@@ -116699,7 +116699,7 @@ entity
 	"spawnflags" "0"
 	"StartDisabled" "0"
 	"targetname" "ann_deaerator_high_pressure"
-	"origin" "77.1625 -649 642.685"
+	"origin" "82.1626 -649 634.025"
 	editor
 	{
 		"color" "220 30 220"
@@ -116819,7 +116819,7 @@ entity
 	"spawnflags" "0"
 	"StartDisabled" "0"
 	"targetname" "ann_deaerator_high_temperature"
-	"origin" "77.1625 -667 642.685"
+	"origin" "77.1627 -649 642.685"
 	editor
 	{
 		"color" "220 30 220"

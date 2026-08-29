@@ -1,0 +1,57 @@
+{
+  "schema": "luasquare.timeline/v1",
+  "id": "dfr_pre_annihilation",
+  "label": "Pre-Annihilation Procedure",
+  "channel": "procedure",
+  "conflictPolicy": "reject",
+  "duration": 15,
+  "lifecycle": {
+    "startGuard": "dfr.pre_annihilation.start_guard",
+    "runGuard": "dfr.pre_annihilation.run_guard",
+    "onStart": "dfr.pre_annihilation.start",
+    "onCancel": "dfr.pre_annihilation.cancel",
+    "onComplete": "dfr.pre_annihilation.complete"
+  },
+  "tracks": [
+    {
+      "id": "catalyzers",
+      "label": "Available catalyzers",
+      "target": {"resolver": "dfr.available_catalyzers"},
+      "clips": [
+        {
+          "id": "start_catalyzers",
+          "kind": "timeline",
+          "at": 0,
+          "timeline": "annihilation_fire",
+          "required": true,
+          "minimumSuccess": 1,
+          "metadata": {"role": "catalyzer"}
+        }
+      ]
+    },
+    {
+      "id": "stabilizer_gate",
+      "label": "Stabilizer gate",
+      "target": {"component": "reactor_machine"},
+      "clips": [
+        {
+          "id": "open_gate",
+          "kind": "timeline",
+          "at": 8,
+          "timeline": "pre_annihilation_gate",
+          "required": true,
+          "minimumSuccess": 1,
+          "metadata": {"role": "reactor_machine", "required": true}
+        }
+      ]
+    },
+    {
+      "id": "core",
+      "label": "Core impact",
+      "target": "self",
+      "clips": [
+        {"id": "pulse_core", "kind": "marker", "at": 8, "action": "pulse_core", "required": true}
+      ]
+    }
+  ]
+}

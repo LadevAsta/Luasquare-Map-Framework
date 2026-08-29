@@ -164,43 +164,47 @@ local function commandAxes(visual, factors, transitionSeconds)
 end
 
 function DFR.RegisterCoreVisual(id, targetName, data)
-    return registerVisual(id, targetName, data)
+    local result = registerVisual(id, targetName, data)
+    if result and DFR.RegisterCoreVisualTimelineComponent then
+        DFR.RegisterCoreVisualTimelineComponent(id)
+    end
+    return result
 end
 
 function DFR.RegisterDefaultCoreVisuals(options)
     options = options or {}
 
-    registerVisual('core_sphere', options.coreSphere or 'dfr_prop_coresphere', {
+    DFR.RegisterCoreVisual('core_sphere', options.coreSphere or 'dfr_prop_coresphere', {
         label = 'Core Sphere', kind = 'prop', class = 'prop_scalable',
         basisRadiusHammer = options.coreSphereBasisRadiusHammer or 230,
         basisRadiusMeters = options.coreSphereBasisRadiusMeters or 5.842,
         debug = options.coreSphereDebug
     })
-    registerVisual('core_stellar', options.coreStellar or 'dfr_prop_corestellar', {
+    DFR.RegisterCoreVisual('core_stellar', options.coreStellar or 'dfr_prop_corestellar', {
         label = 'Stellar Core', kind = 'prop', class = 'prop_scalable',
         basisRadiusHammer = options.coreStellarBasisRadiusHammer or 64,
         basisRadiusMeters = options.coreStellarBasisRadiusMeters or 5.842,
         debug = options.coreStellarDebug
     })
-    registerVisual('core_blackhole', options.coreBlackhole or 'dfr_prop_coreblackhole', {
+    DFR.RegisterCoreVisual('core_blackhole', options.coreBlackhole or 'dfr_prop_coreblackhole', {
         label = 'Event Horizon', kind = 'prop', class = 'prop_scalable',
         basisRadiusHammer = options.coreBlackholeBasisRadiusHammer or 100,
         basisRadiusMeters = options.coreBlackholeBasisRadiusMeters or 5.842,
         debug = options.coreBlackholeDebug
     })
-    registerVisual('core_shield', options.coreShield or 'dfr_prop_coreshield', {
+    DFR.RegisterCoreVisual('core_shield', options.coreShield or 'dfr_prop_coreshield', {
         label = 'Core Shield', kind = 'prop', class = 'prop_scalable',
         basisRadiusHammer = options.coreShieldBasisRadiusHammer or 700,
         basisRadiusMeters = options.coreShieldBasisRadiusMeters or 5.842,
         debug = options.coreShieldDebug
     })
 
-    registerVisual('beam_director', options.directorBeam or 'beam_core_director', { label = 'Director Beam', kind = 'beam', class = 'env_beam', all = true })
-    registerVisual('beam_annihilation', options.annihilationBeam or 'beam_core_annihilation', { label = 'Annihilation Beam', kind = 'beam', class = 'env_beam', all = true })
-    registerVisual('beam_darkfusion', options.darkFusionBeam or 'beam_core_darkfusion', { label = 'Dark Fusion Beam', kind = 'beam', class = 'env_beam', all = true })
-    registerVisual('beam_unstable', options.unstableBeam or 'beam_core_unstable', { label = 'Unstable Beam', kind = 'beam', class = 'env_beam', all = true })
-    registerVisual('beam_catalyze', options.catalyzeBeam or 'beam_core_catalyze', { label = 'Catalyze Beam', kind = 'beam', class = 'env_beam', all = true })
-    registerVisual('core_chamber_light', options.coreChamberLight or 'light_corechamber', { label = 'Core Chamber Light', kind = 'light', class = 'light' })
+    DFR.RegisterCoreVisual('beam_director', options.directorBeam or 'beam_core_director', { label = 'Director Beam', kind = 'beam', class = 'env_beam', all = true })
+    DFR.RegisterCoreVisual('beam_annihilation', options.annihilationBeam or 'beam_core_annihilation', { label = 'Annihilation Beam', kind = 'beam', class = 'env_beam', all = true })
+    DFR.RegisterCoreVisual('beam_darkfusion', options.darkFusionBeam or 'beam_core_darkfusion', { label = 'Dark Fusion Beam', kind = 'beam', class = 'env_beam', all = true })
+    DFR.RegisterCoreVisual('beam_unstable', options.unstableBeam or 'beam_core_unstable', { label = 'Unstable Beam', kind = 'beam', class = 'env_beam', all = true })
+    DFR.RegisterCoreVisual('beam_catalyze', options.catalyzeBeam or 'beam_core_catalyze', { label = 'Catalyze Beam', kind = 'beam', class = 'env_beam', all = true })
+    DFR.RegisterCoreVisual('core_chamber_light', options.coreChamberLight or 'light_corechamber', { label = 'Core Chamber Light', kind = 'light', class = 'light' })
 
     DFR.StartCoreVisualAnimator()
     DFR.ResetCoreVisuals()

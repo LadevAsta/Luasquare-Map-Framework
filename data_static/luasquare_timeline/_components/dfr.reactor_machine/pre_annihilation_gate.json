@@ -1,0 +1,20 @@
+{
+  "schema": "luasquare.timeline/v1",
+  "id": "dfr_reactor_machine_pre_annihilation_gate",
+  "label": "Pre-Annihilation Stabilizer Gate",
+  "channel": "stabilizer",
+  "conflictPolicy": "replace",
+  "duration": 3,
+  "lifecycle": {"onCancel": "dfr.reactor_machine.cancel"},
+  "tracks": [
+    {
+      "id": "arms",
+      "label": "Stabilizer arms",
+      "target": "self",
+      "clips": [
+        {"id": "force_open", "kind": "marker", "at": 0, "action": "open_stabilizer_arms", "required": true},
+        {"id": "close", "kind": "marker", "at": 3, "action": "close_stabilizer_arms", "required": true}
+      ]
+    }
+  ]
+}

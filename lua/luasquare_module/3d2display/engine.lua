@@ -15,6 +15,7 @@ local sharedFiles = {
 }
 
 local clientFiles = {
+    'luasquare_module/editor_theme.lua',
     'luasquare_module/3d2display/renderer.lua',
     'luasquare_module/3d2display/elements.lua',
     'luasquare_module/3d2display/network_client.lua',
