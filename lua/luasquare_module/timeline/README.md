@@ -7,16 +7,16 @@ The timeline engine schedules declarative `luasquare.timeline/v1` sources while 
 Store reusable component choreography under:
 
 ```text
-data_static/luasquare_timeline/_components/<component_type>/<timeline_id>.json
+data_static/luasquare/timeline/_components/<component_type>/<timeline_id>.json
 ```
 
 Store map procedures under:
 
 ```text
-data_static/luasquare_timeline/<map>/<timeline_id>.json
+data_static/luasquare/timeline/<map>/<timeline_id>.json
 ```
 
-The in-game editor writes canonical drafts under `garrysmod/data/luasquare_timeline/drafts/`, mirroring the packed path. Drafts are not loaded automatically; copy finished sources into `data_static` before packing, or pass a draft path explicitly from a development bootstrap.
+The in-game editor writes canonical drafts under `garrysmod/data/luasquare/timeline/drafts/`, mirroring the packed path. Drafts are not loaded automatically; copy finished sources into `data_static` before packing, or pass a draft path explicitly from a development bootstrap.
 
 Each file contains one timeline. Timing is in seconds. Tracks execute in declaration order, and clips at the same time execute in track order followed by clip order.
 
@@ -59,7 +59,7 @@ LUASQUARE_TIMELINE.RegisterComponent('demo_machine', {
 LUASQUARE_TIMELINE.BindTimeline(
     'demo_machine',
     'startup',
-    'data_static/luasquare_timeline/_components/example.machine/startup.json'
+    'data_static/luasquare/timeline/_components/example.machine/startup.json'
 )
 
 LUASQUARE_TIMELINE.Start('demo_machine', 'startup', {actor = player})

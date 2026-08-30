@@ -6,8 +6,8 @@ LUASQUARE_3D2D.Schema = 'luasquare.3d2display/v1'
 LUASQUARE_3D2D.TickInterval = LUASQUARE_3D2D.TickInterval or 0.1
 LUASQUARE_3D2D.DefaultScale = LUASQUARE_3D2D.DefaultScale or 0.1
 LUASQUARE_3D2D.DefaultSurfaceOffset = LUASQUARE_3D2D.DefaultSurfaceOffset or 0.05
-LUASQUARE_3D2D.SourceRoot = 'data_static/luasquare_3d2display'
-LUASQUARE_3D2D.DraftRoot = 'luasquare_3d2display/drafts'
+LUASQUARE_3D2D.SourceRoot = 'data_static/luasquare/3d2display'
+LUASQUARE_3D2D.DraftRoot = 'luasquare/3d2display/drafts'
 
 local sharedFiles = {
     'luasquare_module/3d2display/shared.lua',

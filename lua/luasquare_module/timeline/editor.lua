@@ -561,7 +561,7 @@ end
 function Editor:DraftPath()
     if self.Session.draftPath then return self.Session.draftPath end
     local origin = tostring(self.Session.origin or '')
-    local suffix = string.match(origin, '^data_static/luasquare_timeline/(.+)$')
+    local suffix = string.match(origin, '^' .. TIMELINE.SourceRoot .. '/(.+)$')
     if not suffix then suffix = game.GetMap() .. '/' .. normalizeFileName(self.Session.source.id) .. '.json' end
     return TIMELINE.DraftRoot .. '/' .. suffix
 end

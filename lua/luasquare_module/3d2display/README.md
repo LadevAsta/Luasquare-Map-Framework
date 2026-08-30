@@ -40,8 +40,8 @@ Providers and actions must be registered before `Start`, because source compilat
 ## Source locations
 
 ```text
-data_static/luasquare_3d2display/_themes/<group>.json
-data_static/luasquare_3d2display/<map>/<display_id>.json
+data_static/luasquare/3d2display/_themes/<group>.json
+data_static/luasquare/3d2display/<map>/<display_id>.json
 ```
 
 The runtime reads these through the `GAME` search path. This lets a map addon ship its own layouts while depending on the framework addon for Lua. Use one display per file and a stable, unique ID.
@@ -49,7 +49,7 @@ The runtime reads these through the `GAME` search path. This lets a map addon sh
 Editor drafts are deliberately separate:
 
 ```text
-garrysmod/data/luasquare_3d2display/drafts/<map>/<display_id>.json
+garrysmod/data/luasquare/3d2display/drafts/<map>/<display_id>.json
 ```
 
 Copy approved drafts into the map addon's `data_static` tree before running GMAD.
@@ -316,6 +316,6 @@ most 512 leaf paths per provider. Declared `fields` remain available before a
 sample exists, and manual path entry remains available for capped data.
 
 The Themes window opens packed theme packs read-only and saves editable drafts
-under `data/luasquare_3d2display/drafts/_themes/`. Its working theme is simulated
+under `data/luasquare/3d2display/drafts/_themes/`. Its working theme is simulated
 only in the editor viewport. Copy the completed JSON into
-`data_static/luasquare_3d2display/_themes/` before packing.
+`data_static/luasquare/3d2display/_themes/` before packing.

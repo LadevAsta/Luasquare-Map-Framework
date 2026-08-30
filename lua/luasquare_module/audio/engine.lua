@@ -7,7 +7,8 @@ LUASQUARE_AUDIO = LUASQUARE_AUDIO or {}
 local AUDIO = LUASQUARE_AUDIO
 
 AUDIO.Schema = 'luasquare.audio/v1'
-AUDIO.SourceRoot = 'data_static/luasquare_audio'
+AUDIO.SourceRoot = 'data_static/luasquare/audio'
+AUDIO.DraftRoot = 'luasquare/audio/drafts'
 AUDIO.TickInterval = 0.05
 AUDIO.NetChunkBytes = 48000
 AUDIO.MaxCatalogBytes = 4 * 1024 * 1024

@@ -275,7 +275,7 @@ function DFR.SetReactorStabilizerImmediate(active)
     return run({'stabilizer_rotator'}, DFR.StopMachinery)
 end
 
-local REACTOR_TIMELINE_ROOT = 'data_static/luasquare_timeline/_components/dfr.reactor_machine/'
+local REACTOR_TIMELINE_ROOT = 'data_static/luasquare/timeline/_components/dfr.reactor_machine/'
 
 local function reactorMachineCleanup()
     closeStabilizerArms()

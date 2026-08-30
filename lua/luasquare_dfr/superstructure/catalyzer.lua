@@ -136,7 +136,7 @@ function DFR.GetCatalyzer(id)
     return DFR.Catalyzers[tonumber(id)]
 end
 
-local CATALYZER_TIMELINE_ROOT = 'data_static/luasquare_timeline/_components/dfr.catalyzer/'
+local CATALYZER_TIMELINE_ROOT = 'data_static/luasquare/timeline/_components/dfr.catalyzer/'
 
 local function registerGroupComponent(unit, group)
     local componentId = 'catalyzer:' .. unit.id .. ':' .. group.key

@@ -14,22 +14,22 @@ include('luasquare_module/audio/engine.lua')
 Reusable registry assets are global across maps and load recursively:
 
 ```text
-data_static/luasquare_audio/_shared/<contributor>/sounds/*.json
-data_static/luasquare_audio/_shared/<contributor>/subtitles/*.json
-data_static/luasquare_audio/_shared/<contributor>/subtitle_styles/*.json
-data_static/luasquare_audio/_shared/<contributor>/pa_lines/*.json
+data_static/luasquare/audio/_shared/<contributor>/sounds/*.json
+data_static/luasquare/audio/_shared/<contributor>/subtitles/*.json
+data_static/luasquare/audio/_shared/<contributor>/subtitle_styles/*.json
+data_static/luasquare/audio/_shared/<contributor>/pa_lines/*.json
 ```
 
 Only entity-dependent declarations are map-owned:
 
 ```text
-data_static/luasquare_audio/<map>/channels/*.json
-data_static/luasquare_audio/<map>/soundscapes/*.json
+data_static/luasquare/audio/<map>/channels/*.json
+data_static/luasquare/audio/<map>/soundscapes/*.json
 ```
 
 The contributor segment prevents mounted addons from hiding one another. Framework foundations use `luasquare`; DFR-owned media uses `darkenergyconstruct`. Shared files are merged by normalized lexical path. IDs are global: the first definition wins, a collision warning names both origins, and unrelated definitions from the later pack still load. Legacy non-namespaced folders remain readable with migration warnings.
 
-Editor masters have fixed draft paths under `garrysmod/data/luasquare_audio/drafts/_shared/luasquare/`: `sounds/shared_audio.json`, `subtitles/shared_subtitle.json`, `subtitle_styles/shared_subtitle_style.json`, and `pa_lines/shared_pa.json`. Packed contributor assets remain read-only in the Shared Pool browser and must be explicitly imported before editing. Map channel and soundscape drafts continue to mirror their map-owned folders.
+Editor masters have fixed draft paths under `garrysmod/data/luasquare/audio/drafts/_shared/luasquare/`: `sounds/shared_audio.json`, `subtitles/shared_subtitle.json`, `subtitle_styles/shared_subtitle_style.json`, and `pa_lines/shared_pa.json`. Packed contributor assets remain read-only in the Shared Pool browser and must be explicitly imported before editing. Map channel and soundscape drafts continue to mirror their map-owned folders.
 
 Sound paths are relative to `sound/`. Modes are:
 

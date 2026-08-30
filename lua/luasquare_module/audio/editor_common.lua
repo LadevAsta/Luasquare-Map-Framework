@@ -64,15 +64,14 @@ end
 
 function EDITOR.ListSources(category, mapOwned)
     local spec = EDITOR.SharedSpecs[category]
-    local packedRoot = mapOwned and ('data_static/luasquare_audio/' .. game.GetMap() .. '/' .. category)
-        or 'data_static/luasquare_audio/_shared'
-    local draftRoot = mapOwned and ('luasquare_audio/drafts/' .. game.GetMap() .. '/' .. category)
-        or ('luasquare_audio/drafts/_shared/luasquare/' .. (spec and spec.folder or category))
+    local packedRoot = mapOwned and (AUDIO.SourceRoot .. '/' .. game.GetMap() .. '/' .. category)
+        or (AUDIO.SourceRoot .. '/_shared')
+    local draftRoot = mapOwned and (AUDIO.DraftRoot .. '/' .. game.GetMap() .. '/' .. category)
+        or (AUDIO.DraftRoot .. '/_shared/luasquare/' .. (spec and spec.folder or category))
     local out = {}
     local packed, drafts = {}, {}
     collectFiles(packedRoot, 'GAME', packed)
     collectFiles(draftRoot, 'DATA', drafts)
-    if not mapOwned and spec then collectFiles('luasquare_audio/drafts/_shared/' .. spec.folder, 'DATA', drafts) end
     local function append(path, search, packedSource)
         local info = AUDIO.GetSharedPathInfo('/' .. string.gsub(path, '\\', '/'))
         if mapOwned or info and info.folder == spec.folder then
@@ -167,9 +166,10 @@ function EDITOR.LoadMasterSource(category)
     local source = EDITOR.NewMasterSource(category)
     local spec = EDITOR.SharedSpecs[category]
     if not spec then return source end
-    local path = 'luasquare_audio/drafts/_shared/luasquare/' .. spec.folder .. '/' .. spec.id .. '.json'
-    if not file.Exists(path, 'DATA') then return source end
-    return EDITOR.ReadSource({path = path, search = 'DATA'}) or source
+    local relative = '/_shared/luasquare/' .. spec.folder .. '/' .. spec.id .. '.json'
+    local path = AUDIO.DraftRoot .. relative
+    if file.Exists(path, 'DATA') then return EDITOR.ReadSource({path = path, search = 'DATA'}) or source end
+    return source
 end
 
 local function mergePoolDefinition(snapshot, origins, item, tableName, id, definition)

@@ -25,7 +25,7 @@ Bootstrap calls:
 
 3D2D display sources:
     The gm_darkfusion_v2 addon owns its packed JSON under:
-        data_static/luasquare_3d2display/gm_darkfusion_v2/
+        data_static/luasquare/3d2display/gm_darkfusion_v2/
     DISPLAY160x80_r_1 is the Simple startup screen.
     DISPLAY512x256_mainscreen_m is the Complex reference display with shared
     Facility, Core, Startup, and Catalyzers pages. Its tabs and named actions use
@@ -118,7 +118,7 @@ Reactor-machine timelines:
         Opens the stabilizer arms immediately and closes them after three seconds.
 
     These timelines are one-file JSON sources under
-    data_static/luasquare_timeline/_components/dfr.reactor_machine/ and are bound
+    data_static/luasquare/timeline/_components/dfr.reactor_machine/ and are bound
     to the reactor_machine component. Procedures
     and controls start them through DFR.StartReactorMachineTimeline rather than
     reproducing their individual machinery inputs.
@@ -163,7 +163,7 @@ Catalyzers:
     Explosion, damage-fire particle, destructible, and dark-beam groups are never
     used by the normal pre-annihilation procedure.
     Every unit binds the reusable
-    data_static/luasquare_timeline/_components/dfr.catalyzer/annihilation_fire.json
+    data_static/luasquare/timeline/_components/dfr.catalyzer/annihilation_fire.json
     source to an independent component owner, allowing all six units to run the
     local annihilation_fire timeline simultaneously without ID collisions.
     The future names dark_fusion_catalysis, active_fuel_cycle_fire, and
@@ -363,7 +363,7 @@ Pre-annihilation procedure:
     configured catalyzer quorum. Parent cancellation cascades to all active child
     timelines; components perform their own cleanup.
     Timing and child composition are loaded from
-    data_static/luasquare_timeline/gm_darkfusion_v2/pre_annihilation.json. State guards,
+    data_static/luasquare/timeline/gm_darkfusion_v2/pre_annihilation.json. State guards,
     quorum checks, control locks, and the final state transition remain trusted
     named Lua lifecycle handlers.
 

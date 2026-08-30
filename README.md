@@ -152,10 +152,10 @@ LUASQUARE_3D2D.Start()
 Store one display per file under:
 
 ```text
-data_static/luasquare_3d2display/<map>/<display_id>.json
+data_static/luasquare/3d2display/<map>/<display_id>.json
 ```
 
-Theme packs are shared from `data_static/luasquare_3d2display/_themes/*.json`. `data_static` is packable by GMAD and sources are read through Garry's Mod's `GAME` search path, allowing a map addon to own its layouts while this addon owns the runtime.
+Theme packs are shared from `data_static/luasquare/3d2display/_themes/*.json`. `data_static` is packable by GMAD and sources are read through Garry's Mod's `GAME` search path, allowing a map addon to own its layouts while this addon owns the runtime.
 
 The current schema is `luasquare.3d2display/v1`. Simple displays contain the existing ordered `lines`; Complex displays contain stable pages and layered elements (`LinePanel`, `Material`, `SolidRectangle`, and `Annunciator`). Provider references are explicit objects:
 
@@ -167,7 +167,7 @@ The current schema is `luasquare.3d2display/v1`. Simple displays contain the exi
 }
 ```
 
-Sources cannot contain Lua or console commands. Actions similarly reference only IDs registered through `RegisterAction`. Ordered `conditions` support `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `truthy`, `all`, `any`, and `not`; all rules compose and later effects win. Displays can declare typed server-authoritative variables and bind properties or condition operands with `{"variable":"name"}`. Material elements support synchronized frame, flash, and centered rotation animation. See [the 3D2D authoring guide](lua/luasquare_module/3d2display/README.md) and the [RBMK JSON examples](data_static/luasquare_3d2display/experiment_rbmk).
+Sources cannot contain Lua or console commands. Actions similarly reference only IDs registered through `RegisterAction`. Ordered `conditions` support `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `truthy`, `all`, `any`, and `not`; all rules compose and later effects win. Displays can declare typed server-authoritative variables and bind properties or condition operands with `{"variable":"name"}`. Material elements support synchronized frame, flash, and centered rotation animation. See [the 3D2D authoring guide](lua/luasquare_module/3d2display/README.md) and the [RBMK JSON examples](data_static/luasquare/3d2display/experiment_rbmk).
 
 The runtime can derive physical panel dimensions from an `info_target` name:
 
@@ -188,13 +188,13 @@ Open `Spawn Menu -> Options -> Luasquare -> 3D2D Display Editor`. It is availabl
 Packed `data_static` sources open read-only. **Save draft** writes canonical JSON to the exact path shown by the editor:
 
 ```text
-garrysmod/data/luasquare_3d2display/drafts/<map>/<display_id>.json
+garrysmod/data/luasquare/3d2display/drafts/<map>/<display_id>.json
 ```
 
 Copy the finished draft into the map addon's matching `data_static` directory before packing. Clearing preview, disconnecting, cleanup, or reloading sources restores the packed definition.
 
 The editor's Themes window creates reusable theme-pack drafts under
-`garrysmod/data/luasquare_3d2display/drafts/_themes/`. Packed theme sources are
+`garrysmod/data/luasquare/3d2display/drafts/_themes/`. Packed theme sources are
 read-only until saved as drafts; the window validates them and simulates the
 working colors in the display viewport without changing the server runtime.
 
@@ -202,15 +202,15 @@ working colors in the display viewport without changing the server runtime.
 
 Timeline timing and composition are authored as `luasquare.timeline/v1` JSON. Server Lua registers trusted components, typed actions, lifecycle handlers, dynamic target resolvers, and live-preview cleanup. Sources cannot contain Lua, console commands, raw targetnames, or arbitrary EntFire inputs.
 
-Reusable component sources live under `data_static/luasquare_timeline/_components/`; map procedures live under `data_static/luasquare_timeline/<map>/`. The DFR reactor-machine, six reusable catalyzer instances, and pre-annihilation procedure use these sources. A bootstrap can replace an individual default by passing an explicit source path when registering that component.
+Reusable component sources live under `data_static/luasquare/timeline/_components/`; map procedures live under `data_static/luasquare/timeline/<map>/`. The DFR reactor-machine, six reusable catalyzer instances, and pre-annihilation procedure use these sources. A bootstrap can replace an individual default by passing an explicit source path when registering that component.
 
-Open `Spawn Menu -> Options -> Luasquare -> Editors -> Timeline Editor` in single-player to create tracks, drag registered components into choreography, resize duration/interpolation clips, mute tracks during preview, and synchronize a local reference sound with the playhead. Packed sources are read-only; drafts are saved under `garrysmod/data/luasquare_timeline/drafts/`.
+Open `Spawn Menu -> Options -> Luasquare -> Editors -> Timeline Editor` in single-player to create tracks, drag registered components into choreography, resize duration/interpolation clips, mute tracks during preview, and synchronize a local reference sound with the playhead. Packed sources are read-only; drafts are saved under `garrysmod/data/luasquare/timeline/drafts/`.
 
 Simulation preview never contacts map entities. Confirmed live preview is server-authoritative, refuses occupied production channels, and returns every touched component to its declared safe state when it ends. See [the timeline authoring guide](lua/luasquare_module/timeline/README.md).
 
 ## Source-driven audio
 
-`LUASQUARE_AUDIO` loads shared sounds, timed subtitle sequences/styles, music buses, and reusable PA lines recursively from category folders under `data_static/luasquare_audio/_shared/`. Only PA channels and soundscape bindings live under the current map. Music uses seekable client audio channels; global, PA, and ambient playback retains Source channels and DSP, while positional `source` sounds require a channel or runtime emitter.
+`LUASQUARE_AUDIO` loads shared sounds, timed subtitle sequences/styles, music buses, and reusable PA lines recursively from category folders under `data_static/luasquare/audio/_shared/`. Only PA channels and soundscape bindings live under the current map. Music uses seekable client audio channels; global, PA, and ambient playback retains Source channels and DSP, while positional `source` sounds require a channel or runtime emitter.
 
 Playback and PA ordering remain server-authoritative. One PA line can schedule overlapping registered sounds, and one sound can drive a multi-chunk subtitle group. Catalogs are compressed and chunked once, while music state changes and subtitle timing events use bounded messages. The Sound Registry, Subtitle Sequence, and PA editors provide client-local previews and canonical drafts. Audio packs also become typed timeline components after both engines load. See [the audio authoring guide](lua/luasquare_module/audio/README.md).
 

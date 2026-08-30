@@ -7,8 +7,8 @@ LUASQUARE_TIMELINE = LUASQUARE_TIMELINE or {}
 local TIMELINE = LUASQUARE_TIMELINE
 
 TIMELINE.Schema = 'luasquare.timeline/v1'
-TIMELINE.SourceRoot = 'data_static/luasquare_timeline'
-TIMELINE.DraftRoot = 'luasquare_timeline/drafts'
+TIMELINE.SourceRoot = 'data_static/luasquare/timeline'
+TIMELINE.DraftRoot = 'luasquare/timeline/drafts'
 TIMELINE.TickInterval = TIMELINE.TickInterval or 0.05
 TIMELINE.MaxPreviewBytes = 512 * 1024
 TIMELINE.NetChunkBytes = 48000

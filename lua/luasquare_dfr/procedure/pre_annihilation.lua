@@ -192,7 +192,7 @@ function DFR.RegisterPreAnnihilationProcedure(options)
     end)
 
     local sourcePath = options.timelineSource or options.sourcePath
-        or ('data_static/luasquare_timeline/' .. game.GetMap() .. '/pre_annihilation.json')
+        or ('data_static/luasquare/timeline/' .. game.GetMap() .. '/pre_annihilation.json')
     local bound = DFR.BindComponentTimeline(ownerId, TIMELINE_NAME, sourcePath)
     local owner = DFR.GetTimelineOwner(ownerId)
     DFR.PreAnnihilation.TimelineOwner = owner
