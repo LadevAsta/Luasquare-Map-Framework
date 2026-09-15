@@ -6,6 +6,10 @@ local EDITOR = AUDIO.Editor
 local THEME = LUASQUARE_EDITOR_THEME
 local userInput = _G.input
 
+function EDITOR.Report(message)
+    print('[LUASQUARE_AUDIO_EDITOR] ' .. tostring(message or ''))
+end
+
 EDITOR.SharedSpecs = EDITOR.SharedSpecs or {
     sounds = {folder = 'sounds', id = 'shared_audio', label = 'Shared audio', tables = {'sounds', 'musicBuses'}},
     subtitles = {folder = 'subtitles', id = 'shared_subtitle', label = 'Shared subtitles', tables = {'subtitles'}},
@@ -392,22 +396,46 @@ function EDITOR.OpenSourceManager(editor)
         end
     end
     search.OnValueChange = rebuild
-    list.DoDoubleClick = function(_, _, line)
+    local function loadLine(line)
         if not line.SourceItem then return end
         if not editor.Session.mapOwned and line.SourceItem.packed then
-            Derma_Message('Packed contributor sources are read-only. Use Shared Pool to import individual assets into the master draft.',
-                'Read-only contributor', 'OK')
+            EDITOR.Report('Packed contributor sources are read-only. Use Shared Pool to import individual assets into the master draft.')
             return
         end
         EDITOR.ConfirmDiscard(editor.Session, function()
             local source = EDITOR.ReadSource(line.SourceItem)
-            if not source then Derma_Message('Unable to decode source.', 'Load failed', 'OK') return end
+            if not source then EDITOR.Report('Unable to decode source.') return end
             editor:SetSource(source, line.SourceItem.path, line.SourceItem.packed)
             frame:Close()
         end)
     end
+    local function selectedLine()
+        local selected = list:GetSelectedLine()
+        return selected and list:GetLine(selected)
+    end
+    list.DoDoubleClick = function(_, _, line) loadLine(line) end
+    local controls = vgui.Create('DPanel', frame)
+    controls:Dock(BOTTOM) controls:SetTall(36)
+    local function button(label, width, callback)
+        local control = vgui.Create('DButton', controls)
+        control:Dock(LEFT) control:DockMargin(6, 4, 0, 4)
+        control:SetWide(width) control:SetText(label) control.DoClick = callback
+    end
+    button('Load selected', 108, function()
+        local line = selectedLine()
+        if line then loadLine(line) end
+    end)
+    button('New source', 92, function()
+        EDITOR.ConfirmDiscard(editor.Session, function() editor:NewSource() frame:Close() end)
+    end)
+    button('Save current draft', 132, function()
+        local ok, message = EDITOR.Save(editor.Session)
+        editor.Status:SetText(ok and ('Saved: data/' .. message) or message)
+        rebuild()
+    end)
+    button('Close', 70, function() frame:Close() end)
     rebuild()
-    if THEME then THEME.ApplyTree(frame) end
+    if THEME then THEME.ApplyEditor(frame, {controls}) end
 end
 
 function EDITOR.OpenSharedPool(editor)

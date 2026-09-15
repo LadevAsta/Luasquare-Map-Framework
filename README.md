@@ -13,7 +13,7 @@ Luasquare began as an RBMK-style reactor experiment, but it is now a broader map
 | --- | --- |
 | RBMK simulation | Grid-based reactor layouts; four-direction neutron-flux propagation; fuel, xenon, heat, control rods, automatic regulation, vessel water/steam, recirculation, pressure, integrity, leaks, blowouts, SCRAM, and failure handling |
 | Balance of plant | Fluid networks, pumps, valves, heat exchangers, steam separators, condensers, deaerators, cooling towers, turbines, generators, diesel generators, electrical grids, breakers, and transformers |
-| Map modules | Source-driven Simple/Complex 3D2D displays; JSON choreography timelines and editor; synchronized music, PA, ambient audio, soundscapes, and subtitles; graphs, themes, raycast interaction; skin-based seven-segment displays; gauges; numeric keypads; annunciators; control bindings; Source entity bindings; and movable-machinery helpers |
+| Map modules | Source-driven Simple/Complex 3D2D displays; declarative annunciators; JSON choreography timelines and editor; synchronized music, PA, ambient audio, soundscapes, and subtitles; graphs, themes, raycast interaction; skin-based seven-segment displays; gauges; numeric keypads; control bindings; Source entity bindings; and movable-machinery helpers |
 | Dark Fusion Reactor | A staged reactor framework with startup controls, resource state, VMF bindings, machinery, independently animated core visuals, component-owned JSON timelines, six-catalyzer sequencing, telemetry, debug controls, and a guarded simulation tick |
 | Development tools | Client-side RBMK and plant overlays, DFR admin controls in the spawn menu, bundled annunciator/display assets, and asset-generation scripts |
 | Reference content | The playable `experiment_rbmk` BSP, its editable VMF source, an LRBMKP-400 layout, and a complete map-specific RBMK bootstrap |
@@ -81,7 +81,7 @@ include('luasquare_module/seg7display.lua')
 include('luasquare_module/3d2display/engine.lua')
 include('luasquare_module/timeline/engine.lua')
 include('luasquare_module/audio/engine.lua')
-include('luasquare_module/annunciator/annunciator.lua')
+include('luasquare_module/annunciator/engine.lua')
 include('luasquare_powerplant/init.lua')
 include('luasquare_rbmk/init.lua')
 
@@ -169,6 +169,16 @@ The current schema is `luasquare.3d2display/v1`. Simple displays contain the exi
 
 Sources cannot contain Lua or console commands. Actions similarly reference only IDs registered through `RegisterAction`. Ordered `conditions` support `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `truthy`, `all`, `any`, and `not`; all rules compose and later effects win. Displays can declare typed server-authoritative variables and bind properties or condition operands with `{"variable":"name"}`. Material elements support synchronized frame, flash, and centered rotation animation. See [the 3D2D authoring guide](lua/luasquare_module/3d2display/README.md) and the [RBMK JSON examples](data_static/luasquare/3d2display/experiment_rbmk).
 
+## Source-driven annunciators
+
+Annunciator declarations use `luasquare.annunciator/v1` packs under `data_static/luasquare/annunciator/<map>/`. Lua registers named telemetry providers; JSON owns groups, conditions, clear hysteresis, tiers, messages, explicit indicator props, registered Audio sound IDs, sound modes, mute policy, and re-alarm timing. The server owns lifecycle and sends bounded snapshots/deltas used directly by 3D2D annunciator elements.
+
+The bundled `experiment_rbmk` source contains all 22 reference alarms without changing its legacy lowercase prop targetnames. Existing no-argument Hammer calls to `Acknowledge`, `Reset`, `Mute`, and `TestAll` remain valid. New callers may pass group scope and use `Test(scope)` or `Unmute(scope)`.
+
+The Annunciator Editor uses a separate searchable packed/draft source window and registered-sound browser. Its local lifecycle preview follows alarm audio policy and pitch without changing server state, while its model camera is aligned automatically to the broad annunciator face. Source-driven editor chrome uses the shared dark-gray theme and reports informational diagnostics to the console.
+
+See the [annunciator authoring guide](lua/luasquare_module/annunciator/README.md) and [RBMK annunciator pack](data_static/luasquare/annunciator/experiment_rbmk/rbmk_annunciators.json).
+
 The runtime can derive physical panel dimensions from an `info_target` name:
 
 ```text
@@ -231,7 +241,7 @@ Spawn Menu -> Options -> Luasquare
 
 The **RBMK Framework** and **Powerplant Framework** panels control client-side world overlays and filters. Registered components need `monitorPos`, a named monitor target, or reactor world-position data to appear in the appropriate overlay.
 
-The **Dark Fusion Reactor** panel exposes development controls for state changes, binding validation, machinery, core radii and animation, timelines, and individual catalyzer inspection. JSON authoring tools are grouped under the **Editors** page, including 3D2D, timeline, sound registry, subtitle sequence, and PA editors. These are development tools, not player-facing reactor controls. The DFR remains a work in progress.
+The **Dark Fusion Reactor** panel exposes development controls for state changes, binding validation, machinery, core radii and animation, timelines, and individual catalyzer inspection. JSON authoring tools are grouped under the **Editors** page, including 3D2D, timeline, annunciator, sound registry, subtitle sequence, and PA editors. These are development tools, not player-facing reactor controls. The DFR remains a work in progress.
 
 ## Repository layout
 
@@ -242,7 +252,7 @@ lua/
 |-- luasquare_powerplant/    Fluid, thermal, turbine, generator, and grid systems
 |-- luasquare_rbmk/          RBMK core simulation, layouts, and example bootstrap
 `-- luasquare_dfr/           DFR runtime, reactor, procedure, presentation, and superstructure modules
-data_static/                 Packable JSON display, theme, timeline, and audio sources
+data_static/                 Packable JSON display, theme, timeline, audio, and annunciator sources
 maps/                        Compiled reference map and editable VMF source
 materials/, models/, sound/ Bundled control-room and environmental assets
 tools/                       Annunciator model/material generation scripts

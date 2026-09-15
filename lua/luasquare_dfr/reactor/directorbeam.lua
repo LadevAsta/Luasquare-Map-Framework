@@ -4,10 +4,12 @@ DFR.DirectorBeam = DFR.DirectorBeam or {}
 -- Dark-Plasma Director Beam
 -- This is the beam that can transfer photon energy and dark plasma from below to above.
 -- Dark-Plasma Director Beam system is the kilometers-tall 'spinal cord' of the citadel and will constantly generate waste heat after entering Annihilation Stage.
--- It bring energy into core's influx, and receives energy from core's outflux AND a Dark Plasma Node that is used as feedback for the director beam itself.
+-- It bring initial energy into core's influx, and receives energy from core's outflux.
+-- Director beam consumes electrical power. But can also receive energy from a Dark Plasma Node that is used as feedback loop for the director beam itself to reduce input demand.
 -- After the reactor core, along the length of the Director Beam, there will be multiple Dark Plasma Turbines and Dark Plasma Nodes.
 -- Dark Plasma Turbines generates conventional electricity for citadel's own demand and the excess will be exported as electrical power.
 -- Dark Plasma Nodes acts as provider node for other systems that want to use Dark Plasma as energy.
+-- Director beam is actually a part of superstructure and shall be moved to superstructure folder.
 
 local function clamp(value, minValue, maxValue)
     if math.Clamp then return math.Clamp(value, minValue, maxValue) end

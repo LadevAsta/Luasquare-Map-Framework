@@ -33,7 +33,9 @@ return end
 
 include('luasquare_module/seg7display.lua') -- Pseudo 7-Segments numeric display
 include('luasquare_module/3d2display/engine.lua') -- Source-driven 3D2D displays
-include('luasquare_module/annunciator/annunciator.lua') -- Alarm annunciator system
+include('luasquare_module/timeline/engine.lua') -- JSON timelines and annunciator controls
+include('luasquare_module/audio/engine.lua') -- Source-driven audio
+include('luasquare_module/annunciator/engine.lua') -- Source-driven annunciator system
 include('luasquare_module/gaugedisplay.lua') -- Gauge display
 include('luasquare_module/keypad_controller.lua') -- Numeric Keypads
 include('luasquare_module/rod_selector.lua') -- RBMK Control Rod Selector
@@ -1397,358 +1399,125 @@ LUASQUARE_KEYPAD.RegisterKeypad('aprctrl',
 )
 
 -- =========================================
--- ANNUNCIATOR FUNCTION
--- =========================================
-
-local MAPDEF_annunciatorCorePos = Vector(35, -433, 627)
-
-LUASQUARE_ANNUNCIATOR.SetCorePosition(MAPDEF_annunciatorCorePos)
-LUASQUARE_ANNUNCIATOR.SetUnmuteCue('buttons/button17.wav', 200, 10, 100)
-
--- =========================================
 -- ANNUNCIATOR
 -- =========================================
 
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('rpv_pressure_high', {
-    label = 'RPV PRESSURE HIGH',
-    soundEntity = 'ann_rpv_pressure_high_snd',
-    getter = function()
-        return RBMK.RPVPressure > 60
-    end
-})
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('rpv_temperature_high', {
-    label = 'RPV TEMPERATURE HIGH',
-    soundWav = 'ambient/alarms/combine_bank_alarm_loop4.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 100,
-    getter = function()
-        return RBMK.MaxHeat > 1100
-    end
-})
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('fuel_channel_leak', {
-    label = 'FUEL CHANNEL LEAK',
-    soundWav = 'bms_objects/alarms/alarm14.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 100,
-    ackStopsSound = false,
-    getter = function()
-        local leakCount = RBMK.GetFuelChannelLeakCount()
-        if leakCount <= 0 then return false end
-
-        local lastLeak = RBMK.EventState and RBMK.EventState.LastFuelLeak
-        if lastLeak then return true, string.format('%d CHANNEL(S), LAST %d,%d', leakCount, lastLeak.x or 0, lastLeak.y or 0) end
-        return true, string.format('%d CHANNEL(S)', leakCount)
-    end
-})
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('control_rods_unpowered', {
-    label = 'CONTROL RODS UNPOWERED',
-    soundWav = 'bms_objects/alarms/alarm6.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 110,
-    getter = function()
-        local state = RBMK.GetControlRodPowerState and RBMK.GetControlRodPowerState() or {}
-        if (state.demandMW or 0) > 0 and not state.powered then
-            return true, string.format('%.3f / %.3f MW', state.acceptedMW or 0, state.demandMW or 0)
-        end
-        return false
-    end
-})
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('scram_rods_stuck', {
-    label = 'SCRAM RODS STUCK',
-    soundWav = 'bms_objects/alarms/alarm6.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 120,
-    ackStopsSound = false,
-    getter = function()
-        local state = RBMK.GetControlRodPowerState and RBMK.GetControlRodPowerState() or {}
-        local count = state.stuckCount or 0
-        if count > 0 then return true, string.format('%d ROD(S)', count) end
-        return false
-    end
-})
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('rbmk_integrity_low', {
-    label = 'RBMK INTEGRITY LOW',
-    soundWav = 'bms_objects/alarms/alarm1.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 100,
-    getter = function()
-        local score = RBMK.IntegrityScore or 1
-        if score <= 0.75 then return true, string.format('%.0f%%', score * 100) end
-        return false
-    end
-})
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('recirculation_flow_low', {
-    label = 'RECIRC FLOW LOW',
-    soundWav = 'bms_objects/alarms/alarm6.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 100,
-    reAlarmDelay = 0,
-    getter = function()
-        local flow = RBMK.LastEffectiveCoreFlow or 0
-        local threshold = (RBMK.RecirculationRatedFlow or 16000) * 0.25
-        if flow < threshold and (RBMK.LastThermalMW or 0) > 10 then return true, string.format('%.0f / %.0f/s', flow, threshold) end
-        return false
-    end
-})
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('rbmk_dryout_risk', {
-    label = 'RBMK DRYOUT RISK',
-    soundWav = 'bms_objects/alarms/alarm1.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 120,
-    reAlarmDelay = 0,
-    getter = function()
-        local risk = RBMK.LastDryoutRisk or 0
-        if risk >= 0.65 then return true, string.format('%.0f%%', risk * 100) end
-        return false
-    end
-})
-LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('reactor_panel', {
-    indicators = {
-        rpv_pressure_high = 'ann_rpv_pressure_high',
-        rpv_temperature_high = 'ann_rpv_temperature_high',
-        fuel_channel_leak = 'ann_fuel_channel_leak',
-        control_rods_unpowered = 'ann_control_rods_unpowered',
-        scram_rods_stuck = 'ann_scram_rods_stuck',
-        rbmk_integrity_low = 'ann_rbmk_integrity_low',
-        recirculation_flow_low = 'ann_recirculation_flow_low',
-        rbmk_dryout_risk = 'ann_rbmk_dryout_risk'
+LUASQUARE_ANNUNCIATOR.RegisterDataProvider('rbmk.annunciator', function()
+    local rodPower = RBMK.GetControlRodPowerState and RBMK.GetControlRodPowerState() or {}
+    local separator = LUASQUARE_STEAMSEPARATOR.GetSteamSeparator('main_steam_separator')
+    local turbine = LUASQUARE_TURBINE.GetTurbine('tg1')
+    local generator = LUASQUARE_POWERGENERATOR.GetGenerator('tg1_generator')
+    local grid = LUASQUARE_POWERGRID.GetGrid('station_grid')
+    local coolant = LUASQUARE_FLUID.GetNetwork('cooling_water')
+    local deaerator = LUASQUARE_DEAERATOR.GetDeaerator('main_deaerator')
+    local separatorLevel = separator and LUASQUARE_STEAMSEPARATOR.GetLevelPercent('main_steam_separator') or 0
+    local coolantLevel = coolant and (coolant.maxAmount or 0) > 0
+        and (coolant.amount or 0) / coolant.maxAmount * 100 or 0
+    local deaeratorLevel = deaerator and LUASQUARE_DEAERATOR.GetLevelPercent('main_deaerator') or 0
+    local leakCount = RBMK.GetFuelChannelLeakCount()
+    local lastLeak = RBMK.EventState and RBMK.EventState.LastFuelLeak
+    local recirculationThreshold = (RBMK.RecirculationRatedFlow or 16000) * 0.25
+    local availableMW = grid and math.max(grid.lastAvailableMW or 0, 0.0001) or 0
+    local gridThreshold = grid and availableMW * (grid.overloadTripFraction or 1.15) or 0
+    local coolantThreshold = coolant and (coolant.coolantHighTemperature or 60) or 60
+    local deaeratorPressureThreshold = deaerator
+        and (deaerator.highPressure or deaerator.maxPressure or 10) or 10
+    local deaeratorTemperatureThreshold = deaerator and (deaerator.highTemperature or 120) or 120
+    local messages = {
+        fuel_channel_leak = lastLeak
+            and string.format('%d CHANNEL(S), LAST %d,%d', leakCount, lastLeak.x or 0, lastLeak.y or 0)
+            or string.format('%d CHANNEL(S)', leakCount),
+        control_rods_unpowered = string.format('%.3f / %.3f MW',
+            rodPower.acceptedMW or 0, rodPower.demandMW or 0),
+        scram_rods_stuck = string.format('%d ROD(S)', rodPower.stuckCount or 0),
+        rbmk_integrity_low = string.format('%.0f%%', (RBMK.IntegrityScore or 1) * 100),
+        recirculation_flow_low = string.format('%.0f / %.0f/s',
+            RBMK.LastEffectiveCoreFlow or 0, recirculationThreshold),
+        rbmk_dryout_risk = string.format('%.0f%%', (RBMK.LastDryoutRisk or 0) * 100),
+        steam_separator_low_level = string.format('%.0f%%', separatorLevel),
+        steam_separator_high_level = string.format('%.0f%%', separatorLevel),
+        steam_separator_high_pressure = string.format('%.1f bar', separator and separator.pressure or 0),
+        steam_wet_carryover = string.format('%.1f/s', separator and separator.lastCarryover or 0),
+        station_grid_overload = string.format('%.1f / %.1f MW',
+            grid and grid.lastLoadMW or 0, availableMW),
+        cooling_water_high_temperature = string.format('%.1f / %.1f C',
+            coolant and coolant.temperature or 0, coolantThreshold),
+        cooling_water_low_level = string.format('%.0f%%', coolantLevel),
+        deaerator_high_pressure = string.format('%.1f / %.1f bar',
+            deaerator and deaerator.pressure or 0, deaeratorPressureThreshold),
+        deaerator_high_temperature = string.format('%.1f / %.1f C',
+            deaerator and deaerator.temperature or 0, deaeratorTemperatureThreshold),
+        deaerator_flooded = string.format('%.0f%%', deaeratorLevel)
     }
-})
-
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('steam_separator_low_level', {
-    label = 'SEPARATOR LEVEL LOW',
-    soundWav = 'bms_objects/alarms/alarm6.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 105,
-    getter = function()
-        local separator = LUASQUARE_STEAMSEPARATOR.GetSteamSeparator('main_steam_separator')
-        if not separator then return false end
-        local level = LUASQUARE_STEAMSEPARATOR.GetLevelPercent('main_steam_separator')
-        if level <= 20 then return true, string.format('%.0f%%', level) end
-        return false
-    end
-})
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('steam_separator_high_level', {
-    label = 'SEPARATOR LEVEL HIGH',
-    soundWav = 'bms_objects/alarms/alarm6.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 95,
-    getter = function()
-        local separator = LUASQUARE_STEAMSEPARATOR.GetSteamSeparator('main_steam_separator')
-        if not separator then return false end
-        local level = LUASQUARE_STEAMSEPARATOR.GetLevelPercent('main_steam_separator')
-        if level >= 85 then return true, string.format('%.0f%%', level) end
-        return false
-    end
-})
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('steam_separator_high_pressure', {
-    label = 'SEPARATOR PRESS HIGH',
-    soundWav = 'bms_objects/alarms/alarm6.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 115,
-    getter = function()
-        local separator = LUASQUARE_STEAMSEPARATOR.GetSteamSeparator('main_steam_separator')
-        if not separator then return false end
-        if (separator.pressure or 0) >= 60 then return true, string.format('%.1f bar', separator.pressure or 0) end
-        return false
-    end
-})
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('steam_wet_carryover', {
-    label = 'WET STEAM CARRYOVER',
-    soundWav = 'bms_objects/alarms/alarm1.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 100,
-    getter = function()
-        local separator = LUASQUARE_STEAMSEPARATOR.GetSteamSeparator('main_steam_separator')
-        if not separator then return false end
-        if (separator.lastCarryover or 0) > 0.5 then return true, string.format('%.1f/s', separator.lastCarryover or 0) end
-        return false
-    end
-})
-LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('separator_panel', {
-    indicators = {
-        steam_separator_low_level = 'ann_steam_separator_low_level',
-        steam_separator_high_level = 'ann_steam_separator_high_level',
-        steam_separator_high_pressure = 'ann_steam_separator_high_pressure',
-        steam_wet_carryover = 'ann_steam_wet_carryover',
+    return {
+        rpvPressure = RBMK.RPVPressure or 0,
+        rpvTemperature = RBMK.MaxHeat or 0,
+        fuelChannelLeakCount = leakCount,
+        controlRodDemandMW = rodPower.demandMW or 0,
+        controlRodsPowered = rodPower.powered and true or false,
+        scramRodsStuck = rodPower.stuckCount or 0,
+        integrity = RBMK.IntegrityScore or 1,
+        recirculationFlow = RBMK.LastEffectiveCoreFlow or 0,
+        recirculationThreshold = recirculationThreshold,
+        thermalMW = RBMK.LastThermalMW or 0,
+        dryoutRisk = RBMK.LastDryoutRisk or 0,
+        separatorPresent = separator ~= nil,
+        separatorLevel = separatorLevel,
+        separatorPressure = separator and separator.pressure or 0,
+        separatorCarryover = separator and separator.lastCarryover or 0,
+        turbineTripped = turbine and turbine.tripped or false,
+        reversePowerTimer = generator and generator.reversePowerTimer or 0,
+        gridPresent = grid ~= nil,
+        gridLoadMW = grid and grid.lastLoadMW or 0,
+        gridOverloadThreshold = gridThreshold,
+        coolantPresent = coolant ~= nil,
+        coolantTemperature = coolant and coolant.temperature or 0,
+        coolantTemperatureThreshold = coolantThreshold,
+        coolantLevel = coolantLevel,
+        deaeratorPresent = deaerator ~= nil,
+        deaeratorPressure = deaerator and deaerator.pressure or 0,
+        deaeratorPressureThreshold = deaeratorPressureThreshold,
+        deaeratorTemperature = deaerator and deaerator.temperature or 0,
+        deaeratorTemperatureThreshold = deaeratorTemperatureThreshold,
+        deaeratorFlooded = deaerator and deaerator.flooded or false,
+        deaeratorLevel = deaeratorLevel,
+        messages = messages
     }
-})
-
-
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('tg1_trip', {
-    label = 'TURBINE A TRIP',
-    soundWav = 'bms_objects/alarms/alarm4.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 110,
-    getter = function()
-        return LUASQUARE_TURBINE.GetTurbine('tg1').tripped
-    end
-})
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('tg1_reversepower', {
-    label = 'TURBINE A REVERSE POWER',
-    soundWav = 'bms_objects/alarms/alarm1.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 120,
-    getter = function()
-        return LUASQUARE_POWERGENERATOR.GetGenerator('tg1_generator').reversePowerTimer > 0
-    end
-})
-LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('turbine_a_panel', {
-    indicators = {
-        tg1_trip = 'ann_turbine_a_trip',
-        tg1_reversepower = 'ann_turbine_a_reversepower'
-    }
-})
-
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('station_grid_overload', {
-    label = 'STATION GRID OVERLOAD',
-    soundWav = 'bms_objects/alarms/alarm6.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 115,
-    getter = function()
-        local grid = LUASQUARE_POWERGRID.GetGrid('station_grid')
-        if not grid then return false end
-
-        local available = math.max(grid.lastAvailableMW or 0, 0.0001)
-        local load = grid.lastLoadMW or 0
-        local overload = load > available * (grid.overloadTripFraction or 1.15)
-        if overload then return true, string.format('%.1f / %.1f MW', load, available) end
-        return false
-    end
-})
-
-LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('station_grid_panel', {
-    indicators = {
-        station_grid_overload = 'ann_station_grid_overload',
-    }
-})
-
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('cooling_water_high_temperature', {
-    label = 'COOLING WATER HIGH TEMP',
-    soundWav = 'bms_objects/alarms/alarm6.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 105,
-    getter = function()
-        local coolant = LUASQUARE_FLUID.GetNetwork('cooling_water')
-        if not coolant then return false end
-
-        local threshold = coolant.coolantHighTemperature or 60
-        if (coolant.temperature or 0) >= threshold then return true, string.format('%.1f / %.1f C', coolant.temperature or 0, threshold) end
-        return false
-    end
-})
-
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('cooling_water_low_level', {
-    label = 'COOLING WATER LOW LEVEL',
-    soundWav = 'bms_objects/alarms/alarm6.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 95,
-    getter = function()
-        local coolant = LUASQUARE_FLUID.GetNetwork('cooling_water')
-        if not coolant then return false end
-        local level = 0
-        if (coolant.maxAmount or 0) > 0 then level = (coolant.amount or 0) / coolant.maxAmount * 100 end
-        if level <= 70 then return true, string.format('%.0f%%', level) end
-        return false
-    end
-})
-
-LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('coolant_panel', {
-    indicators = {
-        cooling_water_high_temperature = 'ann_cooling_water_high_temperature',
-        cooling_water_low_level = 'ann_cooling_water_low_level',
-    }
-})
-
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('deaerator_high_pressure', {
-    label = 'DEAERATOR HIGH PRESS',
-    soundWav = 'bms_objects/alarms/alarm6.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 115,
-    getter = function()
-        local deaerator = LUASQUARE_DEAERATOR.GetDeaerator('main_deaerator')
-        if not deaerator then return false end
-        local threshold = deaerator.highPressure or deaerator.maxPressure or 10
-        if (deaerator.pressure or 0) >= threshold then return true, string.format('%.1f / %.1f bar', deaerator.pressure or 0, threshold) end
-        return false
-    end
-})
-
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('deaerator_high_temperature', {
-    label = 'DEAERATOR HIGH TEMP',
-    soundWav = 'bms_objects/alarms/alarm6.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 105,
-    getter = function()
-        local deaerator = LUASQUARE_DEAERATOR.GetDeaerator('main_deaerator')
-        if not deaerator then return false end
-        local threshold = deaerator.highTemperature or 120
-        if (deaerator.temperature or 0) >= threshold then return true, string.format('%.1f / %.1f C', deaerator.temperature or 0, threshold) end
-        return false
-    end
-})
-
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('deaerator_flooded', {
-    label = 'DEAERATOR FLOODED',
-    soundWav = 'bms_objects/alarms/alarm6.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 90,
-    getter = function()
-        local deaerator = LUASQUARE_DEAERATOR.GetDeaerator('main_deaerator')
-        if not deaerator then return false end
-        if deaerator.flooded then return true, string.format('%.0f%%', LUASQUARE_DEAERATOR.GetLevelPercent('main_deaerator')) end
-        return false
-    end
-})
-
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('deaerator_water_low', {
-    label = 'DEAERATOR WATER LOW',
-    soundWav = 'bms_objects/alarms/alarm1.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 90,
-    getter = function()
-        return LUASQUARE_DEAERATOR.GetLevelPercent('main_deaerator') < 10
-    end
-})
-
-LUASQUARE_ANNUNCIATOR.RegisterAlarm('deaerator_water_high', {
-    label = 'DEAERATOR WATER HIGH',
-    soundWav = 'bms_objects/alarms/alarm1.wav',
-    soundDistance = 100,
-    soundVolume = 10,
-    soundPitch = 90,
-    getter = function()
-        return LUASQUARE_DEAERATOR.GetLevelPercent('main_deaerator') > 80
-    end
-})
-
-LUASQUARE_ANNUNCIATOR.RegisterPropDisplay('deaerator_panel', {
-    indicators = {
-        deaerator_high_pressure = 'ann_deaerator_high_pressure',
-        deaerator_high_temperature = 'ann_deaerator_high_temperature',
-        deaerator_flooded = 'ann_deaerator_flooded',
-        deaerator_water_low = 'ann_deaerator_water_low',
-        deaerator_water_high = 'ann_deaerator_water_high',
+end, {
+    interval = 0.5,
+    label = 'RBMK and balance-of-plant annunciator telemetry',
+    fields = {
+        {path = 'rpvPressure', type = 'number', label = 'RPV pressure'},
+        {path = 'rpvTemperature', type = 'number', label = 'Maximum channel temperature'},
+        {path = 'fuelChannelLeakCount', type = 'number', label = 'Fuel-channel leak count'},
+        {path = 'controlRodDemandMW', type = 'number', label = 'Control-rod demand'},
+        {path = 'controlRodsPowered', type = 'boolean', label = 'Control rods powered'},
+        {path = 'scramRodsStuck', type = 'number', label = 'Stuck SCRAM rod count'},
+        {path = 'integrity', type = 'number', label = 'Core integrity'},
+        {path = 'recirculationFlow', type = 'number', label = 'Effective core flow'},
+        {path = 'recirculationThreshold', type = 'number', label = 'Low-flow threshold'},
+        {path = 'thermalMW', type = 'number', label = 'Thermal power'},
+        {path = 'dryoutRisk', type = 'number', label = 'Dryout risk'},
+        {path = 'separatorPresent', type = 'boolean', label = 'Separator available'},
+        {path = 'separatorLevel', type = 'number', label = 'Separator level'},
+        {path = 'separatorPressure', type = 'number', label = 'Separator pressure'},
+        {path = 'separatorCarryover', type = 'number', label = 'Separator carryover'},
+        {path = 'turbineTripped', type = 'boolean', label = 'Turbine A tripped'},
+        {path = 'reversePowerTimer', type = 'number', label = 'Reverse-power timer'},
+        {path = 'gridPresent', type = 'boolean', label = 'Station grid available'},
+        {path = 'gridLoadMW', type = 'number', label = 'Station load'},
+        {path = 'gridOverloadThreshold', type = 'number', label = 'Grid overload threshold'},
+        {path = 'coolantPresent', type = 'boolean', label = 'Cooling-water network available'},
+        {path = 'coolantTemperature', type = 'number', label = 'Cooling-water temperature'},
+        {path = 'coolantTemperatureThreshold', type = 'number', label = 'Cooling-water temperature threshold'},
+        {path = 'coolantLevel', type = 'number', label = 'Cooling-water level'},
+        {path = 'deaeratorPresent', type = 'boolean', label = 'Deaerator available'},
+        {path = 'deaeratorPressure', type = 'number', label = 'Deaerator pressure'},
+        {path = 'deaeratorPressureThreshold', type = 'number', label = 'Deaerator pressure threshold'},
+        {path = 'deaeratorTemperature', type = 'number', label = 'Deaerator temperature'},
+        {path = 'deaeratorTemperatureThreshold', type = 'number', label = 'Deaerator temperature threshold'},
+        {path = 'deaeratorFlooded', type = 'boolean', label = 'Deaerator flooded'},
+        {path = 'deaeratorLevel', type = 'number', label = 'Deaerator level'}
     }
 })
 

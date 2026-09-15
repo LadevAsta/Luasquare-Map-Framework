@@ -433,7 +433,7 @@ The bootstrap includes required packages and registers the systems used by the m
 Example:
 include('luasquare_module/seg7display.lua')
 include('luasquare_module/3d2display.lua')
-include('luasquare_module/annunciator/annunciator.lua')
+include('luasquare_module/annunciator/engine.lua')
 include('luasquare_module/gaugedisplay.lua')
 include('luasquare_module/keypad_controller.lua')
 include('luasquare_module/rod_selector.lua')

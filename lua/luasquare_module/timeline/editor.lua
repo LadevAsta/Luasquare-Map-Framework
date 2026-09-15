@@ -14,6 +14,10 @@ local SCROLLBAR_SIZE = 14
 local COMPONENT_SHELF_HEIGHT = 190
 local DEFAULT_SNAP_SECONDS = 0.1
 
+local function editorNotice(message)
+    print('[LUASQUARE_TIMELINE_EDITOR] ' .. tostring(message or ''))
+end
+
 local function defaultSource()
     return {
         schema = TIMELINE.Schema,
@@ -169,7 +173,11 @@ function Editor:Init()
     self:BuildUI()
     self:Compile(false)
     TIMELINE.RequestCatalog()
-    timer.Simple(0, function() if IsValid(self) and LUASQUARE_EDITOR_THEME then LUASQUARE_EDITOR_THEME.ApplyTree(self) end end)
+    timer.Simple(0, function()
+        if IsValid(self) and LUASQUARE_EDITOR_THEME then
+            LUASQUARE_EDITOR_THEME.ApplyEditor(self, {self.Toolbar})
+        end
+    end)
 end
 
 function Editor:BuildUI()
@@ -476,7 +484,7 @@ end
 
 function Editor:Commit(callback, rebuildInspector)
     if self.Session.readOnly then
-        Derma_Message('Save the packed source as a draft before editing it.', 'Read-only source', 'OK')
+        editorNotice('Save the packed source as a draft before editing it.')
         return false
     end
     table.insert(self.Session.history, TIMELINE.DeepCopy(self.Session.source))
@@ -527,7 +535,7 @@ function Editor:OpenSource(item)
         source = json and util.JSONToTable(json) or nil
     end
     if type(source) ~= 'table' then
-        Derma_Message('Unable to read timeline source.', 'Open failed', 'OK')
+        editorNotice('Unable to read timeline source.')
         return
     end
     self:StopPreview()
@@ -581,7 +589,7 @@ function Editor:SaveDraft()
     self.Session.dirty = false
     self:Compile(false)
     self:PopulateSources()
-    notification.AddLegacy('Timeline draft saved: data/' .. path, NOTIFY_GENERIC, 6)
+    editorNotice('Timeline draft saved: data/' .. path)
 end
 
 function Editor:PopulateSources()
@@ -676,7 +684,11 @@ function Editor:OpenSourceManager()
     button('Close', function() frame:Close() end)
     self:PopulateSourceManager()
     frame:MakePopup()
-    timer.Simple(0, function() if IsValid(frame) and LUASQUARE_EDITOR_THEME then LUASQUARE_EDITOR_THEME.ApplyTree(frame) end end)
+    timer.Simple(0, function()
+        if IsValid(frame) and LUASQUARE_EDITOR_THEME then
+            LUASQUARE_EDITOR_THEME.ApplyEditor(frame, {buttons})
+        end
+    end)
 end
 
 function Editor:PopulateComponents()
@@ -829,8 +841,8 @@ function Editor:AddDropAt(drop, x, y)
     local existing = sourceTrack(self.Session, row)
     local existingComponent = existing and self:ComponentForTrack(existing)
     if existing and (not existingComponent or existingComponent.id ~= drop.component.id) then
-        notification.AddLegacy('That track targets ' .. tostring(existingComponent and existingComponent.label or 'another component') .. '.',
-            NOTIFY_ERROR, 4)
+        editorNotice('That track targets '
+            .. tostring(existingComponent and existingComponent.label or 'another component') .. '.')
         return
     end
     self:Commit(function(source)
@@ -1384,7 +1396,7 @@ function Editor:BuildTrackInspector(track, trackIndex)
         value = normalizeFileName(value)
         for index, other in ipairs(self.Session.source.tracks or {}) do
             if index ~= trackIndex and other.id == value then
-                notification.AddLegacy('Track ID already exists.', NOTIFY_ERROR, 3)
+                editorNotice('Track ID already exists.')
                 return
             end
         end
@@ -1622,17 +1634,17 @@ end
 
 function Editor:ShowDiagnostics()
     local _, diagnostics = TIMELINE.CompileSource(self.Session.source, self.Session.origin)
-    Derma_Message(TIMELINE.DiagnosticsText(diagnostics), 'Timeline validation', 'OK')
+    editorNotice(TIMELINE.DiagnosticsText(diagnostics))
 end
 
 function Editor:LoadReferenceAudio(showErrors)
     local audio = self.Session.source.editor and self.Session.source.editor.referenceAudio
     if not audio or not audio.path or audio.path == '' then
-        if showErrors then Derma_Message('Set an editor reference-audio path first.', 'Reference audio', 'OK') end
+        if showErrors then editorNotice('Set an editor reference-audio path first.') end
         return false
     end
     return self.Audio:Load(audio, function(ok, message)
-        if showErrors and not ok then Derma_Message(message, 'Reference audio failed', 'OK') end
+        if showErrors and not ok then editorNotice('Reference audio failed: ' .. tostring(message)) end
     end)
 end
 
@@ -1660,7 +1672,7 @@ end
 function Editor:ConfirmLivePreview()
     if not self.Session.compiled then self:ShowDiagnostics() return end
     if not self.Session.ownerId then
-        Derma_Message('Select a binding owner in the inspector.', 'Live preview', 'OK')
+        editorNotice('Select a binding owner in the inspector.')
         return
     end
     Derma_Query(
@@ -1671,7 +1683,7 @@ function Editor:ConfirmLivePreview()
                 self.Session.playhead, self.Session.mutedTracks)
             if not ok then
                 self.Session.pendingLiveSeek = nil
-                Derma_Message(reason, 'Live preview failed', 'OK')
+                editorNotice('Live preview failed: ' .. tostring(reason))
             end
         end, 'Cancel')
 end
@@ -1701,7 +1713,7 @@ vgui.Register('LUASQUARE_TIMELINE_Editor', Editor, 'DFrame')
 
 function EDITOR.Open()
     if not game.SinglePlayer() then
-        Derma_Message('The timeline editor is available only in single-player.', 'Timeline editor', 'OK')
+        editorNotice('The timeline editor is available only in single-player.')
         return nil
     end
     if IsValid(EDITOR.Window) then EDITOR.Window:MakePopup() return EDITOR.Window end

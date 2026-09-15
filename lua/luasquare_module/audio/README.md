@@ -31,6 +31,8 @@ The contributor segment prevents mounted addons from hiding one another. Framewo
 
 Editor masters have fixed draft paths under `garrysmod/data/luasquare/audio/drafts/_shared/luasquare/`: `sounds/shared_audio.json`, `subtitles/shared_subtitle.json`, `subtitle_styles/shared_subtitle_style.json`, and `pa_lines/shared_pa.json`. Packed contributor assets remain read-only in the Shared Pool browser and must be explicitly imported before editing. Map channel and soundscape drafts continue to mirror their map-owned folders.
 
+Sound definitions require a positive explicit `duration` when Garry's Mod cannot measure the referenced asset during source compilation. Providing the measured duration is recommended for sounds contributed by mounted games so their availability does not depend on mount/load timing.
+
 Sound paths are relative to `sound/`. Modes are:
 
 - `music`: synchronized, seekable client `IGModAudioChannel` playback.
@@ -38,6 +40,8 @@ Sound paths are relative to `sound/`. Modes are:
 - `source`: positional Source playback that requires a PA-channel emitter or an explicit runtime entity, position, or targetname.
 
 Sound declarations never own emitters. A music sound may list `musicBuses`; an empty list permits any bus. WAV and constant-bitrate MP3 durations are measured with `SoundDuration` when possible; use an explicit duration for OGG, VBR MP3, sound scripts, or unresolved files.
+
+Trusted server callers may register a `luasquare_` userinfo name with `RegisterClientVolumeConVar`, then pass it as `clientVolumeConVar` to `PlaySound`. Only allowlisted names are honored, and Source/global emission is split per recipient so each listener receives their own clamped multiplier. The annunciator engine uses `luasquare_audio_annunciator_volume` for every alarm, siren, repeat, and TEST sound; the slider is under **Options → Luasquare → Audio System**.
 
 ## Shared registry example
 

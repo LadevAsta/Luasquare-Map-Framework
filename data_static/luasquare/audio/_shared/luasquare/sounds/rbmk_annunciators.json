@@ -1,0 +1,67 @@
+{
+  "schema": "luasquare.audio/v1",
+  "id": "luasquare_rbmk_annunciator_sounds",
+  "label": "Luasquare RBMK annunciator sounds",
+  "sounds": {
+    "rbmk.annunciator.combine_bank_alarm": {
+      "label": "Combine bank alarm",
+      "path": "ambient/alarms/combine_bank_alarm_loop4.wav",
+      "mode": "source",
+      "volume": 1,
+      "pitch": 100,
+      "soundLevel": 100,
+      "duration": 1.223946,
+      "loop": true
+    },
+    "rbmk.annunciator.alarm14": {
+      "label": "BMS alarm 14",
+      "path": "bms_objects/alarms/alarm14.wav",
+      "mode": "source",
+      "volume": 1,
+      "pitch": 100,
+      "soundLevel": 100,
+      "duration": 1.358322,
+      "loop": true
+    },
+    "rbmk.annunciator.alarm6": {
+      "label": "BMS alarm 6",
+      "path": "bms_objects/alarms/alarm6.wav",
+      "mode": "source",
+      "volume": 1,
+      "pitch": 100,
+      "soundLevel": 100,
+      "duration": 1.891655,
+      "loop": true
+    },
+    "rbmk.annunciator.alarm1": {
+      "label": "BMS alarm 1",
+      "path": "bms_objects/alarms/alarm1.wav",
+      "mode": "source",
+      "volume": 1,
+      "pitch": 100,
+      "soundLevel": 100,
+      "duration": 2.3,
+      "loop": true
+    },
+    "rbmk.annunciator.alarm4": {
+      "label": "BMS alarm 4",
+      "path": "bms_objects/alarms/alarm4.wav",
+      "mode": "source",
+      "volume": 1,
+      "pitch": 100,
+      "soundLevel": 100,
+      "duration": 5.03356,
+      "loop": true
+    },
+    "rbmk.annunciator.lc_alarm1": {
+      "label": "BMS liquid-control alarm",
+      "path": "bms_objects/alarms/lc_alarm1.wav",
+      "mode": "source",
+      "volume": 1,
+      "pitch": 100,
+      "soundLevel": 100,
+      "duration": 1.699637,
+      "loop": true
+    }
+  }
+}

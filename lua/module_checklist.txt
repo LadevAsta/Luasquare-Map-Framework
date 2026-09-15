@@ -18,7 +18,11 @@ luasquare_module
         gaugedisplay.lua (Source entity gauge display driver) [existing]
         keypad_controller.lua (numeric keypad state and callbacks) [existing]
         seg7display.lua (skin-based pseudo 7-segment displays) [existing]
-        annunciator/annunciator.lua (alarm annunciator lifecycle) [existing]
+        annunciator/ (v1 JSON compiler, authoritative lifecycle/audio runtime, bounded networking,
+            3D2D/timeline actions, client state, and admin editor) [implemented]
+            - Packed multi-group sources live in map-owned data_static; drafts live in data/.
+            - Conditions consume named telemetry providers and never source Lua.
+            - The experiment_rbmk reference owns one provider and a packed 22-alarm source.
         rod_selector.lua (RBMK-specific enough to eventually move or rename) [existing / review later]
 
     logging.lua (shared logging, log history, module prefix, severity, developer print policy) [needed]

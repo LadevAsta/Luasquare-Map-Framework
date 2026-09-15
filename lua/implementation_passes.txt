@@ -1,5 +1,330 @@
 Put idea or figured implementation pass or long next working changes here.
 
+=============[Not yet implemented/changed, Planned]=============
+
+
+Refactor and Migrate all the remaining bootstrap-script-based Luasquare modules and powerplant and RBMK to declarative JSON source-driven engine.
+- The described goal is to give mapper(authors) ability to create a map-specific declarative layout of linked powerplant systems(boiler unit, heat exchanger, coolant, electricals) in a Node graphs style editor gui with inspector.
+
+    Proposed migration sub-passes for review (codebase inventory; all remain Planned):
+    - These subdivide only the parent migration. Existing passes below remain separate and in their current order.
+    - Suggested dependencies: source/compiler/lifecycle foundations, component adapters, editors, then map migrations.
+      Control-related sub-passes depend on the separately planned full Control Layer; its prototype is insufficient.
+    - JSON owns map instances, configuration, links, and registered behavior selections. Physics, trusted callbacks,
+      and reactor-specific procedures remain Lua. Do not serialize functions, executable expressions, or live tables.
+    - 3d2display/, timeline/, audio/, and annunciator/ already have JSON engines. Reuse their v1 schemas and editors;
+      migrate remaining registration glue rather than rebuilding them. New source-family/schema names need review.
+    - data_static/luasquare/ is canonical. Historical Applied notes still mention obsolete pre-consolidation paths;
+      module_checklist.txt also contains stale timeline/audio progress descriptions. Do not copy these into new sources.
+
+    01. Define the map manifest and component source contracts.
+        - Replace bootstrap include/configure/register/start lists with a manifest and referenced component packs.
+        - Specify versioned schemas, stable IDs, required/optional packages, shared presets, map overrides, cross-pack
+          references, deterministic precedence, duplicate handling, and startup settings. Prevent double discovery/loading.
+        - Pack under data_static/luasquare/ through GAME; canonical drafts stay under data/luasquare/<family>/drafts/.
+          Never auto-load drafts or allow source paths to select arbitrary Lua files.
+
+    02. Implement the source compiler and registered component-type catalog.
+        - Describe trusted constructors/adapters with typed fields, defaults, limits, units, ports, actions, and telemetry.
+        - Compile validated definitions and resolve references before runtime construction; never generate Lua.
+        - Diagnose file/component/field/port errors: unknown types, duplicate IDs, invalid ranges/non-finite numbers,
+          incompatible units, missing references, and excessive file/node/link/depth/payload sizes.
+        - Separate initial configuration, editor metadata, and mutable state; define schema upgrade/compatibility policy.
+
+    03. Implement dependency-aware map-instance lifecycle.
+        - Adapt powerplant/init.lua, rbmk/init.lua, and independent module Start/timer patterns into explicit creation,
+          link resolution, integration registration, initial inventory/derived capacity setup, and activation phases.
+        - Physical coolant/electrical cycles are valid; distinguish them from invalid construction dependencies.
+        - Preserve current physics cadence/order initially. Validate before activation and unwind partial failures.
+        - Define Stop/Destroy ownership, cleanup ordering, cache invalidation, guards, and a minimal run-on-spawn loader.
+          Stop timelines/audio/effects while their owners exist; reconstruct cleanly after PreCleanupMap.
+
+    04. Introduce typed plant endpoints and RBMK adapters.
+        - fluidpump.lua/fluidvalve.lua dispatch on endpoint strings and directly access RBMK; turbine.lua accepts
+          an RBMK boiler special case, function, or live table. Replace source-facing ambiguity with registered ports.
+        - Define pressure/temperature/inventory/level/transfer/thermal-power capabilities, fluid compatibility,
+          connection direction/cardinality, and external supply/drain boundaries. Put RBMK adapters in luasquare_rbmk.
+        - Preserve accepted-transfer accounting, temperature mixing, pressure, overflow, and shared-boiler allocation.
+
+    05. Migrate logical Source bindings.
+        - Cover sourcebinding.lua CreateRegistry/Register target lists, classes, required/optional, first/all resolution,
+          notes, tags, units, and metadata. Keep map targetnames in map-owned packs and host callbacks in trusted Lua.
+        - Add bounded entity discovery and wrong-class/missing/ambiguous-binding diagnostics with cache invalidation.
+        - Expose only registered class-specific action/output adapters; JSON must not expose arbitrary Fire/Call,
+          method/input names, console commands, URLs, absolute paths, or path traversal.
+
+    06. Migrate movable machinery and path layouts.
+        - Cover machinery.lua RegisterMachine/RegisterPath kinds, binding IDs, speed scaling, deploy/retract settings,
+          initial states/nodes, path_track nodes/edges, switches/branches, and named destinations.
+        - Replace raw input-string configuration with registered capabilities; retain destination tracking and trusted
+          OnPathTrackPassed integration. Validate routes/classes and provide timeline adapters with safe cancellation.
+
+    07. Migrate controls and Source operator routing.
+        - Replace controlbinding.lua callback/onUse and state/availability-function instance glue with registered
+          action/condition references, typed values, allowed states, cooldowns, and logical bindings.
+        - Integrate the separately planned Control Layer's physical locks, forced interactions, retry expiry, actor
+          logging, and CTRLI discovery. Its current prototype does not complete these requirements.
+        - Audit Hammer RunPassedCode callers; retain a trusted compatibility bridge or explicitly migrate VMF I/O.
+          Player, automated, timeline, and display actions must use the same authoritative control path.
+
+    08. Migrate seven-segment displays.
+        - seg7display.lua RegisterDisplay/BindDisplay still require digit arrays and getter closures. Declare ordered
+          digit bindings, provider/path inputs, update cadence, and supported formatting in JSON.
+        - Preserve integer conversion, negative/blank/overflow behavior and model skins; validate props and preview values.
+
+    09. Migrate physical gauges.
+        - gaugedisplay.lua RegisterGauge/BindGauge become entity binding, min/max, inversion, speed, provider/path,
+          and bounded scaling/normalization declarations. Preserve SetPosition behavior and add inspector/preview support.
+        - Diagnose invalid ranges and missing telemetry; define an explicit unavailable-value policy.
+
+    10. Migrate keypads and operator target state.
+        - keypad_controller.lua onSubmit closures become registered submit actions with typed parameters; declare
+          maxDigits/maxValue, display ID, initial value, clear-on-submit, digit entry, clear, and backspace behavior.
+        - Replace bootstrap feedwater/hotwell target locals and fan-out callbacks with owned targets and action bindings.
+          Cover paired pumps, APR target/enable, and rod insertion; preserve Control Layer's numeric automation exception.
+
+    11. Migrate fluid network definitions.
+        - Cover fluidnetwork.lua RegisterNetwork fluid type, inventory, capacity, volume, pressure/temperature tuning,
+          overflow behavior, and monitor anchors/offsets. Document actual units and initial versus derived/live fields.
+        - Validate steam, hotwell, cooling-water, diesel-fuel, and standalone reservoir configurations.
+
+    12. Migrate valves and boundary flows.
+        - Cover fluidvalve.lua RegisterValve source/target, flow/pressure tuning, initial opening/enabled state, and
+          operator actions. Use typed endpoints rather than special RBMK strings; cover reference-map drains and sinks.
+
+    13. Migrate pumps, power consumption, and level regulation.
+        - Cover fluidpump.lua RegisterPump flow/head, speed levels, source/target, enable state, grid/breaker/power,
+          regulation mode/sensor/target/deadband/gain/minimum output, and presentation bindings.
+        - Preserve source/target sensing, power-limited delivery, and recirculation/feedwater semantics. Resolve shared
+          targets explicitly; cover feedwater, circulation, condensate, hotwell, cooling-water, and make-up configurations.
+
+    14. Migrate heat exchangers.
+        - Cover heatexchanger.lua hot/cold networks/pumps, effectiveness, approach temperature, thermal limit,
+          heat capacity, enable state, and monitors. Validate both sides without changing the heat-transfer model.
+        - Add a packed example: experiment_rbmk includes this module but does not register a heat exchanger.
+
+    15. Migrate steam separators and recirculation connections.
+        - Cover steamseparator.lua inventory/capacity/pressure/temperature, steam output, separation/carryover tuning,
+          and feedwater/recirculation/reactor connections. Preserve initial fill and reactor/separator state ownership.
+
+    16. Migrate condensers.
+        - Cover condenser.lua steam, cooling-water, condensate/output connections, thermal/flow/capacity settings,
+          operating state, and monitors. Expose explicit graph ports while preserving current condensation accounting.
+
+    17. Migrate deaerators.
+        - Cover deaerator.lua water/steam supply, storage, heating, automatic regulation, relief/overflow behavior,
+          initial inventory/state, and telemetry/actions. Validate its links independently of bootstrap registration order.
+
+    18. Migrate cooling towers.
+        - Cover coolingtower.lua basin inventory, cooling, evaporation/make-up, fluid and electrical dependencies,
+          initial state, and monitor metadata. Preserve current thermal/water consumption and power behavior.
+
+    19. Migrate grids, breakers, and transformers.
+        - Cover powergrid.lua RegisterGrid/RegisterBreaker/RegisterTransformer source types, voltage/frequency,
+          demand ramps, inertia/droop, base loads, batteries, trips, switch states, and transformer direction/capacity.
+        - Validate references/units and preserve charge/discharge, trip/reset feedback, and existing solver behavior.
+          Make implicit breaker/load relationships and supported electrical cycles visible in the graph.
+
+    20. Migrate turbines and electrical generators.
+        - Cover turbine.lua steam/bypass/condenser/exhaust extraction and storage, thermal-source references,
+          efficiency, RPM/inertia, synchronization, vibration, trips, and initial operating state.
+        - Cover powergenerator.lua grid/breaker/turbine links, capacity/ramping, reverse-power protection, and sync limits.
+        - Make automatic breakers and turbine-generator links deterministic/collision-checked; keep presentation separate.
+          These two component adapters may be implemented separately once their shared connection contract is defined.
+
+    21. Migrate diesel generator sets.
+        - Cover dieselgenerator.lua fuel network/tank/refill/consumption, target power, enable/auto-start, generator,
+          grid/breaker, and monitors. Explicitly resolve its implicitly created generator/breaker without duplicates.
+        - Preserve fuel exhaustion/refueling and power ramping; validate both explicit and generated generator instances.
+
+    22. Migrate plant event presentation and continuous machine audio.
+        - Inventory relay/sound/shake/entity fields, including turbine severe/extreme trips and grid/breaker feedback.
+          Declare event-to-registered-action bindings independently of physics configuration.
+        - Reuse Source bindings, machinery, timelines, and registered Audio IDs where supported; preserve continuous
+          speed/volume/pitch feedback and Source DSP/emitter behavior. Define stop/reset for every persistent effect.
+
+    23. Migrate RBMK layouts and fuel presets.
+        - Replace layouts/LRBMKP-400.lua construction calls with a validated grid: dimensions/model, coordinates,
+          fuel/steam/blank/control/reflector/absorber/void/neutron-source cells, and autofill policy.
+        - Preserve fuel IDs, rods/groups, insertion/graphite/reflector settings, source state, ignoreEdge/ignoreNearVoid;
+          reject duplicate/out-of-range cells. Separate reusable geometry from map rod/selector visual bindings.
+        - fueltypes.lua has function-valued xenon behavior and fuel.lua has flux formulas. Keep trusted named models
+          in Lua; numeric fuel presets may select those models through validated IDs, never executable expressions.
+
+    24. Migrate RBMK vessel settings and initial state.
+        - Replace bootstrap assignments for geometry/origin/spacing, heat/flux/steam/cooling/pressure, integrity,
+          leak/meltdown/blowout, rod power/motion, APR/PID, water fill, and initial rod/source/regulator state.
+        - Declare steam/separator/drain and grid/breaker links. Resolve derived capacities before plant components
+          that currently copy RBMK fields; preserve Hammer-unit volume conversions and simulation units.
+        - RBMK currently uses one global core. Support one explicitly at first, or separately approve a multi-reactor
+          runtime refactor before promising multiple reactor nodes as independent simulations.
+
+    25. Migrate RBMK map effects and rod selection.
+        - Declare blowout valve lists/ranges, rod visuals, selector sprites, and failure/leak/meltdown relays through
+          logical bindings; RBMK retains failure decisions and control-rod behavior.
+        - rod_selector.lua directly depends on RBMK: use an RBMK-owned adapter or move it while preserving legacy
+          LUASQUARE_ROD_SELECTOR VMF callers. Expose selection/group/apply/SCRAM/source/reflector actions.
+        - Preserve keypad percentage-to-insertion inversion, power/stuck behavior, and indicator cleanup.
+
+    26. Replace bootstrap telemetry/getter glue with reusable adapters.
+        - experiment_rbmk.lua still builds MAPDEF_* presentation columns, rbmk.* display/alarm providers, and physical
+          instrument getter closures. Export typed plant/RBMK telemetry with discoverable paths and units.
+        - Support declarative instance/path selection and bounded registered transforms for percentages, scale,
+          rounding, aggregation, and formatting. Complex calculations remain named Lua adapters.
+        - Preserve existing provider IDs/paths or update every packed consumer together; keep operator target state,
+          simulation data, display formatting, and debug snapshots separate.
+
+    27. Integrate existing JSON engines with source-created instances.
+        - Register display actions/providers, annunciator providers, timeline components/lifecycle handlers/resolvers,
+          and audio emitters from trusted adapters. Validate cross-source references before activation.
+        - Preserve v1 compatibility, timeline ownership/channel locks, and safe resets. Choreography must not replace
+          continuous physics or reactor procedure logic; already migrated assets remain usable.
+
+    28. Build the plant graph editor and component inspector.
+        - Use searchable/categorized type catalogs, typed ports, compatible-link hints, units/defaults/limits, component
+          search, and diagnostics selecting offending nodes/fields. Separate physical anchors from editor positions.
+        - Provide pan/zoom, select/drag/snap, undo/redo, duplicate with ID/reference remapping, delete/unlink, grouping,
+          reusable subassemblies/presets with explicit overrides, and visible implicit components/cross-pack links.
+        - Use dark-gray/gray surfaces with white text, native drag/resize and fullscreen/windowed controls, a separate
+          load/save source window, read-only packed sources, canonical drafts, and in-window plus console diagnostics.
+
+    29. Add RBMK grid and physical instrument/binding authoring views.
+        - Provide a cell palette/grid inspector for fuel, rods/groups, autofill, world anchors, and plant connections;
+          authoring a core should not require placing every cell as a separate plant graph node.
+        - Provide structured binding, machinery path, SEG7, gauge, keypad, and selector inspectors/previews with
+          bounded searchable entity/provider/action catalogs. Integrate with the existing editor spawn menu.
+        - Link to existing display/timeline/audio/annunciator editors instead of duplicating their authoring workflows.
+
+    30. Add editor networking, runtime inspection, and isolated preview.
+        - Use bounded revisioned/chunked definitions/catalogs, subscribed incremental telemetry, and late-join state;
+          avoid broadcasting entire plant/core structures every tick. Preserve server validation and authorization.
+        - Apply payload/rate limits and integrate the separately planned development-mode access policy when available.
+        - Begin with offline/local structural preview. Live plant replacement changes inventories and dependencies:
+          define transactional restart/state policy explicitly, or require map reload instead of promising safe hot reload.
+        - Clean previews/subscriptions/overrides on close/disconnect/cleanup/reload. Adapt plant/RBMK debug overlays
+          to new instance IDs and monitor bindings while keeping developer state separate from operator telemetry.
+
+    31. Migrate experiment_rbmk end to end.
+        - Export its layout/settings, all plant instances/links, physical instruments, operator bindings/targets,
+          monitor anchors, and presentation wiring into packed map sources; retain existing JSON assets compatibly.
+        - Reduce bootstrapper/experiment_rbmk.lua to cleanup-aware loading and genuine trusted extension setup.
+        - Audit maps/experiment_rbmk.vmf RunPassedCode outputs; keep wrappers until callers migrate. If I/O changes
+          require it, edit VMF source and schedule a BSP rebuild; never hand-edit compiled output.
+        - Add small examples for existing APIs absent from the reference, especially heat exchangers.
+
+    32. Migrate shared-module consumers in the external DFR map.
+        - Audit DarkEnergyConstruct-Reactor-Map/lua/luasquare_dfr/bootstrapper/gm_darkfusion_v2.lua and framework DFR
+          wrappers for bindings, machinery/default paths, startup controls, display wiring, core/catalyzer instance
+          configuration, and timeline overrides. Move map-owned declarations into that map addon's packs.
+        - Keep DFR state/procedures, visual algorithms, and component behavior in trusted luasquare_dfr registrations.
+          Preserve IDs/choreography/cleanup. This does not authorize missing DFR physics or revised catalyzer gameplay.
+
+    33. Review optional additions that are not migrations of implemented code.
+        - No standalone boiler module exists in powerplant/; current thermal-source support is in turbine.lua/RBMK.
+          Decide separately whether to implement generic boiler physics/actions/telemetry/schema/editor or initially
+          expose existing thermal sources only. The parent goal's boiler node must not imply an already working module.
+        - itemreceptacle.lua is a comments-only design stub. SENT attachment/insertion/extraction, resource access,
+          physical locking, and indicators require implementation before a source-driven adapter can be migrated.
+        - Multi-reactor support and unimplemented checklist state-machine/signal-bus/variables/logging systems need
+          separate scope decisions; introduce only minimal shared contracts required by approved migration sub-passes.
+
+    34. Validate migrations, retire compatibility deliberately, and document authoring.
+        - Compare compiled definitions against original registrations: defaults, implicit instances, links, derived
+          capacities, initial inventory/state, and tick settings. Strict-parse JSON and verify canonical round trips.
+        - Test invalid types/units/IDs/links, missing entities, forbidden content, payload bounds, and failed startup
+          rollback. Verify realm inclusion/AddCSLuaFile, cleanup ownership, and late-join synchronization.
+        - In a real experiment_rbmk session: test startup/steady operation, pump targets/power loss, coolant/steam,
+          turbine sync/trips, grid/battery/diesel, rods/APR/SCRAM, gauges/SEG7/keypads, displays, and alarms.
+        - In gm_darkfusion_v2: test startup controls, machinery destinations, catalyzer choreography, and displays.
+          Repeat Clean Up Everything, failed-load recovery, editor close/disconnect, and late join; inspect for duplicate
+          timers, stale entities/state, and lingering audio. Test source/draft reload policy explicitly.
+        - Document mapper setup, node/port units, Lua extension APIs, minimal loader, and any VMF/BSP rebuild needs.
+          Search all callers before removing legacy APIs and update relevant READMEs/checklist during implementation.
+        - Keep the parent Planned until its reviewed scope is verified. The separate foundation-0.2 bump remains gated
+          on all its stated prerequisite passes, including those outside this migration.
+
+
+Implement Control Layer System
+- Control Layer is the wrapping interface system that will binds hammer interactable entities (func_button, func_rot_button) intended as controller of Luasquare entities. It is the interface between players + external controlling components and an acting component.
+- Goal is to increase robustness of controller map-entities and actually physically locking/unlocking them instead of the current rejection method.
+- Control Layer can lock/unlock button when they become unavailable/available, protecting it from actual player (Or other non-player entities capable of pressing map button such as LambdaPlayers).
+- Control Layer can press, pressIn/Out or toggle button when prompted by other systems such as Timeline (Will be important in later automated sequences).
+- When a control is automatically prompted to press but it is locked, yield the request for a short 2 second and try again, if it doesn't unlock, request expires.
+    - This is to prevent pressIn/Out failure on same-tick unlock and interaction request.
+- ANY control interaction SHOULD be routed through the Control Layer before the control signal reaches the real acting component. this system shall reduce the validation hits by locking the control before it can even get activated and actually sync the button lock state in the map so that map button can have 'locked' feedback to player.
+    - Few exception cases are automating variable numeric inputs from modules such as keypad_controller. (Control Layer triggered by automated module such as timeline can submit value directly without pressing actual keypad)
+- Control Layer can print logs for blames (who used this control and when in server HH:MM:SS eg. [11:30:02 LadevAsta] Turbine A: TRIP (Red Highlight) / [16:11:39 DECAOS] Coolant Pump 3: SPEED 3 > 2 (No highlight)).
+- Control Layer editor with func_button and func_rot_button auto-detection following shared naming convention: 'CTRLI_buttonname' CTRLI (Control Interface) in capital and buttonname in any-case.
+
+
+Implement Logging Panel to 3D2D complex display.
+- A special panel element that will display logs (Debug, facility print-out, Control layer blames)
+
+
+Implement 3d2display on/off state, and Injection behavior
+- On/off switch, causing them to only display black screen or simply not show to client at all when off.
+- all 3d2display can be 'injected' with a globally loaded different display layout on runtime temporarily replacing the current display with it.
+    - Use case: brief Startup welcome screen, Mainframe Error screen.
+- Injectable display layout is declared and made globally available to be deployed on all target displays (possibly all of them in most cases)
+    - One layout can contain many canvas variations so that elements can be authored appropriately.
+- EACH display will choose the canvas variation with closest or equal resolution when they are injected.
+
+
+Optimize 3d2d Graph Renderer.
+- Reference client history without copying it.
+- Replace front-removal with a head-index/ring buffer.
+- Decimate samples to at most one or two points per horizontal pixel.
+- Cache graph geometry or render it to a fixed-size render target only when a sample or style changes.
+- Keep the cached result as one textured draw during normal frames.
+- Avoid rebuilding bounds when explicit min and max are configured.
+
+
+Seperate Singleplayer/Admin game experience and Development environment.
+    - Luasquare shall have development mode toggle. Without development mode, tools and editors are denied access to anyone no matter what.
+    - In server, only server owner can toggle it.
+
+
+Bump Luasquare version to foundation-0.2 after all implementation passes above are done.
+    - 'foundation-0.2' involves architectural change and migration of all Luasquare map module/components toward JSON-source-based instead of Bootstrapper script. As well as stable visually operable in-game gui editors for various JSON data.
+
+
+Implement new Catalyzer manual/auto control and flow model
+- (multi-)SELECT[1-6] AND SELECT MODE > PRIME > CHARGE > EXCITE > FIRE
+- Many func_button > func_rot_button > func_rot_button > func_rot_button > func_rot_button
+- Detailed Flow :
+    - Select all catalyzer that applies AND Select mode (Annihilation or Catalyze)
+        - In Pre-Annihilation, ALL catalyzer must be selected at Annihilation, but PRIME is already unlocked with at least one selected.
+            - Operator MAY select less than 6 but the lesser will risk annihilation failure and must redo the fire.
+            - This intentionally opens a window for operator error.
+            - Automated system always select 6.
+        - In Pre-Darkfusion, ALL catalyzers must be selected at Catalyze before PRIME is even unlocked.
+        - In Darkfusion-Active Fuel Cycle, At least one catalyzer must be selected before PRIME is unlocked.
+        - In Darkfusion-Passive Fuel Cycle, All catalyzers are selected and enforced by default.
+            - When Passive Fuel Cycle has just been activated (or switched to), PRIME, CHARGE, EXCITE, FIRE must be done then the Passive Fuel Cycle is successfully initialized.
+            - By then, PRIME, CHARGE, EXCITE and FIRE is switched back to PressOut position then be locked.
+    - PRIME selected catalyzers, immediately locking selection buttons in the process then lock itself upon activation, run alerting timeline on selected catalyzers.
+    - CHARGE selected catalyzers, Locked Prime lever (and itself, it will remain in pressIn position), run charge timeline on selected catalyzers 'charge' involves the CatalyzerHull firing laser, glowing sprite and playsound but not the Tip.
+    - EXCITE selected catalyzers, Locked Charge lever (and itself), run excite(formerly known as charge_high) timeline on selected catalyzers 'excite' involves the CatalyzerTip emitting glowing and progressively growing sprite to the max size. By then timeline shall tell that FIRE should be available.
+    - FIRE selected catalyzers, Locked Excite lever (and itself), run fire timeline on selected catalyzers 'fire' involves CatalyzerTip activating beams(for darkfusion or annihilation), enlarging both CatalyzerHull and Tip glowing sprite from their latest size.
+    - After FIRE, all levers unlock and immediately return to PressOut position before locking again as fast as possible. Then, unlock selection button group again.
+- Cancel lever is only available from Prime through Excite where it will discard the charged energy (also clear fired timeline).
+
+=============[Applied Implemented/changed passes]=============
+
+Re-implement and Migrate Annunciator System into new declarative JSON source-driven engine. [Implemented as luasquare.annunciator/v1]
+- Replaced the monolithic Lua alarm declarations with guarded shared/compiler, authoritative runtime,
+  bounded networking, client state, and editor modules.
+- Added multi-group packed sources, registered provider/path conditions, clear-condition hysteresis,
+  tier lifecycle, scoped ACK/RESET/MUTE/UNMUTE/TEST, timed mute, re-alarm, hooks, and late-join state.
+- Integrated only registered Audio IDs with once/loop/repeat policies and per-recipient
+  luasquare_audio_annunciator_volume scaling.
+- Moved 3D2D annunciator presentation to the annunciator client snapshot and added catalog selection.
+- Migrated all 22 experiment_rbmk alarms and explicit legacy targetnames into one packed source,
+  backed by one RBMK/plant telemetry provider. Existing no-argument VMF operator calls remain valid.
+- Added the Annunciator Editor with packed/draft handling, undo/redo, validation, structured and
+  nested condition editing, source/audio/prop catalogs, local lifecycle simulation, and model preview.
+- Removed the old declaration/binding/core-position APIs and monolithic implementation.
+
 Improve 3d2display placement experience. [prototype implemented]
     Mapper could name their info_target something like 'DISPLAY512x256_dfr_status_panel', and place and orient the info_target correctly so that it resides on canva's upper left corner(already a feature) and the local z gizmo point upward from display's normal and local x gizmo point along the display width.
     the code will then be aware of the targetname as it includes the resolution (In hammer units) and place display there with the set the resolution without manually setting the resolution in map bootstrapper unless overridden for some reason.
@@ -65,15 +390,6 @@ Implementation note:
     Use rather than mouse capture. Packed files remain read-only in the editor; draft export
     goes to data/luasquare_3d2display/drafts/<map>/ for manual copying into the map addon.
 
-
-Optimize 3d2d Graph Renderer.
-- Reference client history without copying it.
-- Replace front-removal with a head-index/ring buffer.
-- Decimate samples to at most one or two points per horizontal pixel.
-- Cache graph geometry or render it to a fixed-size render target only when a sample or style changes.
-- Keep the cached result as one textured draw during normal frames.
-- Avoid rebuilding bounds when explicit min and max are configured.
-
 Update 3d2d Function, Editor function & UI. [Implemented update]
 - inspector
     - proper foldable advanced json fields, options in element functional categories such as interact action, condition. within inspector.
@@ -99,7 +415,7 @@ Update 3d2d Function, Editor function & UI. [Implemented update]
     - Is it possible to rotate displayed material? If it is, make it so that editor can rotate and element visual animation to be able to rotate it in degrees/s.
     - Is it possible for 3d2d to even modify source material proxies?
 
-Switch Timeline Engine architecture to JSON based. [Work in progress]
+Switch Timeline Engine architecture to JSON based. [Implemented]
     - Clean-Discard the existing system.
     - New system should utilize timeline defined in JSON. Repeatable component such as catalyzer.lua that really want to utilize timeline will load 'default' timeline file(s), unless a custom one is told to it at bootstrap.
     - Timeline json can be created, edited and saved in data. Using in-game editor that may also preview. Accessible in singleplayer only.
@@ -114,7 +430,7 @@ Switch Timeline Engine architecture to JSON based. [Work in progress]
         - Some component(or subcomponent in the component) can have setvalue. In the case of setvalue, timeline may interpolate the set value (linear, etc) from first value to second value at the end of the component. The callback during interpolation is per timeline-tick.
     - Technical limitation is to be discussed in planning pass (Such as whether or not the game can 'pause' a sound or change it effective volume while its playing).
 
-Implement Luasquare Audiosystem. [Work in progress]
+Implement Luasquare Audiosystem. [Implemented]
     - Subtitler.
         - Subtitler will draw a box and text on player's hud when this player heard a sound somewhere that have defined a subtitle with this system.
         - Box and text will fade in and animated with subtle 'slide up'.
@@ -150,9 +466,3 @@ Implement Luasquare Audiosystem. [Work in progress]
         - State-based system. When a state is told, it switch there and disable all connected soundscapes and enable soundscape for that state.
         - Affect all env_soundscape with same name.
         - This is because different part of the map should have different set of soundscape and trigger area.
-
-
-
-Seperate Singleplayer/Admin game experience and Development environment.
-    - Luasquare shall have development mode toggle. Without development mode, tools are denied access no matter what.
-    - In server, only server owner can toggle it.

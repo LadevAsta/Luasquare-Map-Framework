@@ -12,7 +12,7 @@ DISPLAY.Net = DISPLAY.Net or {
     EditorResult = 'LUASQUARE_3D2D_EditorResult'
 }
 DISPLAY.ClientState = DISPLAY.ClientState or {
-    Displays = {}, Providers = {}, ThemePacks = {}, ThemeState = {}, Annunciators = {}, Graphs = {}
+    Displays = {}, Providers = {}, ThemePacks = {}, ThemeState = {}, Graphs = {}
 }
 DISPLAY.ClientTransfers = DISPLAY.ClientTransfers or {}
 
@@ -36,7 +36,6 @@ local function hydrateSnapshot(snapshot)
     DISPLAY.ClientState.Providers = DISPLAY.ClientState.Providers or {}
     DISPLAY.ClientState.ThemePacks = DISPLAY.ClientState.ThemePacks or {}
     DISPLAY.ClientState.ThemeState = DISPLAY.ClientState.ThemeState or {}
-    DISPLAY.ClientState.Annunciators = DISPLAY.ClientState.Annunciators or {}
     DISPLAY.ClientState.Graphs = DISPLAY.ClientState.Graphs or {}
     DISPLAY.ClientRevision = snapshot.revision
     DISPLAY.LastDeltaSequence = 0
@@ -80,7 +79,6 @@ local function applyDelta(delta)
         end
     end
     for group, theme in pairs(delta.themes or {}) do DISPLAY.ClientState.ThemeState[group] = theme end
-    for id, value in pairs(delta.annunciators or {}) do DISPLAY.ClientState.Annunciators[id] = value end
     for id, page in pairs(delta.pages or {}) do
         for _, display in ipairs(DISPLAY.ClientState.Displays or {}) do
             if display.id == id then display.activePage = page break end

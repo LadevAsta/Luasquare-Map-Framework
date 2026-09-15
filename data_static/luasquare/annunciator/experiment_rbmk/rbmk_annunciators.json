@@ -1,0 +1,549 @@
+{
+  "schema": "luasquare.annunciator/v1",
+  "kind": "annunciator_pack",
+  "id": "experiment_rbmk_annunciators",
+  "label": "Experiment RBMK annunciators",
+  "groups": {
+    "reactor": {
+      "label": "Reactor",
+      "muteSeconds": 60,
+      "soundOrigin": {"position": [35, -433, 627]}
+    },
+    "separator": {
+      "label": "Steam separator",
+      "muteSeconds": 60,
+      "soundOrigin": {"position": [35, -433, 627]}
+    },
+    "turbine_a": {
+      "label": "Turbine A",
+      "muteSeconds": 60,
+      "soundOrigin": {"position": [35, -433, 627]}
+    },
+    "station_grid": {
+      "label": "Station grid",
+      "muteSeconds": 60,
+      "soundOrigin": {"position": [35, -433, 627]}
+    },
+    "coolant": {
+      "label": "Cooling water",
+      "muteSeconds": 60,
+      "soundOrigin": {"position": [35, -433, 627]}
+    },
+    "deaerator": {
+      "label": "Deaerator",
+      "muteSeconds": 60,
+      "soundOrigin": {"position": [35, -433, 627]}
+    }
+  },
+  "alarms": {
+    "rpv_pressure_high": {
+      "label": "RPV PRESSURE HIGH",
+      "group": "reactor",
+      "tier": 2,
+      "condition": {"provider": "rbmk.annunciator", "path": "rpvPressure", "op": "gt", "value": 60},
+      "indicator": {
+        "targetnames": ["ann_rpv_pressure_high"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.lc_alarm1",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 100,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "rpv_temperature_high": {
+      "label": "RPV TEMPERATURE HIGH",
+      "group": "reactor",
+      "tier": 2,
+      "condition": {"provider": "rbmk.annunciator", "path": "rpvTemperature", "op": "gt", "value": 1100},
+      "indicator": {
+        "targetnames": ["ann_rpv_temperature_high"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.combine_bank_alarm",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 100,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "fuel_channel_leak": {
+      "label": "FUEL CHANNEL LEAK",
+      "group": "reactor",
+      "tier": 3,
+      "condition": {"provider": "rbmk.annunciator", "path": "fuelChannelLeakCount", "op": "gt", "value": 0},
+      "message": {"provider": "rbmk.annunciator", "path": "messages.fuel_channel_leak"},
+      "indicator": {
+        "targetnames": ["ann_fuel_channel_leak"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm14",
+        "mode": "loop",
+        "ackSilences": false,
+        "pitch": 100,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "control_rods_unpowered": {
+      "label": "CONTROL RODS UNPOWERED",
+      "group": "reactor",
+      "tier": 2,
+      "condition": {
+        "all": [
+          {"provider": "rbmk.annunciator", "path": "controlRodDemandMW", "op": "gt", "value": 0},
+          {"provider": "rbmk.annunciator", "path": "controlRodsPowered", "op": "eq", "value": false}
+        ]
+      },
+      "message": {"provider": "rbmk.annunciator", "path": "messages.control_rods_unpowered"},
+      "indicator": {
+        "targetnames": ["ann_control_rods_unpowered"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm6",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 110,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "scram_rods_stuck": {
+      "label": "SCRAM RODS STUCK",
+      "group": "reactor",
+      "tier": 3,
+      "condition": {"provider": "rbmk.annunciator", "path": "scramRodsStuck", "op": "gt", "value": 0},
+      "message": {"provider": "rbmk.annunciator", "path": "messages.scram_rods_stuck"},
+      "indicator": {
+        "targetnames": ["ann_scram_rods_stuck"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm6",
+        "mode": "loop",
+        "ackSilences": false,
+        "pitch": 120,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "rbmk_integrity_low": {
+      "label": "RBMK INTEGRITY LOW",
+      "group": "reactor",
+      "tier": 3,
+      "condition": {"provider": "rbmk.annunciator", "path": "integrity", "op": "lte", "value": 0.75},
+      "message": {"provider": "rbmk.annunciator", "path": "messages.rbmk_integrity_low"},
+      "indicator": {
+        "targetnames": ["ann_rbmk_integrity_low"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm1",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 100,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "recirculation_flow_low": {
+      "label": "RECIRC FLOW LOW",
+      "group": "reactor",
+      "tier": 2,
+      "condition": {
+        "all": [
+          {
+            "provider": "rbmk.annunciator",
+            "path": "recirculationFlow",
+            "op": "lt",
+            "value": {"provider": "rbmk.annunciator", "path": "recirculationThreshold"}
+          },
+          {"provider": "rbmk.annunciator", "path": "thermalMW", "op": "gt", "value": 10}
+        ]
+      },
+      "message": {"provider": "rbmk.annunciator", "path": "messages.recirculation_flow_low"},
+      "reAlarmSeconds": 0,
+      "indicator": {
+        "targetnames": ["ann_recirculation_flow_low"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm6",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 100,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "rbmk_dryout_risk": {
+      "label": "RBMK DRYOUT RISK",
+      "group": "reactor",
+      "tier": 3,
+      "condition": {"provider": "rbmk.annunciator", "path": "dryoutRisk", "op": "gte", "value": 0.65},
+      "message": {"provider": "rbmk.annunciator", "path": "messages.rbmk_dryout_risk"},
+      "reAlarmSeconds": 0,
+      "indicator": {
+        "targetnames": ["ann_rbmk_dryout_risk"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm1",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 120,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "steam_separator_low_level": {
+      "label": "SEPARATOR LEVEL LOW",
+      "group": "separator",
+      "tier": 2,
+      "condition": {
+        "all": [
+          {"provider": "rbmk.annunciator", "path": "separatorPresent", "op": "truthy"},
+          {"provider": "rbmk.annunciator", "path": "separatorLevel", "op": "lte", "value": 20}
+        ]
+      },
+      "message": {"provider": "rbmk.annunciator", "path": "messages.steam_separator_low_level"},
+      "indicator": {
+        "targetnames": ["ann_steam_separator_low_level"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm6",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 105,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "steam_separator_high_level": {
+      "label": "SEPARATOR LEVEL HIGH",
+      "group": "separator",
+      "tier": 2,
+      "condition": {
+        "all": [
+          {"provider": "rbmk.annunciator", "path": "separatorPresent", "op": "truthy"},
+          {"provider": "rbmk.annunciator", "path": "separatorLevel", "op": "gte", "value": 85}
+        ]
+      },
+      "message": {"provider": "rbmk.annunciator", "path": "messages.steam_separator_high_level"},
+      "indicator": {
+        "targetnames": ["ann_steam_separator_high_level"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm6",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 95,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "steam_separator_high_pressure": {
+      "label": "SEPARATOR PRESS HIGH",
+      "group": "separator",
+      "tier": 2,
+      "condition": {
+        "all": [
+          {"provider": "rbmk.annunciator", "path": "separatorPresent", "op": "truthy"},
+          {"provider": "rbmk.annunciator", "path": "separatorPressure", "op": "gte", "value": 60}
+        ]
+      },
+      "message": {"provider": "rbmk.annunciator", "path": "messages.steam_separator_high_pressure"},
+      "indicator": {
+        "targetnames": ["ann_steam_separator_high_pressure"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm6",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 115,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "steam_wet_carryover": {
+      "label": "WET STEAM CARRYOVER",
+      "group": "separator",
+      "tier": 2,
+      "condition": {
+        "all": [
+          {"provider": "rbmk.annunciator", "path": "separatorPresent", "op": "truthy"},
+          {"provider": "rbmk.annunciator", "path": "separatorCarryover", "op": "gt", "value": 0.5}
+        ]
+      },
+      "message": {"provider": "rbmk.annunciator", "path": "messages.steam_wet_carryover"},
+      "indicator": {
+        "targetnames": ["ann_steam_wet_carryover"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm1",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 100,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "tg1_trip": {
+      "label": "TURBINE A TRIP",
+      "group": "turbine_a",
+      "tier": 3,
+      "condition": {"provider": "rbmk.annunciator", "path": "turbineTripped", "op": "truthy"},
+      "indicator": {
+        "targetnames": ["ann_turbine_a_trip"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm4",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 110,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "tg1_reversepower": {
+      "label": "TURBINE A REVERSE POWER",
+      "group": "turbine_a",
+      "tier": 3,
+      "condition": {"provider": "rbmk.annunciator", "path": "reversePowerTimer", "op": "gt", "value": 0},
+      "indicator": {
+        "targetnames": ["ann_turbine_a_reversepower"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm1",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 120,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "station_grid_overload": {
+      "label": "STATION GRID OVERLOAD",
+      "group": "station_grid",
+      "tier": 3,
+      "condition": {
+        "all": [
+          {"provider": "rbmk.annunciator", "path": "gridPresent", "op": "truthy"},
+          {
+            "provider": "rbmk.annunciator",
+            "path": "gridLoadMW",
+            "op": "gt",
+            "value": {"provider": "rbmk.annunciator", "path": "gridOverloadThreshold"}
+          }
+        ]
+      },
+      "message": {"provider": "rbmk.annunciator", "path": "messages.station_grid_overload"},
+      "indicator": {
+        "targetnames": ["ann_station_grid_overload"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm6",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 115,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "cooling_water_high_temperature": {
+      "label": "COOLING WATER HIGH TEMP",
+      "group": "coolant",
+      "tier": 2,
+      "condition": {
+        "all": [
+          {"provider": "rbmk.annunciator", "path": "coolantPresent", "op": "truthy"},
+          {
+            "provider": "rbmk.annunciator",
+            "path": "coolantTemperature",
+            "op": "gte",
+            "value": {"provider": "rbmk.annunciator", "path": "coolantTemperatureThreshold"}
+          }
+        ]
+      },
+      "message": {"provider": "rbmk.annunciator", "path": "messages.cooling_water_high_temperature"},
+      "indicator": {
+        "targetnames": ["ann_cooling_water_high_temperature"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm6",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 105,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "cooling_water_low_level": {
+      "label": "COOLING WATER LOW LEVEL",
+      "group": "coolant",
+      "tier": 2,
+      "condition": {
+        "all": [
+          {"provider": "rbmk.annunciator", "path": "coolantPresent", "op": "truthy"},
+          {"provider": "rbmk.annunciator", "path": "coolantLevel", "op": "lte", "value": 70}
+        ]
+      },
+      "message": {"provider": "rbmk.annunciator", "path": "messages.cooling_water_low_level"},
+      "indicator": {
+        "targetnames": ["ann_cooling_water_low_level"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm6",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 95,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "deaerator_high_pressure": {
+      "label": "DEAERATOR HIGH PRESS",
+      "group": "deaerator",
+      "tier": 2,
+      "condition": {
+        "all": [
+          {"provider": "rbmk.annunciator", "path": "deaeratorPresent", "op": "truthy"},
+          {
+            "provider": "rbmk.annunciator",
+            "path": "deaeratorPressure",
+            "op": "gte",
+            "value": {"provider": "rbmk.annunciator", "path": "deaeratorPressureThreshold"}
+          }
+        ]
+      },
+      "message": {"provider": "rbmk.annunciator", "path": "messages.deaerator_high_pressure"},
+      "indicator": {
+        "targetnames": ["ann_deaerator_high_pressure"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm6",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 115,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "deaerator_high_temperature": {
+      "label": "DEAERATOR HIGH TEMP",
+      "group": "deaerator",
+      "tier": 2,
+      "condition": {
+        "all": [
+          {"provider": "rbmk.annunciator", "path": "deaeratorPresent", "op": "truthy"},
+          {
+            "provider": "rbmk.annunciator",
+            "path": "deaeratorTemperature",
+            "op": "gte",
+            "value": {"provider": "rbmk.annunciator", "path": "deaeratorTemperatureThreshold"}
+          }
+        ]
+      },
+      "message": {"provider": "rbmk.annunciator", "path": "messages.deaerator_high_temperature"},
+      "indicator": {
+        "targetnames": ["ann_deaerator_high_temperature"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm6",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 105,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "deaerator_flooded": {
+      "label": "DEAERATOR FLOODED",
+      "group": "deaerator",
+      "tier": 3,
+      "condition": {
+        "all": [
+          {"provider": "rbmk.annunciator", "path": "deaeratorPresent", "op": "truthy"},
+          {"provider": "rbmk.annunciator", "path": "deaeratorFlooded", "op": "truthy"}
+        ]
+      },
+      "message": {"provider": "rbmk.annunciator", "path": "messages.deaerator_flooded"},
+      "indicator": {
+        "targetnames": ["ann_deaerator_flooded"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm6",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 90,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "deaerator_water_low": {
+      "label": "DEAERATOR WATER LOW",
+      "group": "deaerator",
+      "tier": 2,
+      "condition": {
+        "all": [
+          {"provider": "rbmk.annunciator", "path": "deaeratorPresent", "op": "truthy"},
+          {"provider": "rbmk.annunciator", "path": "deaeratorLevel", "op": "lt", "value": 10}
+        ]
+      },
+      "indicator": {
+        "targetnames": ["ann_deaerator_water_low"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm1",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 90,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    },
+    "deaerator_water_high": {
+      "label": "DEAERATOR WATER HIGH",
+      "group": "deaerator",
+      "tier": 2,
+      "condition": {
+        "all": [
+          {"provider": "rbmk.annunciator", "path": "deaeratorPresent", "op": "truthy"},
+          {"provider": "rbmk.annunciator", "path": "deaeratorLevel", "op": "gt", "value": 80}
+        ]
+      },
+      "indicator": {
+        "targetnames": ["ann_deaerator_water_high"],
+        "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
+      },
+      "audio": {
+        "sound": "rbmk.annunciator.alarm1",
+        "mode": "loop",
+        "ackSilences": true,
+        "pitch": 90,
+        "volume": 1,
+        "soundLevel": 100
+      }
+    }
+  }
+}

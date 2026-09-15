@@ -87,7 +87,7 @@ end
 
 function DISPLAY.BroadcastDelta(delta)
     if not hasEntries(delta.providers) and not hasEntries(delta.variables) and not hasEntries(delta.pages)
-        and not hasEntries(delta.themes) and not hasEntries(delta.annunciators)
+        and not hasEntries(delta.themes)
         and #(delta.graphSamples or {}) == 0 then return false end
     if not hasBroadcastRecipients() then return true end
     local sent = sendChunked(DISPLAY.Net.Delta, delta, nil, MAX_DELTA_BYTES)

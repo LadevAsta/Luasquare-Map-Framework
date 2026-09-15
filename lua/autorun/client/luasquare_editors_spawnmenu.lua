@@ -8,15 +8,13 @@ hook.Add('PopulateToolMenu', 'LUASQUARE_EditorsMenu', function()
         panel:Button('3D2D Display Editor').DoClick = function()
             if LUASQUARE_3D2D and LUASQUARE_3D2D.Editor then LUASQUARE_3D2D.Editor.Open() end
         end
-        panel:Button('3D2D Theme Editor').DoClick = function()
-            if not LUASQUARE_3D2D or not LUASQUARE_3D2D.Editor then return end
-            local displayEditor = LUASQUARE_3D2D.Editor.Open()
-            if IsValid(displayEditor) and LUASQUARE_3D2D.Editor.OpenThemeEditor then
-                LUASQUARE_3D2D.Editor.OpenThemeEditor(displayEditor)
-            end
-        end
         panel:Button('Timeline Editor').DoClick = function()
             if LUASQUARE_TIMELINE and LUASQUARE_TIMELINE.Editor then LUASQUARE_TIMELINE.Editor.Open() end
+        end
+        panel:Button('Annunciator Editor').DoClick = function()
+            if LUASQUARE_ANNUNCIATOR and LUASQUARE_ANNUNCIATOR.Editor then
+                LUASQUARE_ANNUNCIATOR.Editor.Open()
+            end
         end
 
         panel:Help('Audio registry editors use client-local previews and never enter the server playback queues.')

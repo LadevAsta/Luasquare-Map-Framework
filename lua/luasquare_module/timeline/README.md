@@ -124,6 +124,8 @@ Clip kinds are `marker`, `duration`, `number`, and `timeline`. Supported numeric
 
 Open `Spawn Menu -> Options -> Luasquare -> Timeline Editor`. The editor is intentionally restricted to single-player.
 
+The toolbar and source manager use the shared dark-gray editor palette. Informational and validation output is printed to the console so it cannot be hidden behind the editor; explicit discard/live-preview confirmation dialogs remain interactive.
+
 Packed sources open read-only. Save one as a draft before editing. The component browser is populated from the server's sanitized component catalog. Drag a component onto the timeline to create a track and clip, then select the clip to choose an exposed action and its typed parameters.
 
 Simulation preview changes only the editor playhead. Live preview requires confirmation, rejects production channel conflicts, and invokes real component actions. Every live-previewable component must provide `safeReset`; preview stop, failure, editor closure, cleanup, or completion invokes that reset. This is a safe-state reset, not an exact restoration of prior entity state.

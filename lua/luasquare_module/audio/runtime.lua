@@ -17,6 +17,23 @@ AUDIO.PAStates = AUDIO.PAStates or {}
 AUDIO.SoundscapeStates = AUDIO.SoundscapeStates or {}
 AUDIO.InstanceSerial = AUDIO.InstanceSerial or 0
 AUDIO.TimerName = 'LUASQUARE_AUDIO_Runtime'
+AUDIO.ClientVolumeConVars = AUDIO.ClientVolumeConVars or {
+    luasquare_audio_annunciator_volume = true
+}
+
+function AUDIO.RegisterClientVolumeConVar(name)
+    name = string.lower(tostring(name or ''))
+    if not string.match(name, '^luasquare_[%w_]+$') then return false end
+    AUDIO.ClientVolumeConVars[name] = true
+    return true
+end
+
+function AUDIO.UnregisterClientVolumeConVar(name)
+    name = string.lower(tostring(name or ''))
+    if name == 'luasquare_audio_annunciator_volume' then return false end
+    AUDIO.ClientVolumeConVars[name] = nil
+    return true
+end
 
 local categories = AUDIO.SourceCategories
 local getSoundProperties = _G.sound and _G.sound.GetProperties
@@ -542,12 +559,18 @@ local function resolveEmitters(sound, options)
     return out
 end
 
-local function emitAt(sound, emitter, recipients, instance)
+local function recipientVolume(ply, convar)
+    if not convar or not AUDIO.ClientVolumeConVars[convar] then return 1 end
+    return AUDIO.Clamp(ply:GetInfoNum(convar, 1), 0, 1)
+end
+
+local function emitAt(sound, emitter, recipients, instance, clientVolumeConVar)
     if emitter.kind == 'global' then
         for _, ply in ipairs(recipients) do
             local filter = RecipientFilter() filter:AddPlayer(ply)
             EmitSound(sound.path, ply:GetPos(), ply:EntIndex(), channelValues[sound.channel] or CHAN_AUTO,
-                sound.volume, sound.soundLevel, SND_SHOULDPAUSE or 128, sound.pitch, sound.dsp, filter)
+                sound.volume * recipientVolume(ply, clientVolumeConVar), sound.soundLevel,
+                SND_SHOULDPAUSE or 128, sound.pitch, sound.dsp, filter)
             table.insert(instance.emittedFrom, ply)
         end
         return #recipients > 0
@@ -562,6 +585,16 @@ local function emitAt(sound, emitter, recipients, instance)
         end
     end
     if not IsValid(entity) then return false end
+    if clientVolumeConVar and AUDIO.ClientVolumeConVars[clientVolumeConVar] then
+        for _, ply in ipairs(recipients) do
+            local filter = RecipientFilter() filter:AddPlayer(ply)
+            EmitSound(sound.path, entity:GetPos(), entity:EntIndex(), channelValues[sound.channel] or CHAN_AUTO,
+                sound.volume * recipientVolume(ply, clientVolumeConVar), sound.soundLevel,
+                SND_SHOULDPAUSE or 128, sound.pitch, sound.dsp, filter)
+        end
+        if #recipients > 0 then table.insert(instance.emittedFrom, entity) end
+        return #recipients > 0
+    end
     local filter = RecipientFilter()
     for _, ply in ipairs(recipients) do filter:AddPlayer(ply) end
     EmitSound(sound.path, entity:GetPos(), entity:EntIndex(), channelValues[sound.channel] or CHAN_AUTO,
@@ -629,21 +662,32 @@ function AUDIO.PlaySound(soundId, options)
     if not sound or (sound.mode ~= 'source' and sound.mode ~= 'global') then
         return false, 'unknown or incompatible Source/global sound'
     end
-    local emitters = resolveEmitters(sound, options)
+    local effectiveSound = table.Copy(sound)
+    if options.volume ~= nil then effectiveSound.volume = AUDIO.Clamp(options.volume, 0, 1) end
+    if options.pitch ~= nil then
+        effectiveSound.pitch = math.floor(AUDIO.Clamp(options.pitch, 1, 255))
+    end
+    if options.soundLevel ~= nil then
+        effectiveSound.soundLevel = math.floor(AUDIO.Clamp(options.soundLevel, 0, 511))
+    end
+    local volumeConVar = tostring(options.clientVolumeConVar or '')
+    if not AUDIO.ClientVolumeConVars[volumeConVar] then volumeConVar = nil end
+    local emitters = resolveEmitters(effectiveSound, options)
     if #emitters == 0 then return false, 'no sound emitter resolved' end
-    local effectiveLoop = options.loop ~= nil and options.loop or sound.loop
+    local effectiveLoop = effectiveSound.loop
+    if options.loop ~= nil then effectiveLoop = options.loop and true or false end
     local instance = {
         id = nextId('sound'), soundId = soundId, ownerId = tostring(options.ownerId or ''),
-        soundPath = sound.path, startedAt = now(),
-        endsAt = not effectiveLoop and (now() + sound.duration * 100 / sound.pitch) or nil,
+        soundPath = effectiveSound.path, startedAt = now(),
+        endsAt = not effectiveLoop and (now() + effectiveSound.duration * 100 / effectiveSound.pitch) or nil,
         loop = effectiveLoop, emittedFrom = {}, temporaryEntities = {}, subtitleId = nil
     }
     local recipientSet, emitted = {}, false
     for _, emitter in ipairs(emitters) do
         local recipients = emitter.kind == 'global' and allRecipients()
-            or playersAt(emitterPosition(emitter), tonumber(options.hearingRadius) or sound.hearingRadius)
+            or playersAt(emitterPosition(emitter), tonumber(options.hearingRadius) or effectiveSound.hearingRadius)
         uniqueRecipients(recipientSet, recipients)
-        emitted = emitAt(sound, emitter, recipients, instance) or emitted
+        emitted = emitAt(effectiveSound, emitter, recipients, instance, volumeConVar) or emitted
     end
     if not emitted then
         for _, entity in ipairs(instance.temporaryEntities) do if IsValid(entity) then entity:Remove() end end
@@ -653,7 +697,7 @@ function AUDIO.PlaySound(soundId, options)
     local subtitleSequence = AUDIO.SubtitleBySound and AUDIO.SubtitleBySound[soundId]
     if subtitleSequence and options.subtitle ~= false then
         local ok, subtitleInstance = AUDIO.StartSubtitleSequence(subtitleSequence, {
-            recipients = recipientList(recipientSet), playbackRate = sound.pitch / 100,
+            recipients = recipientList(recipientSet), playbackRate = effectiveSound.pitch / 100,
             ownerId = instance.ownerId
         })
         if ok then instance.subtitleId = subtitleInstance end

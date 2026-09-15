@@ -10,6 +10,10 @@ local userInput = _G.input
 local CHUNK_BYTES = 48000
 local transferSerial = 0
 
+local function editorNotice(message)
+    print('[LUASQUARE_3D2D_EDITOR] ' .. tostring(message or ''))
+end
+
 local function normalizeMap()
     return string.lower(string.gsub(game.GetMap() or 'unknown', '[^%w_%-]', '_'))
 end
@@ -321,7 +325,7 @@ function EditorPanel:Init()
     self.ValidateButton = toolButton('Validate', function()
         self:Compile()
         local diagnostics = DISPLAY.DiagnosticsText(self.Session.diagnostics)
-        Derma_Message(diagnostics ~= '' and diagnostics or 'Source is valid.', 'Display validation', 'OK')
+        editorNotice(diagnostics ~= '' and diagnostics or 'Source is valid.')
     end, 65)
 
     self.ElementSnapButton = toolButton('Element snap: ON', function()
@@ -427,7 +431,11 @@ function EditorPanel:Init()
 
     self:RefreshSources()
     self:ReplaceSource(self.Session.source, self.Session.origin, false)
-    timer.Simple(0, function() if IsValid(self) and LUASQUARE_EDITOR_THEME then LUASQUARE_EDITOR_THEME.ApplyTree(self) end end)
+    timer.Simple(0, function()
+        if IsValid(self) and LUASQUARE_EDITOR_THEME then
+            LUASQUARE_EDITOR_THEME.ApplyEditor(self, {self.Toolbar})
+        end
+    end)
 end
 
 function EditorPanel:RefreshSources()
@@ -492,7 +500,7 @@ function EditorPanel:OpenSourceWindow()
                 self:ReplaceSource(source, entry.path, entry.readOnly)
                 if IsValid(frame) then frame:Close() end
             else
-                Derma_Message(message, 'Open failed', 'OK')
+                editorNotice('Open failed: ' .. tostring(message))
             end
         end)
     end
@@ -517,6 +525,7 @@ function EditorPanel:OpenSourceWindow()
     button('Load selected', loadSelected)
     button('Save draft', function() self:SaveDraft() self:PopulateSourceWindow() end)
     button('Close', function() frame:Close() end)
+    if LUASQUARE_EDITOR_THEME then LUASQUARE_EDITOR_THEME.Apply(buttons, 'panel') end
     self:PopulateSourceWindow()
     self:ActivateSubwindow(frame)
 end
@@ -558,7 +567,7 @@ function EditorPanel:OpenEntry(entry)
         if source then
             self:ReplaceSource(source, entry.path, entry.readOnly)
         else
-            Derma_Message(message, 'Open failed', 'OK')
+            editorNotice('Open failed: ' .. tostring(message))
             self:RefreshSources()
         end
     end)
@@ -584,7 +593,7 @@ end
 
 function EditorPanel:Changed(callback)
     if self.Session.readOnly then
-        Derma_Message('Packed data_static sources are read-only. Save this source as a draft before editing.', 'Read-only source', 'OK')
+        editorNotice('Packed data_static sources are read-only. Save this source as a draft before editing.')
         return false
     end
     pushHistory(self.Session)
@@ -675,7 +684,7 @@ function EditorPanel:SaveDraft()
     self:Compile()
     self:RefreshSources()
     SetClipboardText(self.Session.origin)
-    notification.AddLegacy('Draft saved; exact path copied to clipboard.', NOTIFY_GENERIC, 4)
+    editorNotice('Draft saved; exact path copied to clipboard.')
 end
 
 function EditorPanel:PopulatePreviewThemes(picker)
@@ -774,13 +783,13 @@ end
 
 function EditorPanel:Preview(target)
     if not self:Compile() then
-        Derma_Message(DISPLAY.DiagnosticsText(self.Session.diagnostics), 'Preview validation failed', 'OK')
+        editorNotice('Preview validation failed: ' .. DISPLAY.DiagnosticsText(self.Session.diagnostics))
         return
     end
     target = target or DISPLAY.NormalizeId(self.Session.source.id)
     if not target then return end
     local ok, message = sendPreview(self.Session.source, target)
-    if not ok then Derma_Message(message, 'Preview failed', 'OK') end
+    if not ok then editorNotice('Preview failed: ' .. tostring(message)) end
 end
 
 function EditorPanel:RebuildHierarchyLegacy()
@@ -982,6 +991,29 @@ function EditorPanel:AddTextField(labelText, object, key)
     end
 end
 
+function EditorPanel:AddAnnunciatorField(object)
+    self:AddInspectorLabel('Alarm ID')
+    local field = self:InspectorAdd('DComboBox')
+    field:Dock(TOP)
+    field:DockMargin(6, 2, 6, 0)
+    field:SetSortItems(true)
+    field:SetValue(tostring(object.alarm or ''))
+    local alarms = LUASQUARE_ANNUNCIATOR and LUASQUARE_ANNUNCIATOR.ClientState
+        and LUASQUARE_ANNUNCIATOR.ClientState.alarms or {}
+    for id, alarm in pairs(alarms) do
+        field:AddChoice(tostring(alarm.label or id) .. '  [' .. id .. ']', id)
+    end
+    field.OnSelect = function(_, _, _, id)
+        self:Changed(function() object.alarm = id end)
+    end
+    field.OnLoseFocus = function(input)
+        local value = input:GetValue()
+        if alarms[value] and object.alarm ~= value then
+            self:Changed(function() object.alarm = value end)
+        end
+    end
+end
+
 function EditorPanel:AddNumberField(labelText, object, key, minimum, maximum, decimals, initialValue, onChanged)
     local slider = self:InspectorAdd('DNumSlider')
     slider:Dock(TOP)
@@ -1044,7 +1076,7 @@ function EditorPanel:AddJSONField(labelText, object, key)
     apply.DoClick = function()
         local wrapper = util.JSONToTable('{"value":' .. field:GetValue() .. '}')
         if type(wrapper) ~= 'table' or wrapper.value == nil then
-            notification.AddLegacy('Invalid JSON value', NOTIFY_ERROR, 3)
+            editorNotice('Invalid JSON value')
             return
         end
         self:Changed(function() object[key] = wrapper.value end)
@@ -1383,7 +1415,7 @@ function EditorPanel:OpenMaterialPicker(callback, initial)
     pathEntry.OnEnter = function(input) selectPath(input:GetValue(), true) end
     apply.DoClick = function()
         if selectPath(pathEntry:GetValue(), true) then callback(selected) frame:Close()
-        else notification.AddLegacy('Select a safe VMT path first.', NOTIFY_ERROR, 3) end
+        else editorNotice('Select a safe VMT path first.') end
     end
     if selected then selectPath(selected, true) end
     refreshSearch()
@@ -1398,7 +1430,7 @@ function EditorPanel:AddMaterialField(labelText, object, key)
     entry.OnEnter = function(input)
         local path = normalizeMaterialEditorPath(input:GetValue())
         if path then self:Changed(function() object[key] = path end)
-        else notification.AddLegacy('Unsafe material path.', NOTIFY_ERROR, 3) end
+        else editorNotice('Unsafe material path.') end
     end
     local browse = row:Add('DButton')
     browse:Dock(RIGHT) browse:DockMargin(4, 0, 0, 0) browse:SetWide(70) browse:SetText('Browse')
@@ -1695,7 +1727,7 @@ function EditorPanel:AddConditionComparisonField(condition)
             local raw = string.Trim(input:GetValue())
             local value = inferredType == 'number' and tonumber(raw) or raw
             if inferredType == 'number' and value == nil then
-                notification.AddLegacy('Comparison requires a number.', NOTIFY_ERROR, 3)
+                editorNotice('Comparison requires a number.')
                 return
             end
             self:Changed(function() condition.when.value = value end)
@@ -1791,7 +1823,7 @@ end
 
 function EditorPanel:OpenConditionWindow(object, index, initialCondition)
     if self.Session.readOnly then
-        Derma_Message('Save the packed source as a draft before editing conditions.', 'Read-only source', 'OK')
+        editorNotice('Save the packed source as a draft before editing conditions.')
         return
     end
     if IsValid(self.ConditionWindow) then self.ConditionWindow:Remove() end
@@ -2029,7 +2061,7 @@ function EditorPanel:OpenConditionWindow(object, index, initialCondition)
     loadJSON.DoClick = function()
         local parsed = util.JSONToTable(advanced:GetValue())
         if type(parsed) ~= 'table' then
-            notification.AddLegacy('Condition JSON is invalid.', NOTIFY_ERROR, 3)
+            editorNotice('Condition JSON is invalid.')
             return
         end
         working = parsed
@@ -2045,7 +2077,7 @@ function EditorPanel:OpenConditionWindow(object, index, initialCondition)
     apply.DoClick = function()
         working.id = DISPLAY.NormalizeId(working.id)
         if not working.id then
-            notification.AddLegacy('Condition ID is invalid.', NOTIFY_ERROR, 3)
+            editorNotice('Condition ID is invalid.')
             return
         end
         if type(working.otherwise) == 'table' and not next(working.otherwise) then working.otherwise = nil end
@@ -2053,7 +2085,7 @@ function EditorPanel:OpenConditionWindow(object, index, initialCondition)
         local trialObject = objectAtSelection(trial, selection)
         local currentObject = objectAtSelection(self.Session.source, selection)
         if not trialObject or not currentObject then
-            notification.AddLegacy('The edited object no longer exists.', NOTIFY_ERROR, 3)
+            editorNotice('The edited object no longer exists.')
             frame:Close()
             return
         end
@@ -2062,7 +2094,7 @@ function EditorPanel:OpenConditionWindow(object, index, initialCondition)
         else table.insert(trialObject.conditions, DISPLAY.DeepCopy(working)) end
         local compiled, diagnostics = DISPLAY.CompileSource(trial, tostring(self.Session.origin) .. '#condition')
         if not compiled then
-            Derma_Message(DISPLAY.DiagnosticsText(diagnostics), 'Condition validation failed', 'OK')
+            editorNotice('Condition validation failed: ' .. DISPLAY.DiagnosticsText(diagnostics))
             return
         end
         frame:Close()
@@ -2157,7 +2189,7 @@ end
 
 function EditorPanel:OpenVariableWindow(source)
     if self.Session.readOnly then
-        Derma_Message('Save the packed source as a draft before editing variables.', 'Read-only source', 'OK')
+        editorNotice('Save the packed source as a draft before editing variables.')
         return
     end
     if IsValid(self.VariableWindow) then self:ActivateSubwindow(self.VariableWindow) return end
@@ -2299,7 +2331,7 @@ function EditorPanel:OpenVariableWindow(source)
         renameButton.DoClick = function()
             local normalized = DISPLAY.NormalizeId(rename:GetValue())
             if not normalized or (normalized ~= selectedName and working[normalized]) then
-                notification.AddLegacy('Variable ID is invalid or already used.', NOTIFY_ERROR, 3)
+                editorNotice('Variable ID is invalid or already used.')
                 return
             end
             if normalized ~= selectedName then
@@ -2346,7 +2378,7 @@ function EditorPanel:OpenVariableWindow(source)
                     if value ~= '' and not table.HasValue(values, value) then table.insert(values, value) end
                 end
                 if #values == 0 then
-                    notification.AddLegacy('An enum requires at least one choice.', NOTIFY_ERROR, 3)
+                    editorNotice('An enum requires at least one choice.')
                     return
                 end
                 definition.choices = values
@@ -2384,7 +2416,7 @@ function EditorPanel:OpenVariableWindow(source)
     add.DoClick = function()
         local name = DISPLAY.NormalizeId(newName:GetValue())
         if not name or working[name] then
-            notification.AddLegacy('Variable ID is invalid or already used.', NOTIFY_ERROR, 3)
+            editorNotice('Variable ID is invalid or already used.')
             return
         end
         working[name] = {type = 'number', default = 0, min = 0, max = 100, decimals = 2}
@@ -2409,7 +2441,7 @@ function EditorPanel:OpenVariableWindow(source)
         trial.variables = DISPLAY.DeepCopy(working)
         local compiled, diagnostics = DISPLAY.CompileSource(trial, tostring(self.Session.origin) .. '#variables')
         if not compiled then
-            Derma_Message(DISPLAY.DiagnosticsText(diagnostics), 'Variable validation failed', 'OK')
+            editorNotice('Variable validation failed: ' .. DISPLAY.DiagnosticsText(diagnostics))
             return
         end
         frame:Close()
@@ -2611,7 +2643,7 @@ function EditorPanel:RebuildInspectorLegacy()
             self:AddColorField('Rectangle color', object, 'color', false)
             self:AddNumberField('Flash seconds', object, 'flashSeconds', 0.02, 60, 2)
         elseif elementType == 'annunciator' then
-            self:AddTextField('Alarm ID', object, 'alarm')
+            self:AddAnnunciatorField(object)
             self:AddTextField('Label', object, 'label')
             self:AddColorField('Text color', object, 'textColor', true)
             self:AddColorField('Background color', object, 'backgroundColor', true)
@@ -2769,7 +2801,7 @@ function EditorPanel:RebuildInspector()
             local addLine = self:InspectorAdd('DButton') addLine:Dock(TOP) addLine:DockMargin(6, 4, 6, 0) addLine:SetText('Add line')
             addLine.DoClick = function() self:Changed(function() object.lines = object.lines or {} table.insert(object.lines, {type = 'value', label = 'VALUE', value = 0}) end) end
         elseif elementType == 'annunciator' then
-            self:AddTextField('Alarm ID', object, 'alarm') self:AddTextField('Label', object, 'label')
+            self:AddAnnunciatorField(object) self:AddTextField('Label', object, 'label')
         end
         self:EndInspectorCategory()
 
@@ -2876,7 +2908,7 @@ function EditorPanel:CopySelection(asJSON)
     EDITOR.Clipboard = {kind = selection.kind, value = DISPLAY.DeepCopy(object)}
     if asJSON then
         SetClipboardText(canonicalJSON(object))
-        notification.AddLegacy('Selection JSON copied to clipboard.', NOTIFY_GENERIC, 3)
+        editorNotice('Selection JSON copied to clipboard.')
     end
 end
 
@@ -3007,7 +3039,7 @@ function EditorPanel:DeleteSelection()
     local selection = self.Session.selection
     if not selection or selection.kind == 'display' then return end
     if selection.kind == 'page' and #(self.Session.source.pages or {}) <= 1 then
-        notification.AddLegacy('A complex display must retain one page.', NOTIFY_ERROR, 3)
+        editorNotice('A complex display must retain one page.')
         return
     end
     self:Changed(function()
@@ -3417,7 +3449,7 @@ vgui.Register('LUASQUARE_3D2D_Editor', EditorPanel, 'DFrame')
 
 function EDITOR.Open()
     if not canEdit() then
-        notification.AddLegacy('The display editor is single-player/admin only.', NOTIFY_ERROR, 4)
+        editorNotice('The display editor is single-player/admin only.')
         return
     end
     if IsValid(EDITOR.Frame) then EDITOR.Frame:MakePopup() return EDITOR.Frame end
@@ -3429,7 +3461,7 @@ end
 net.Receive(DISPLAY.Net.EditorResult, function()
     local ok = net.ReadBool()
     local message = net.ReadString()
-    notification.AddLegacy(message, ok and NOTIFY_GENERIC or NOTIFY_ERROR, 5)
+    editorNotice((ok and 'Success: ' or 'Error: ') .. message)
 end)
 
 hook.Add('LUASQUARE_3D2D_SnapshotUpdated', 'LUASQUARE_3D2D_EditorRefreshTargets', function()

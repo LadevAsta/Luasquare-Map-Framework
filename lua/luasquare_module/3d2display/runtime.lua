@@ -12,7 +12,6 @@ DISPLAY.Sources = DISPLAY.Sources or {}
 DISPLAY.Displays = DISPLAY.Displays or {}
 DISPLAY.GraphHistory = DISPLAY.GraphHistory or {}
 DISPLAY.ProviderValues = DISPLAY.ProviderValues or {}
-DISPLAY.AnnunciatorValues = DISPLAY.AnnunciatorValues or {}
 DISPLAY.EntityCache = DISPLAY.EntityCache or {}
 DISPLAY.Previews = DISPLAY.Previews or {}
 DISPLAY.Revision = DISPLAY.Revision or 0
@@ -679,7 +678,6 @@ function DISPLAY.ReloadSources()
     DISPLAY.ThemePacks = {}
     DISPLAY.ThemeState = {}
     DISPLAY.GraphHistory = {}
-    DISPLAY.AnnunciatorValues = {}
     DISPLAY.EntityCache = {}
     DISPLAY.PendingPages = {}
     DISPLAY.PendingThemes = {}
@@ -751,7 +749,6 @@ function DISPLAY.GetSnapshot()
         ActionCatalog = actionCatalog(),
         ThemePacks = DISPLAY.DeepCopy(DISPLAY.ThemePacks),
         ThemeState = DISPLAY.DeepCopy(DISPLAY.ThemeState),
-        Annunciators = DISPLAY.DeepCopy(DISPLAY.AnnunciatorValues),
         Graphs = graphSnapshot()
     }
 end
@@ -802,47 +799,6 @@ local function sampleGraphs(currentTime, delta)
     end
 end
 
-local function collectAnnunciatorIds()
-    local ids = {}
-    for _, display in pairs(DISPLAY.Displays) do
-        for _, page in ipairs(display.definition.pages or {}) do
-            for _, element in ipairs(page.elements or {}) do
-                if element.type == 'annunciator' and element.alarm then ids[element.alarm] = true end
-            end
-        end
-    end
-    return ids
-end
-
-local function sampleAnnunciators(delta)
-    if not LUASQUARE_ANNUNCIATOR or not LUASQUARE_ANNUNCIATOR.GetAlarm then return end
-    for id in pairs(collectAnnunciatorIds()) do
-        local alarm = LUASQUARE_ANNUNCIATOR.GetAlarm(id)
-        local muted = alarm and LUASQUARE_ANNUNCIATOR.IsMuted and LUASQUARE_ANNUNCIATOR.IsMuted() or false
-        local state = 'inactive'
-        if alarm then
-            if alarm.active then
-                state = muted and 'muted' or (alarm.acknowledged and 'acknowledged' or 'active')
-            elseif alarm.resolved then
-                state = 'reset'
-            end
-        end
-        local value = alarm and {
-            active = alarm.active and true or false,
-            acknowledged = alarm.acknowledged and true or false,
-            muted = muted,
-            state = state,
-            rawState = LUASQUARE_ANNUNCIATOR.GetDisplayState and LUASQUARE_ANNUNCIATOR.GetDisplayState(alarm) or nil,
-            message = alarm.message,
-            label = alarm.label or id
-        } or {state = 'missing', label = id}
-        if not DISPLAY.DeepEqual(DISPLAY.AnnunciatorValues[id], value) then
-            DISPLAY.AnnunciatorValues[id] = value
-            delta.annunciators[id] = DISPLAY.DeepCopy(value)
-        end
-    end
-end
-
 function DISPLAY.Update()
     local currentTime = now()
     local delta = {
@@ -853,7 +809,6 @@ function DISPLAY.Update()
         variables = DISPLAY.PendingVariables or {},
         pages = DISPLAY.PendingPages or {},
         themes = DISPLAY.PendingThemes or {},
-        annunciators = {},
         graphSamples = {}
     }
     DISPLAY.PendingPages = {}
@@ -861,7 +816,6 @@ function DISPLAY.Update()
     DISPLAY.PendingVariables = {}
     sampleProviders(currentTime, delta)
     sampleGraphs(currentTime, delta)
-    sampleAnnunciators(delta)
     DISPLAY.DeltaSequence = delta.sequence
     if DISPLAY.BroadcastDelta then DISPLAY.BroadcastDelta(delta) end
 end

@@ -82,6 +82,15 @@ local function resetRuntimeAudio(reason)
     end
 end
 
+local function stopAnnunciator()
+    local annunciator = LUASQUARE_ANNUNCIATOR
+    if not annunciator or not annunciator.Stop then return end
+    local ok, err = pcall(annunciator.Stop)
+    if not ok then
+        print('[LUASQUARE CLEANUP] Annunciator stop failed: ' .. tostring(err))
+    end
+end
+
 local function shouldClearGlobal(name)
     if name == 'RBMK' or name == 'DFR' then return true end
     if startsWith(name, 'LUASQUARE_') or startsWith(name, 'RBMK_') or startsWith(name, 'DFR_') then return true end
@@ -117,6 +126,8 @@ local function resetRuntime(reason)
     reason = tostring(reason or 'manual reset')
     print('[LUASQUARE CLEANUP] Resetting framework runtime: ' .. reason)
 
+    -- Restore indicator skins and stop alarm-owned audio while bindings exist.
+    stopAnnunciator()
     -- Let timeline owners restore their own machinery and presentation while
     -- the component registries and map entities are still available.
     cancelRuntimeTimelines(reason)

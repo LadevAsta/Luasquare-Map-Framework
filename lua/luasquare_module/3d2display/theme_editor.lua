@@ -5,6 +5,10 @@ local DISPLAY = LUASQUARE_3D2D
 local EDITOR = DISPLAY.Editor or {}
 DISPLAY.Editor = EDITOR
 
+local function editorNotice(message)
+    print('[LUASQUARE_3D2D_THEME_EDITOR] ' .. tostring(message or ''))
+end
+
 local function encodeString(value)
     local encoded = util.TableToJSON({tostring(value)}, false) or '[""]'
     return string.sub(encoded, 2, -2)
@@ -138,7 +142,11 @@ function ThemePanel:Init()
     self.Status = self:Add('DLabel') self.Status:Dock(BOTTOM) self.Status:SetTall(38)
     self.Status:SetWrap(true) self.Status:SetContentAlignment(4) self.Status:DockMargin(6, 2, 6, 2)
     self:Replace(self.Source, self.Origin, false)
-    timer.Simple(0, function() if IsValid(self) and LUASQUARE_EDITOR_THEME then LUASQUARE_EDITOR_THEME.ApplyTree(self) end end)
+    timer.Simple(0, function()
+        if IsValid(self) and LUASQUARE_EDITOR_THEME then
+            LUASQUARE_EDITOR_THEME.ApplyEditor(self, {self.Toolbar, self.Left})
+        end
+    end)
 end
 
 function ThemePanel:RefreshSources()
@@ -160,7 +168,7 @@ function ThemePanel:OpenEntry(entry)
     self:ConfirmDiscard(function()
         local source, message = readTheme(entry)
         if source then self:Replace(source, entry.path, entry.readOnly)
-        else Derma_Message(message, 'Open failed', 'OK') self:RefreshSources() end
+        else editorNotice('Open failed: ' .. tostring(message)) self:RefreshSources() end
     end)
 end
 
@@ -182,7 +190,7 @@ end
 
 function ThemePanel:Changed(callback)
     if self.ReadOnly then
-        Derma_Message('Packed themes are read-only. Save as a draft before editing.', 'Read-only theme', 'OK')
+        editorNotice('Packed themes are read-only. Save as a draft before editing.')
         return
     end
     self:PushHistory() callback() self.Dirty = true
@@ -221,7 +229,7 @@ end
 function ThemePanel:ValidateMessage()
     self:Compile()
     local text = DISPLAY.DiagnosticsText(self.Diagnostics)
-    Derma_Message(text ~= '' and text or 'Theme pack is valid.', 'Theme validation', 'OK')
+    editorNotice(text ~= '' and text or 'Theme pack is valid.')
 end
 
 function ThemePanel:SaveDraft()
@@ -233,7 +241,7 @@ function ThemePanel:SaveDraft()
     self.Origin = 'data/' .. path self.ReadOnly = false self.Dirty = false
     self:Compile() self:RefreshSources()
     SetClipboardText(self.Origin)
-    notification.AddLegacy('Theme draft saved; exact path copied.', NOTIFY_GENERIC, 4)
+    editorNotice('Theme draft saved; exact path copied.')
 end
 
 function ThemePanel:RebuildLists()

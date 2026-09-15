@@ -146,6 +146,8 @@ Complex elements use canvas-space `x`, `y`, `width`, `height`, and integer `z`. 
 - `SolidRectangle`: background or decoration.
 - `Annunciator`: named `LUASQUARE_ANNUNCIATOR` alarm state.
 
+An Annunciator element keeps its existing `alarm` ID field. Clients now read tier, color, message, and `off`/`fast_flash`/`on`/`slow_flash` visual state directly from the annunciator engine's bounded snapshot rather than through the display provider transport. The display editor presents the synchronized alarm catalog when choosing this field.
+
 Multiple pages produce a built-in tab strip. Set `showPageTabs` to `false` to
 hide the strip and remove its raycast hit regions while retaining page changes
 through `SetDisplayPage`, cycle helpers, or Hammer buttons. Page state is shared
@@ -290,6 +292,7 @@ previous helper to clamp at the first/last page. Raycast interaction remains
 opt-in even when a display contains multiple pages or named actions.
 
 The spawnmenu editor is under `Options -> Luasquare -> 3D2D Display Editor`.
+The theme editor is opened from inside this display editor; it does not have a redundant spawnmenu entry. Editor chrome and source windows use the shared dark-gray palette, and informational diagnostics are printed to the console instead of popup hints.
 Packed sources open read-only. Save a draft to edit. The editor preserves tree
 expansion and synchronizes viewport selection, cycles through overlapping
 elements from the highest layer downward, and provides context-menu clipboard,

@@ -192,23 +192,23 @@ local function drawLinePanel(display, element, pageId, previewAnimations)
     )
 end
 
-local annunciatorColors = {
-    inactive = '@inactive',
-    active = '@critical',
-    acknowledged = '@warning',
-    muted = '@warning',
-    reset = '@accent',
-    missing = '@inactive'
-}
-
 local function drawAnnunciator(display, element, previewAnimations)
-    local alarm = (DISPLAY.ClientState.Annunciators or {})[element.alarm]
-        or {state = 'missing', label = element.alarm or 'MISSING'}
-    local state = tostring(alarm.state or 'inactive')
-    local background = element.backgroundColor or themed(display, annunciatorColors[state] or '@inactive')
+    local annunciator = LUASQUARE_ANNUNCIATOR and LUASQUARE_ANNUNCIATOR.ClientState
+    local alarm = annunciator and annunciator.alarms and annunciator.alarms[element.alarm]
+        or {visualState = 'missing', label = element.alarm or 'MISSING'}
+    local state = tostring(alarm.visualState or 'off')
+    local color = alarm.color or {}
+    local tierColor = Color(
+        tonumber(color[1] or color.r) or 255,
+        tonumber(color[2] or color.g) or 196,
+        tonumber(color[3] or color.b) or 48,
+        tonumber(color[4] or color.a) or 255
+    )
+    local background = element.backgroundColor
+        or ((state == 'off' or state == 'missing') and themed(display, '@inactive') or tierColor)
     local flash = DISPLAY.DeepCopy(element)
-    if flash.flashSeconds == nil and state == 'active' then flash.flashSeconds = 0.25 end
-    if flash.flashSeconds == nil and state == 'reset' then flash.flashSeconds = 0.75 end
+    if flash.flashSeconds == nil and state == 'fast_flash' then flash.flashSeconds = 0.25 end
+    if flash.flashSeconds == nil and state == 'slow_flash' then flash.flashSeconds = 0.75 end
     background.a = flashAlpha(flash, background.a, previewAnimations)
     surface.SetDrawColor(background)
     surface.DrawRect(element.x, element.y, element.width, element.height)
