@@ -24,17 +24,43 @@ function THEME.Apply(panel, kind)
     panel.LuasquareThemed = true
     local colors = THEME.Colors
     local className = panel.GetClassName and panel:GetClassName() or panel.ClassName or ''
+    local parent = panel.GetParent and panel:GetParent()
+    if IsValid(parent) and (panel == parent.btnClose or panel == parent.btnMaxim or panel == parent.btnMinim) then
+        return panel -- Preserve Derma's native title-bar icons and hover/disabled rendering.
+    end
+    if IsValid(parent) and parent.GetClassName and parent:GetClassName() == 'DNumberWang'
+        and (panel == parent.Up or panel == parent.Down) then return panel end
     if kind == 'frame' or className == 'DFrame' then
         panel.Paint = function(self, width, height)
             draw.RoundedBox(3, 0, 0, width, height, colors.frame)
             draw.RoundedBoxEx(3, 0, 0, width, 25, colors.raised, true, true, false, false)
         end
-    elseif kind == 'inset' or className == 'DTree' or className == 'DListView' then
+    elseif kind == 'inset' or className == 'DTree' or className == 'DListView' or className == 'DMenu' then
         panel.Paint = paint(colors.inset, colors.border)
+    elseif className == 'DMenuOption' then
+        panel:SetTextColor(colors.text)
+        panel.UpdateColours = function(self) self:SetTextStyleColor(colors.text) end
+        panel.Paint = function(self, width, height)
+            surface.SetDrawColor(self:IsHovered() and colors.hover or colors.inset)
+            surface.DrawRect(0, 0, width, height)
+            return false -- Native label rendering retains menu alignment and text inset.
+        end
     elseif kind == 'panel' then
         panel.Paint = paint(colors.panel)
-    elseif className == 'DLabel' then
+    elseif className == 'DLabel' or className == 'DListViewLabel' or className == 'DListViewHeaderLabel' then
         panel:SetTextColor(colors.text)
+        if className == 'DListViewLabel' then
+            panel.UpdateColours = function(self) self:SetTextStyleColor(colors.text) end
+        end
+    elseif className == 'DVScrollBar' then
+        panel.Paint = paint(colors.inset)
+    elseif className == 'DScrollBarGrip' then
+        panel.Paint = function(self, width, height)
+            surface.SetDrawColor(self:IsHovered() and colors.hover or colors.raised)
+            surface.DrawRect(0, 0, width, height)
+            surface.SetDrawColor(colors.border)
+            surface.DrawOutlinedRect(0, 0, width, height, 1)
+        end
     elseif className == 'DButton' or className == 'DComboBox' then
         panel:SetTextColor(colors.text)
         panel.Paint = function(self, width, height)
@@ -50,7 +76,7 @@ function THEME.Apply(panel, kind)
                 width / 2, height / 2, self:GetTextColor() or colors.text,
                 TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
         end
-    elseif className == 'DTextEntry' then
+    elseif className == 'DTextEntry' or className == 'DNumberWang' then
         panel:SetTextColor(colors.text)
         panel:SetHighlightColor(colors.accent)
         panel:SetCursorColor(colors.text)
@@ -72,7 +98,7 @@ function THEME.Apply(panel, kind)
         panel:SetTextColor(colors.text)
     elseif className == 'DListView_Line' then
         panel.Paint = function(self, width, height)
-            local color = self:IsSelected() and colors.accent
+            local color = self:IsLineSelected() and colors.accent
                 or (self:IsHovered() and colors.raised)
                 or colors.inset
             surface.SetDrawColor(color)
@@ -110,4 +136,42 @@ end
 
 function THEME.PaintTimeline(panel)
     if IsValid(panel) then panel.Paint = paint(THEME.Colors.inset, THEME.Colors.border) end
+end
+
+-- Wrapped text grows inside a bounded viewport instead of clipping diagnostics.
+function THEME.CreateTextArea(parent)
+    local panel = vgui.Create('DScrollPanel', parent)
+    local text = panel:Add('DLabel')
+    text:Dock(TOP)
+    text:DockMargin(6, 4, 6, 4)
+    text:SetWrap(true)
+    text:SetAutoStretchVertical(true)
+    text:SetContentAlignment(7)
+    text:SetText('')
+    text:SetMouseInputEnabled(true)
+    text:SetCursor('ibeam')
+    text.OnMousePressed = function(_, button)
+        if button ~= MOUSE_RIGHT then return end
+        local menu = DermaMenu()
+        menu:AddOption('Copy text', function() SetClipboardText(text:GetText()) end)
+        menu:Open()
+        THEME.ApplyTree(menu)
+    end
+    text.OnMouseWheeled = function(_, delta) return panel:OnMouseWheeled(delta) end
+    panel.TextLabel = text
+    function panel:SetText(value)
+        value = tostring(value or '')
+        if text:GetText() == value then return end
+        text:SetText(value)
+        text:InvalidateLayout(true)
+        self:InvalidateLayout(true)
+    end
+    panel.SetValue = panel.SetText
+    function panel:GetText() return text:GetText() end
+    function panel:SetTextColor(value) text:SetTextColor(value) end
+    function panel:SetWrap(value) text:SetWrap(value) end
+    function panel:SetContentAlignment(value) text:SetContentAlignment(value) end
+    function panel:SetTextInset(x, y) text:SetTextInset(x, y) end
+    THEME.ApplyTree(panel)
+    return panel
 end

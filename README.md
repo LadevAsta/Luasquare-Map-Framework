@@ -13,7 +13,7 @@ Luasquare began as an RBMK-style reactor experiment, but it is now a broader map
 | --- | --- |
 | RBMK simulation | Grid-based reactor layouts; four-direction neutron-flux propagation; fuel, xenon, heat, control rods, automatic regulation, vessel water/steam, recirculation, pressure, integrity, leaks, blowouts, SCRAM, and failure handling |
 | Balance of plant | Fluid networks, pumps, valves, heat exchangers, steam separators, condensers, deaerators, cooling towers, turbines, generators, diesel generators, electrical grids, breakers, and transformers |
-| Map modules | Source-driven Simple/Complex 3D2D displays; declarative annunciators; JSON choreography timelines and editor; synchronized music, PA, ambient audio, soundscapes, and subtitles; graphs, themes, raycast interaction; skin-based seven-segment displays; gauges; numeric keypads; control bindings; Source entity bindings; and movable-machinery helpers |
+| Map modules | Source-driven Simple/Complex 3D2D displays; declarative annunciators; JSON choreography timelines and editor; synchronized music, PA, ambient audio, soundscapes, and subtitles; graphs, themes, raycast interaction; skin-based seven-segment displays; gauges; JSON-driven physical/virtual controls and numeric keypads; Source entity bindings; and movable-machinery helpers |
 | Dark Fusion Reactor | A staged reactor framework with startup controls, resource state, VMF bindings, machinery, independently animated core visuals, component-owned JSON timelines, six-catalyzer sequencing, telemetry, debug controls, and a guarded simulation tick |
 | Development tools | Client-side RBMK and plant overlays, DFR admin controls in the spawn menu, bundled annunciator/display assets, and asset-generation scripts |
 | Reference content | The playable `experiment_rbmk` BSP, its editable VMF source, an LRBMKP-400 layout, and a complete map-specific RBMK bootstrap |
@@ -68,7 +68,7 @@ Luasquare does not automatically create a plant. A map owns a bootstrap script t
 2. Configures tick rates and simulation constants.
 3. Registers reactor cells, fluid networks, machinery, grids, displays, alarms, and Hammer targetnames.
 4. Starts each registered system.
-5. Exposes operator actions through a named `lua_run` entity and its `RunPassedCode` input.
+5. Registers trusted Control Layer actions and loads map-owned control JSON; Hammer buttons report validated outputs through the named `lua_run`.
 
 A small server-side bootstrap has this general shape:
 
@@ -108,12 +108,13 @@ LUASQUARE_FLUID.Start()
 LUASQUARE_MY_MAP_SIM_INITIALIZED = true
 ```
 
-In Hammer, place a `lua_run`, enable **Run Code on Spawn**, give it a stable targetname such as `MY_MAP_SIM`, and put the bootstrap `include(...)` in its `Code` keyvalue. The spawn flag is required for automatic rebuilding after **Clean Up Everything**. Buttons and relays can then send calls to it:
+In Hammer, place a `lua_run`, enable **Run Code on Spawn**, give it a stable targetname such as `MY_MAP_SIM`, and put the bootstrap `include(...)` in its `Code` keyvalue. The spawn flag is required for automatic rebuilding after **Clean Up Everything**. Registered operator buttons report their outputs to it (the control JSON must declare the `scram` action/binding):
 
 ```text
+Output:      OnPressed (also report OnIn and OnOut)
 Target:      MY_MAP_SIM
 Input:       RunPassedCode
-Parameter:   RBMK.SCRAM()
+Parameter:   LUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)
 ```
 
 Framework-owned globals and map bootstrap guards should use a `LUASQUARE_`, `RBMK_`, or `DFR_` prefix so cleanup can remove them. A map can register an exceptional name with `LUASQUARE_CLEANUP.RegisterGlobal(name)`. Custom named timers should use the same prefixes, or register their prefix with `LUASQUARE_CLEANUP.RegisterTimerPrefix(prefix)`.
@@ -121,6 +122,12 @@ Framework-owned globals and map bootstrap guards should use a `LUASQUARE_`, `RBM
 Keep VMF targetnames and map coordinates in the map's bootstrap. Reusable behavior belongs in `luasquare_module`, `luasquare_powerplant`, or the relevant reactor package.
 
 For a real integration example, see [`lua/luasquare_rbmk/bootstrapper/experiment_rbmk.lua`](lua/luasquare_rbmk/bootstrapper/experiment_rbmk.lua). The reactor grid itself is defined separately in [`lua/luasquare_rbmk/layouts/LRBMKP-400.lua`](lua/luasquare_rbmk/layouts/LRBMKP-400.lua).
+
+## JSON-driven operator controls
+
+Include `luasquare_module/control/engine.lua`, register trusted typed actions/predicates and SEG7 displays, then call `LUASQUARE_CONTROL.Start()` after map instances exist. Packed `luasquare.control/v1` sources live under `data_static/luasquare/control/<map>/`; editor drafts never load automatically. Physical automation moves the real button, whose validated Hammer output runs the component action. Virtual controls and keypad submissions use the same server validation and history.
+
+Combined PressLock/InLock/OutLock respect every existing lock, press first, and apply an owner lock on the next server tick. Pending requests expire after two seconds; movement acknowledgement times out after five seconds. The Control Editor supports isolated draft simulation and explicit admin/single-player packed live tests. See the [Control Layer guide](lua/luasquare_module/control/README.md) for schema, wiring, lifecycle, migration breaks, and real-map acceptance tests.
 
 ## Source-driven 3D2D displays
 
@@ -142,7 +149,7 @@ end, {
 LUASQUARE_3D2D.RegisterAction('plant.scram', {
     cooldown = 1,
     callback = function(actor, display, page, element, context)
-        return PLANT.SCRAM(actor)
+        return LUASQUARE_CONTROL.Request('scram', 'press', {actor = actor, owner = 'display'}) ~= nil
     end
 })
 
@@ -241,7 +248,7 @@ Spawn Menu -> Options -> Luasquare
 
 The **RBMK Framework** and **Powerplant Framework** panels control client-side world overlays and filters. Registered components need `monitorPos`, a named monitor target, or reactor world-position data to appear in the appropriate overlay.
 
-The **Dark Fusion Reactor** panel exposes development controls for state changes, binding validation, machinery, core radii and animation, timelines, and individual catalyzer inspection. JSON authoring tools are grouped under the **Editors** page, including 3D2D, timeline, annunciator, sound registry, subtitle sequence, and PA editors. These are development tools, not player-facing reactor controls. The DFR remains a work in progress.
+The **Dark Fusion Reactor** panel exposes development controls for state changes, binding validation, machinery, core radii and animation, timelines, and individual catalyzer inspection. JSON authoring tools are grouped under the **Editors** page, including Control Layer, 3D2D, timeline, annunciator, sound registry, subtitle sequence, and PA editors. These are development tools, not player-facing reactor controls. The DFR remains a work in progress.
 
 ## Repository layout
 
@@ -252,7 +259,7 @@ lua/
 |-- luasquare_powerplant/    Fluid, thermal, turbine, generator, and grid systems
 |-- luasquare_rbmk/          RBMK core simulation, layouts, and example bootstrap
 `-- luasquare_dfr/           DFR runtime, reactor, procedure, presentation, and superstructure modules
-data_static/                 Packable JSON display, theme, timeline, audio, and annunciator sources
+data_static/                 Packable JSON control, display, theme, timeline, audio, and annunciator sources
 maps/                        Compiled reference map and editable VMF source
 materials/, models/, sound/ Bundled control-room and environmental assets
 tools/                       Annunciator model/material generation scripts
@@ -264,7 +271,7 @@ Most public APIs are organized in global namespaces:
 - `LUASQUARE_FLUID`, `LUASQUARE_PUMP`, `LUASQUARE_VALVE`
 - `LUASQUARE_TURBINE`, `LUASQUARE_POWERGENERATOR`, `LUASQUARE_POWERGRID`
 - `LUASQUARE_3D2D`, `LUASQUARE_SEG7`, `LUASQUARE_GAUGE`, `LUASQUARE_ANNUNCIATOR`
-- `LUASQUARE_SOURCEBINDING`, `LUASQUARE_CONTROLBINDING`, `LUASQUARE_MACHINERY`, `LUASQUARE_TIMELINE`, `LUASQUARE_AUDIO`
+- `LUASQUARE_SOURCEBINDING`, `LUASQUARE_CONTROL`, `LUASQUARE_MACHINERY`, `LUASQUARE_TIMELINE`, `LUASQUARE_AUDIO`
 - `DFR`
 
 Registration tables in the Lua source are currently the API reference. Many modules also contain a commented example near the end of the file.

@@ -28,12 +28,12 @@ end
 
 function DFR.GetSnapshot()
     local controls = {}
-    for id, control in pairs(DFR.Controls or {}) do
+    for id, control in pairs(LUASQUARE_CONTROL.Controls or {}) do
         controls[id] = {
             id = id,
             label = control.label,
             lockedUntil = control.lockedUntil or 0,
-            available = DFR.IsControlAvailable and DFR.IsControlAvailable(id) or false,
+            available = LUASQUARE_CONTROL.IsAvailable and LUASQUARE_CONTROL.IsAvailable(id) or false,
             lastUseTime = control.lastUseTime
         }
     end
@@ -199,12 +199,12 @@ function DFR.BuildDebugCatalog()
         })
     end
 
-    for id, control in pairs(DFR.Controls or {}) do
+    for id, control in pairs(LUASQUARE_CONTROL.Controls or {}) do
         table.insert(catalog.controls, {
             id = id,
             label = control.label or id,
-            available = DFR.IsControlAvailable and DFR.IsControlAvailable(id) or false,
-            unavailableReason = DFR.GetControlUnavailableReason and DFR.GetControlUnavailableReason(id) or nil,
+            available = LUASQUARE_CONTROL.IsAvailable and LUASQUARE_CONTROL.IsAvailable(id) or false,
+            unavailableReason = LUASQUARE_CONTROL.GetUnavailableReason and LUASQUARE_CONTROL.GetUnavailableReason(id) or nil,
             lockedUntil = control.lockedUntil or 0,
             lastUseTime = control.lastUseTime,
             lastActor = control.lastActor
@@ -381,12 +381,44 @@ end
 local function debugCommand(name, callback)
     if not SERVER or not concommand or not concommand.Add then return end
 
+    local suffix = string.sub(name, #'luasquare_dfr_' + 1)
+    local direct = {start = true, stop = true, halt = true, snapshot = true, use_control = true,
+        validate_bindings = true, clear_binding_cache = true, register_v2_defaults = true,
+        pre_annihilation_start = true, pre_annihilation_cancel = true}
+    local controlId = 'debug.' .. suffix
+    if not direct[suffix] then
+        local fields = {}
+        for index = 1, 8 do fields['arg' .. index] = {type = 'string', optional = true, maxLength = 128} end
+        LUASQUARE_CONTROL.RegisterAction('dfr.' .. controlId, {label = 'Developer: ' .. suffix,
+            parameters = fields, allowRequestParams = true,
+            callback = function(actor, params)
+                if not DFR.DebugCanRun(actor) then return false, 'admin developer permission required' end
+                local args = {}
+                for index = 1, 8 do args[index] = params['arg' .. index] end
+                return callback(actor, args)
+            end})
+        LUASQUARE_CONTROL.RegisterPredicate('dfr.' .. controlId, {label = 'Admin developer', parameters = {},
+            callback = function(actor)
+                return DFR.DebugCanRun(actor), 'admin developer permission required'
+            end})
+    end
+
     concommand.Add(name, function(ply, cmd, args)
         if not DFR.DebugCanRun(ply) then
             DFR.Log('Rejected debug command ' .. tostring(name) .. ' from non-admin player')
             return
         end
 
+        if not direct[suffix] then
+            local params = {}
+            for index, value in ipairs(args or {}) do
+                if index > 8 then DFR.Log('Too many developer arguments'); return end
+                params['arg' .. index] = tostring(value)
+            end
+            local id, status = LUASQUARE_CONTROL.Request(controlId, 'press', {actor = ply, owner = 'debug', params = params})
+            if not id then DFR.Log('Developer control unavailable: ' .. tostring(status)) end
+            return
+        end
         local ok, err = pcall(callback, ply, args or {})
         if not ok then DFR.Halt('Debug command ' .. tostring(name) .. ' failed: ' .. tostring(err)) end
     end)
@@ -425,7 +457,7 @@ debugCommand('luasquare_dfr_transition', function(ply, args)
 end)
 
 debugCommand('luasquare_dfr_use_control', function(ply, args)
-    DFR.UseControl(arg(args, 1), ply, arg(args, 2))
+    LUASQUARE_CONTROL.Request(arg(args, 1), arg(args, 2) or 'press', {actor = ply, owner = 'debug'})
 end)
 
 debugCommand('luasquare_dfr_register_v2_defaults', function()
@@ -582,11 +614,11 @@ debugCommand('luasquare_dfr_visual_pulse', function(ply, args)
 end)
 
 debugCommand('luasquare_dfr_pre_annihilation_start', function(ply)
-    DFR.UseControl('pre_annihilation_begin', ply)
+    LUASQUARE_CONTROL.Request('pre_annihilation_begin', 'press', {actor = ply, owner = 'debug'})
 end)
 
 debugCommand('luasquare_dfr_pre_annihilation_cancel', function(ply)
-    DFR.UseControl('pre_annihilation_cancel', ply)
+    LUASQUARE_CONTROL.Request('pre_annihilation_cancel', 'press', {actor = ply, owner = 'debug'})
 end)
 
 debugCommand('luasquare_dfr_catalyzer_mode', function(ply, args)

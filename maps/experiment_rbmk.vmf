@@ -2,7 +2,7 @@ versioninfo
 {
 	"editorversion" "400"
 	"editorbuild" "8871"
-	"mapversion" "608"
+	"mapversion" "614"
 	"formatversion" "100"
 	"prefab" "0"
 }
@@ -95,7 +95,7 @@ bgimages_plus
 world
 {
 	"id" "1"
-	"mapversion" "608"
+	"mapversion" "614"
 	"classname" "worldspawn"
 	"detailmaterial" "detail/detailsprites"
 	"detailvbsp" "detail.vbsp"
@@ -34145,13 +34145,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "3072"
 	"speed" "50"
-	"targetname" "button_tg1_trip"
+	"targetname" "CTRLI_electrical_generator_trip_tg1_generator"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_POWERGENERATOR.Trip('tg1_generator','MANUAL_TRIP')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -34293,11 +34295,13 @@ entity
 	"spawnflags" "17536"
 	"speed" "360"
 	"StartDisabled" "0"
+	"targetname" "CTRLI_safety_tg1_trip"
 	"wait" "3"
 	connections
 	{
-		"OnIn" "button_tg1_tripUnlock0-1"
-		"OnOut" "button_tg1_tripLock0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -34439,11 +34443,13 @@ entity
 	"spawnflags" "17536"
 	"speed" "360"
 	"StartDisabled" "0"
+	"targetname" "CTRLI_safety_tg1_sync"
 	"wait" "10"
 	connections
 	{
-		"OnIn" "button_tg1_syncUnlock0-1"
-		"OnOut" "button_tg1_syncLock0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -34592,13 +34598,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "3072"
 	"speed" "50"
-	"targetname" "button_tg1_sync"
+	"targetname" "CTRLI_electrical_generator_sync_tg1_generator"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_POWERGENERATOR.Sync('tg1_generator')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -36495,8 +36503,12 @@ entity
 	"spawnflags" "1"
 	connections
 	{
-		"OnMapSpawn" "button_fwpa_0Press4-1"
-		"OnMapSpawn" "button_fwpb_0Press4-1"
+		"OnMapSpawn" "CTRLI_pump_speed_feedwater_pump_a_level_1Press4-1"
+		"OnMapSpawn" "CTRLI_pump_speed_feedwater_pump_b_level_1Press4-1"
+		"OnMapSpawn" "CTRLI_pump_speed_main_circulation_pump_a_level_2Press4-1"
+		"OnMapSpawn" "CTRLI_pump_speed_main_circulation_pump_b_level_2Press4-1"
+		"OnMapSpawn" "CTRLI_pump_speed_condensate_pump_a1_level_1Press4-1"
+		"OnMapSpawn" "CTRLI_pump_speed_circulating_water_pump_a1_level_1Press4-1"
 	}
 	"origin" "74 -153 638"
 	editor
@@ -36725,12 +36737,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_c_rodctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Clear('rodctrl')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -36878,13 +36893,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1056"
 	"speed" "200"
+	"targetname" "CTRLI_reactor_neutron_source_3_5"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnOut" "RBMK_SYSTEMRunPassedCodeRBMK.SetNeutronSourceState(3, 5, true)0-1"
-		"OnIn" "RBMK_SYSTEMRunPassedCodeRBMK.SetNeutronSourceState(3, 5, false)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnIn" "neu_N1ShowSprite0-1"
 		"OnOut" "neu_N1HideSprite0-1"
 	}
@@ -37034,12 +37051,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_rod_toggle_u1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ROD_SELECTOR.Toggle('U1')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -37187,12 +37207,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_rod_toggle_u2"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ROD_SELECTOR.Toggle('U2')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -37340,12 +37363,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_rod_toggle_u3"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ROD_SELECTOR.Toggle('U3')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -37493,12 +37519,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_rod_toggle_u4"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ROD_SELECTOR.Toggle('U4')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -37752,12 +37781,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_s_rodctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.5"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Submit('rodctrl')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -37905,12 +37937,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_7_rodctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('rodctrl', 7)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -38058,12 +38093,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_8_rodctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('rodctrl', 8)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -38211,12 +38249,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_9_rodctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('rodctrl', 9)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -38364,12 +38405,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_6_rodctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('rodctrl', 6)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -38517,12 +38561,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_5_rodctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('rodctrl', 5)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -38670,12 +38717,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_4_rodctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('rodctrl', 4)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -38823,12 +38873,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_3_rodctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('rodctrl', 3)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -38976,12 +39029,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_2_rodctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('rodctrl', 2)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -39129,12 +39185,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_1_rodctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('rodctrl', 1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -39282,12 +39341,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_0_rodctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('rodctrl', 0)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -39435,12 +39497,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "50"
+	"targetname" "CTRLI_rod_clear"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ROD_SELECTOR.Clear()0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -40220,13 +40285,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
-	"targetname" "button_SCRAM"
+	"targetname" "CTRLI_reactor_scram"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "10"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeRBMK.SCRAM()0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "alarm_SCRAMPlaySound0-1"
 		"OnPressed" "alarm_SCRAMStopSound10-1"
 	}
@@ -40369,11 +40436,13 @@ entity
 	"spawnflags" "17536"
 	"speed" "180"
 	"StartDisabled" "0"
+	"targetname" "CTRLI_safety_scram"
 	"wait" "3"
 	connections
 	{
-		"OnIn" "button_SCRAMUnlock0-1"
-		"OnOut" "button_SCRAMLock0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -40752,12 +40821,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "50"
+	"targetname" "CTRLI_rod_group_yellow"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ROD_SELECTOR.ToggleGroup('yellow')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -40905,12 +40977,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "50"
+	"targetname" "CTRLI_rod_group_red"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ROD_SELECTOR.ToggleGroup('red')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -41058,12 +41133,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_rod_toggle_r1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ROD_SELECTOR.Toggle('R1')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -41211,12 +41289,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_rod_toggle_r2"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ROD_SELECTOR.Toggle('R2')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -41364,12 +41445,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_rod_toggle_r3"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ROD_SELECTOR.Toggle('R3')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -41517,12 +41601,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_rod_toggle_r4"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ROD_SELECTOR.Toggle('R4')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -41670,12 +41757,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_rod_toggle_r5"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ROD_SELECTOR.Toggle('R5')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -41823,12 +41913,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_rod_toggle_r6"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ROD_SELECTOR.Toggle('R6')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -41976,12 +42069,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_rod_toggle_r7"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ROD_SELECTOR.Toggle('R7')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -42129,12 +42225,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_rod_toggle_r8"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ROD_SELECTOR.Toggle('R8')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -42498,13 +42597,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1056"
 	"speed" "200"
+	"targetname" "CTRLI_reactor_reflector_5_2"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnOut" "RBMK_SYSTEMRunPassedCodeRBMK.SetReflectorState(5, 2, true)0-1"
-		"OnIn" "RBMK_SYSTEMRunPassedCodeRBMK.SetReflectorState(5, 2, false)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnOut" "ref_R2HideSprite0-1"
 		"OnIn" "ref_R2ShowSprite0-1"
 	}
@@ -76945,13 +77046,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
-	"targetname" "button_fwpa_0"
+	"targetname" "CTRLI_pump_speed_feedwater_pump_a_level_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('feedwater_pump_a', 1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_fwpump_a_1ShowSprite0.05-1"
 		"OnPressed" "sprite_fwpump_a_*HideSprite0-1"
 	}
@@ -77128,12 +77231,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_feedwater_pump_a_level_2"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('feedwater_pump_a', 2)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_fwpump_a_2ShowSprite0.05-1"
 		"OnPressed" "sprite_fwpump_a_*HideSprite0-1"
 	}
@@ -77310,12 +77416,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_feedwater_pump_a_level_3"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('feedwater_pump_a', 3)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_fwpump_a_3ShowSprite0.05-1"
 		"OnPressed" "sprite_fwpump_a_*HideSprite0-1"
 	}
@@ -77492,12 +77601,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_feedwater_pump_a_level_4"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('feedwater_pump_a', 4)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_fwpump_a_4ShowSprite0.05-1"
 		"OnPressed" "sprite_fwpump_a_*HideSprite0-1"
 	}
@@ -77674,12 +77786,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_feedwater_pump_b_level_4"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('feedwater_pump_b', 4)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_fwpump_b_4ShowSprite0.05-1"
 		"OnPressed" "sprite_fwpump_b_*HideSprite0-1"
 	}
@@ -77829,12 +77944,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_feedwater_pump_b_level_3"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('feedwater_pump_b', 3)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_fwpump_b_3ShowSprite0.05-1"
 		"OnPressed" "sprite_fwpump_b_*HideSprite0-1"
 	}
@@ -77984,12 +78102,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_feedwater_pump_b_level_2"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('feedwater_pump_b', 2)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_fwpump_b_2ShowSprite0.05-1"
 		"OnPressed" "sprite_fwpump_b_*HideSprite0-1"
 	}
@@ -78139,13 +78260,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
-	"targetname" "button_fwpb_0"
+	"targetname" "CTRLI_pump_speed_feedwater_pump_b_level_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('feedwater_pump_b', 1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_fwpump_b_1ShowSprite0.05-1"
 		"OnPressed" "sprite_fwpump_b_*HideSprite0-1"
 	}
@@ -78405,7 +78528,7 @@ entity
 	"mindxlevel" "0"
 	"model" "models/props_wasteland/panel_leverhandle001a.mdl"
 	"modelscale" "1.0"
-	"parentname" "control_isolationvalve_steam"
+	"parentname" "CTRLI_reactor_steam_outlet"
 	"PerformanceMode" "0"
 	"pressuredelay" "0"
 	"RandomAnimation" "0"
@@ -78440,12 +78563,13 @@ entity
 	"spawnflags" "17568"
 	"speed" "180"
 	"StartDisabled" "0"
-	"targetname" "control_isolationvalve_steam"
+	"targetname" "CTRLI_reactor_steam_outlet"
 	"wait" "3"
 	connections
 	{
-		"OnOut" "RBMK_SYSTEMRunPassedCodeRBMK.SetSteamOutletOpen(true)0-1"
-		"OnIn" "RBMK_SYSTEMRunPassedCodeRBMK.SetSteamOutletOpen(false)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -78586,12 +78710,13 @@ entity
 	"spawnflags" "17568"
 	"speed" "180"
 	"StartDisabled" "0"
-	"targetname" "control_isolationvalve_water"
+	"targetname" "CTRLI_reactor_feedwater_inlet"
 	"wait" "3"
 	connections
 	{
-		"OnOut" "RBMK_SYSTEMRunPassedCodeRBMK.SetFeedwaterInletOpen(true)0-1"
-		"OnIn" "RBMK_SYSTEMRunPassedCodeRBMK.SetFeedwaterInletOpen(false)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -78741,7 +78866,7 @@ entity
 	"mindxlevel" "0"
 	"model" "models/props_wasteland/panel_leverhandle001a.mdl"
 	"modelscale" "1.0"
-	"parentname" "control_isolationvalve_water"
+	"parentname" "CTRLI_reactor_feedwater_inlet"
 	"PerformanceMode" "0"
 	"pressuredelay" "0"
 	"RandomAnimation" "0"
@@ -79433,12 +79558,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_s_aprctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.5"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Submit('aprctrl')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -79586,12 +79714,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_0_aprctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('aprctrl', 0)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -79739,12 +79870,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_c_aprctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Clear('aprctrl')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -79892,12 +80026,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_7_aprctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('aprctrl', 7)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -80045,12 +80182,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_8_aprctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('aprctrl', 8)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -80198,12 +80338,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_9_aprctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('aprctrl', 9)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -80351,12 +80494,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_6_aprctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('aprctrl', 6)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -80504,12 +80650,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_2_aprctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('aprctrl', 2)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -80657,12 +80806,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_1_aprctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('aprctrl', 1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -80810,12 +80962,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_3_aprctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('aprctrl', 3)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -80963,12 +81118,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_5_aprctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('aprctrl', 5)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -81116,12 +81274,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_4_aprctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('aprctrl', 4)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -85573,12 +85734,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "50"
+	"targetname" "CTRLI_alarm_reset"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ANNUNCIATOR.Reset()0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -85726,12 +85890,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "50"
+	"targetname" "CTRLI_alarm_ack"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ANNUNCIATOR.Acknowledge()0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -85879,12 +86046,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "50"
+	"targetname" "CTRLI_alarm_mute"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ANNUNCIATOR.Mute()0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -86596,12 +86766,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "50"
+	"targetname" "CTRLI_alarm_test"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ANNUNCIATOR.TestAll()0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -90744,12 +90917,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_circulating_water_pump_a1_level_4"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('circulating_water_pump_a1', 4)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_coolant_pump_a_4ShowSprite0.05-1"
 		"OnPressed" "sprite_coolant_pump_a_*HideSprite0-1"
 	}
@@ -90899,12 +91075,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_circulating_water_pump_a1_level_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('circulating_water_pump_a1', 1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_coolant_pump_a_1ShowSprite0.05-1"
 		"OnPressed" "sprite_coolant_pump_a_*HideSprite0-1"
 	}
@@ -91054,12 +91233,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_circulating_water_pump_a1_level_2"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('circulating_water_pump_a1', 2)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_coolant_pump_a_2ShowSprite0.05-1"
 		"OnPressed" "sprite_coolant_pump_a_*HideSprite0-1"
 	}
@@ -91209,12 +91391,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_circulating_water_pump_a1_level_3"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('circulating_water_pump_a1', 3)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_coolant_pump_a_3ShowSprite0.05-1"
 		"OnPressed" "sprite_coolant_pump_a_*HideSprite0-1"
 	}
@@ -91472,12 +91657,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_turbine_valve_tg1_decrease_5"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_TURBINE.AdjustValvePercent('tg1', -5)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -91625,12 +91813,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_turbine_valve_tg1_increase_5"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_TURBINE.AdjustValvePercent('tg1', 5)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -91778,12 +91969,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_turbine_bypass_tg1_increase_5"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_TURBINE.AdjustBypassValvePercent('tg1', 5)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -91931,12 +92125,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_turbine_bypass_tg1_decrease_5"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_TURBINE.AdjustBypassValvePercent('tg1', -5)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -92214,12 +92411,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_turbine_bypass_tg1_increase_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_TURBINE.AdjustBypassValvePercent('tg1', 1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -92367,12 +92567,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_turbine_bypass_tg1_decrease_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_TURBINE.AdjustBypassValvePercent('tg1', -1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -92520,12 +92723,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_turbine_bypass_tg1_increase_0_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_TURBINE.AdjustBypassValvePercent('tg1', 0.1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -92673,12 +92879,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_turbine_bypass_tg1_decrease_0_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_TURBINE.AdjustBypassValvePercent('tg1', -0.1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -92826,12 +93035,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_turbine_valve_tg1_decrease_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_TURBINE.AdjustValvePercent('tg1', -1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -92979,12 +93191,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_turbine_valve_tg1_increase_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_TURBINE.AdjustValvePercent('tg1', 1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -93132,12 +93347,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_turbine_valve_tg1_decrease_0_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_TURBINE.AdjustValvePercent('tg1', -0.1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -93285,12 +93503,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_turbine_valve_tg1_increase_0_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_TURBINE.AdjustValvePercent('tg1', 0.1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -95152,13 +95373,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "3073"
 	"speed" "200"
-	"targetname" "button_tg_1_resettrip"
+	"targetname" "CTRLI_electrical_generator_reset_tg1_generator"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_POWERGENERATOR.ResetTrip('tg1_generator')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "!selfLock0-1"
 		"OnPressed" "snd_tg1_trip_alarmStopSound0-1"
 		"OnPressed" "tg1_prop1Skin01-1"
@@ -95298,7 +95521,6 @@ entity
 	"targetname" "tg1_trip_relay"
 	connections
 	{
-		"OnTrigger" "button_tg_1_resettripUnlock10-1"
 		"OnTrigger" "snd_tg1_trip_alarmPlaySound10-1"
 		"OnTrigger" "tg1_prop1Skin10-1"
 		"OnTrigger" "snd_tg1_trip_sndPlaySound0-1"
@@ -95707,12 +95929,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "50"
+	"targetname" "CTRLI_alarm_reset_35565"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ANNUNCIATOR.Reset()0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -95860,12 +96085,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "50"
+	"targetname" "CTRLI_alarm_ack_35569"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_ANNUNCIATOR.Acknowledge()0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -96633,12 +96861,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_1_fwlevelctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('fwlevelctrl', 1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -96786,12 +97017,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_4_fwlevelctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('fwlevelctrl', 4)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -96939,12 +97173,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_7_fwlevelctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('fwlevelctrl', 7)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -97092,12 +97329,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_c_fwlevelctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Clear('fwlevelctrl')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -97245,12 +97485,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_0_fwlevelctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('fwlevelctrl', 0)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -97398,12 +97641,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_8_fwlevelctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('fwlevelctrl', 8)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -97551,12 +97797,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_5_fwlevelctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('fwlevelctrl', 5)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -97704,12 +97953,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_2_fwlevelctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('fwlevelctrl', 2)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -97857,12 +98109,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_3_fwlevelctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('fwlevelctrl', 3)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -98010,12 +98265,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_6_fwlevelctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('fwlevelctrl', 6)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -98163,12 +98421,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_9_fwlevelctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('fwlevelctrl', 9)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -98316,12 +98577,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_s_fwlevelctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.5"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Submit('fwlevelctrl')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -99239,12 +99503,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_1_hotwellctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('hotwellctrl', 1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -99392,12 +99659,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_4_hotwellctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('hotwellctrl', 4)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -99545,12 +99815,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_7_hotwellctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('hotwellctrl', 7)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -99698,12 +99971,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_c_hotwellctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Clear('hotwellctrl')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -99851,12 +100127,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_0_hotwellctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('hotwellctrl', 0)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -100004,12 +100283,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_8_hotwellctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('hotwellctrl', 8)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -100157,12 +100439,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_5_hotwellctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('hotwellctrl', 5)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -100310,12 +100595,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_2_hotwellctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('hotwellctrl', 2)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -100463,12 +100751,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_3_hotwellctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('hotwellctrl', 3)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -100616,12 +100907,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_6_hotwellctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('hotwellctrl', 6)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -100769,12 +101063,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_9_hotwellctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Press('hotwellctrl', 9)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -100922,12 +101219,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_KPD_s_hotwellctrl"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.5"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_KEYPAD.Submit('hotwellctrl')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -102698,15 +102998,17 @@ entity
 	"sounds" "4"
 	"spawnflags" "1056"
 	"speed" "200"
+	"targetname" "CTRLI_valve_hotwell_drain_valve"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnIn" "sprite_hotwell_drainvalveShowSprite0-1"
 		"OnOut" "sprite_hotwell_drainvalveHideSprite0-1"
-		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_VALVE.SetValve('hotwell_drain_valve', false)0-1"
-		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_VALVE.SetValve('hotwell_drain_valve', true)0-1"
 	}
 	solid
 	{
@@ -104880,15 +105182,17 @@ entity
 	"sounds" "4"
 	"spawnflags" "1056"
 	"speed" "200"
+	"targetname" "CTRLI_electrical_transformer_startup_station_transformer"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnIn" "sprite_startup_station_transformerShowSprite0-1"
 		"OnOut" "sprite_startup_station_transformerHideSprite0-1"
-		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_POWERGRID.SetTransformer('startup_station_transformer', false)0-1"
-		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_POWERGRID.SetTransformer('startup_station_transformer', true)0-1"
 	}
 	solid
 	{
@@ -105402,12 +105706,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_turbine_repair_tg1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.2"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_TURBINE.Repair('tg1')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -105555,12 +105862,15 @@ entity
 	"sounds" "14"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_turbine_extreme_trip_tg1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.2"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_TURBINE.TestExtremeTrip('tg1')0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -109204,7 +109514,6 @@ entity
 	{
 		"OnTrigger" "snd_station_gridtripPlaySound0-1"
 		"OnTrigger" "stationgrid_prop1Skin10-1"
-		"OnTrigger" "button_stationgrid_resettripUnlock10-1"
 		"OnTrigger" "snd_stationgrid_trip_alarmPlaySound8-1"
 	}
 	"origin" "-160 -1648 632"
@@ -109263,15 +109572,17 @@ entity
 	"sounds" "4"
 	"spawnflags" "1056"
 	"speed" "200"
+	"targetname" "CTRLI_electrical_transformer_station_generator_transformer"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnIn" "sprite_station_generator_transformerShowSprite0-1"
 		"OnOut" "sprite_station_generator_transformerHideSprite0-1"
-		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_POWERGRID.SetTransformer('station_generator_transformer', false)0-1"
-		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_POWERGRID.SetTransformer('station_generator_transformer', true)0-1"
 	}
 	solid
 	{
@@ -109635,15 +109946,17 @@ entity
 	"sounds" "4"
 	"spawnflags" "1057"
 	"speed" "200"
+	"targetname" "CTRLI_electrical_diesel_edg1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnIn" "sprite_edg1ShowSprite0-1"
 		"OnOut" "sprite_edg1HideSprite0-1"
-		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_DIESELGENERATOR.SetEnabled('edg1', false)0-1"
-		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_DIESELGENERATOR.SetEnabled('edg1', true)0-1"
 		"OnIn" "prop_edg1SetAnimationenginestart0-1"
 		"OnOut" "prop_edg1SetAnimationidle0-1"
 	}
@@ -109913,15 +110226,17 @@ entity
 	"sounds" "4"
 	"spawnflags" "1056"
 	"speed" "200"
+	"targetname" "CTRLI_electrical_generator_auto_sync_tg1_generator"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnIn" "sprite_tg1_autosyncShowSprite0-1"
 		"OnOut" "sprite_tg1_autosyncHideSprite0-1"
-		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_POWERGENERATOR.SetAutoSync('tg1_generator', false)0-1"
-		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_POWERGENERATOR.SetAutoSync('tg1_generator', true)0-1"
 	}
 	solid
 	{
@@ -110096,13 +110411,15 @@ entity
 	"sounds" "6"
 	"spawnflags" "3073"
 	"speed" "200"
-	"targetname" "button_stationgrid_resettrip"
+	"targetname" "CTRLI_electrical_grid_reset_station_grid"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.2"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_POWERGRID.ResetGrid('station_grid')4-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "!selfLock0-1"
 	}
 	solid
@@ -111102,15 +111419,17 @@ entity
 	"sounds" "4"
 	"spawnflags" "1056"
 	"speed" "200"
+	"targetname" "CTRLI_electrical_transformer_station_control_room_transformer"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnIn" "sprite_station_control_room_transformerShowSprite0-1"
 		"OnOut" "sprite_station_control_room_transformerHideSprite0-1"
-		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_POWERGRID.SetTransformer('station_control_room_transformer', false)0-1"
-		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_POWERGRID.SetTransformer('station_control_room_transformer', true)0-1"
 	}
 	solid
 	{
@@ -111285,15 +111604,17 @@ entity
 	"sounds" "4"
 	"spawnflags" "1056"
 	"speed" "200"
+	"targetname" "CTRLI_electrical_transformer_generator_export_transformer"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnIn" "sprite_generator_export_transformerShowSprite0-1"
 		"OnOut" "sprite_generator_export_transformerHideSprite0-1"
-		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_POWERGRID.SetTransformer('generator_export_transformer', false)0-1"
-		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_POWERGRID.SetTransformer('generator_export_transformer', true)0-1"
 	}
 	solid
 	{
@@ -111441,13 +111762,15 @@ entity
 	"sounds" "6"
 	"spawnflags" "3073"
 	"speed" "200"
-	"targetname" "button_generatorgrid_resettrip"
+	"targetname" "CTRLI_electrical_grid_reset_generator_grid"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.2"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_POWERGRID.ResetGrid('generator_grid')4-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "!selfLock0-1"
 	}
 	solid
@@ -111631,7 +111954,6 @@ entity
 	{
 		"OnTrigger" "snd_station_gridtripPlaySound0-1"
 		"OnTrigger" "generatorgrid_prop1Skin10-1"
-		"OnTrigger" "button_generatorgrid_resettripUnlock10-1"
 	}
 	"origin" "-86 -1943 632"
 	editor
@@ -111871,12 +112193,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_condensate_pump_a1_level_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('condensate_pump_a1', 1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_condpump_a_1ShowSprite0.05-1"
 		"OnPressed" "sprite_condpump_a_*HideSprite0-1"
 	}
@@ -112026,12 +112351,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_condensate_pump_a1_level_2"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('condensate_pump_a1', 2)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_condpump_a_2ShowSprite0.05-1"
 		"OnPressed" "sprite_condpump_a_*HideSprite0-1"
 	}
@@ -112181,12 +112509,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_condensate_pump_a1_level_3"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('condensate_pump_a1', 3)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_condpump_a_3ShowSprite0.05-1"
 		"OnPressed" "sprite_condpump_a_*HideSprite0-1"
 	}
@@ -112336,12 +112667,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_condensate_pump_a1_level_4"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('condensate_pump_a1', 4)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_condpump_a_4ShowSprite0.05-1"
 		"OnPressed" "sprite_condpump_a_*HideSprite0-1"
 	}
@@ -114447,12 +114781,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_deaerator_steam_main_deaerator_increase_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_DEAERATOR.AdjustSteamValvePercent('main_deaerator', 1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -114600,12 +114937,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_deaerator_steam_main_deaerator_decrease_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_DEAERATOR.AdjustSteamValvePercent('main_deaerator', -1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -114753,12 +115093,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_deaerator_relief_main_deaerator_increase_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_DEAERATOR.AdjustReliefValvePercent('main_deaerator', 1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -114906,12 +115249,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_deaerator_relief_main_deaerator_decrease_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_DEAERATOR.AdjustReliefValvePercent('main_deaerator', -1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 	}
 	solid
 	{
@@ -115059,15 +115405,17 @@ entity
 	"sounds" "4"
 	"spawnflags" "1056"
 	"speed" "200"
+	"targetname" "CTRLI_deaerator_auto_main_deaerator"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnIn" "sprite_deaerator_autoShowSprite0-1"
 		"OnOut" "sprite_deaerator_autoHideSprite0-1"
-		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_DEAERATOR.SetAutoRegulator('main_deaerator', false)0-1"
-		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_DEAERATOR.SetAutoRegulator('main_deaerator', true)0-1"
 	}
 	solid
 	{
@@ -116176,15 +116524,17 @@ entity
 	"sounds" "4"
 	"spawnflags" "1056"
 	"speed" "200"
+	"targetname" "CTRLI_pump_enabled_cooling_water_makeup_pump"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnIn" "sprite_makeup_coolantShowSprite0-1"
 		"OnOut" "sprite_makeup_coolantHideSprite0-1"
-		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPump('cooling_water_makeup_pump', false)0-1"
-		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPump('cooling_water_makeup_pump', true)0-1"
 	}
 	solid
 	{
@@ -116386,15 +116736,17 @@ entity
 	"sounds" "4"
 	"spawnflags" "1056"
 	"speed" "200"
+	"targetname" "CTRLI_pump_enabled_hotwell_makeup_pump"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnIn" "sprite_makeup_hotwellShowSprite0-1"
 		"OnOut" "sprite_makeup_hotwellHideSprite0-1"
-		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPump('hotwell_makeup_pump', false)0-1"
-		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPump('hotwell_makeup_pump', true)0-1"
 	}
 	solid
 	{
@@ -117048,13 +117400,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
-	"targetname" "button_recircpa_0"
+	"targetname" "CTRLI_pump_speed_main_circulation_pump_a_level_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('main_circulation_pump_a', 1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_recircpump_a1ShowSprite0.05-1"
 		"OnPressed" "sprite_recircpump_a*HideSprite0-1"
 	}
@@ -117204,12 +117558,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_main_circulation_pump_a_level_2"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('main_circulation_pump_a', 2)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_recircpump_a2ShowSprite0.05-1"
 		"OnPressed" "sprite_recircpump_a*HideSprite0-1"
 	}
@@ -117359,12 +117716,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_main_circulation_pump_a_level_3"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('main_circulation_pump_a', 3)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_recircpump_a3ShowSprite0.05-1"
 		"OnPressed" "sprite_recircpump_a*HideSprite0-1"
 	}
@@ -117514,12 +117874,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_main_circulation_pump_a_level_4"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('main_circulation_pump_a', 4)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_recircpump_a4ShowSprite0.05-1"
 		"OnPressed" "sprite_recircpump_a*HideSprite0-1"
 	}
@@ -117777,13 +118140,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
-	"targetname" "button_recircpb_0"
+	"targetname" "CTRLI_pump_speed_main_circulation_pump_b_level_1"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('main_circulation_pump_b', 1)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_recircpump_b1ShowSprite0.05-1"
 		"OnPressed" "sprite_recircpump_b*HideSprite0-1"
 	}
@@ -117933,12 +118298,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_main_circulation_pump_b_level_2"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('main_circulation_pump_b', 2)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_recircpump_b2ShowSprite0.05-1"
 		"OnPressed" "sprite_recircpump_b*HideSprite0-1"
 	}
@@ -118088,12 +118456,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_main_circulation_pump_b_level_3"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('main_circulation_pump_b', 3)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_recircpump_b3ShowSprite0.05-1"
 		"OnPressed" "sprite_recircpump_b*HideSprite0-1"
 	}
@@ -118243,12 +118614,15 @@ entity
 	"sounds" "4"
 	"spawnflags" "1024"
 	"speed" "200"
+	"targetname" "CTRLI_pump_speed_main_circulation_pump_b_level_4"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
-		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_PUMP.SetPumpSpeed('main_circulation_pump_b', 4)0-1"
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnPressed" "sprite_recircpump_b4ShowSprite0.05-1"
 		"OnPressed" "sprite_recircpump_b*HideSprite0-1"
 	}
@@ -119053,15 +119427,17 @@ entity
 	"sounds" "4"
 	"spawnflags" "1056"
 	"speed" "200"
+	"targetname" "CTRLI_valve_recirc_drain_valve"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnIn" "sprite_recirc_drainvalveShowSprite0-1"
 		"OnOut" "sprite_recirc_drainvalveHideSprite0-1"
-		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_VALVE.SetValve('recirc_drain_valve', false)0-1"
-		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_VALVE.SetValve('recirc_drain_valve', true)0-1"
 	}
 	solid
 	{
@@ -119263,15 +119639,17 @@ entity
 	"sounds" "4"
 	"spawnflags" "1056"
 	"speed" "200"
+	"targetname" "CTRLI_deaerator_overflow_main_deaerator"
 	"unlocked_sentence" "0"
 	"unlocked_sound" "0"
 	"wait" "0.1"
 	connections
 	{
+		"OnPressed" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)0-1"
+		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnIn',CALLER,ACTIVATOR)0-1"
+		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_CONTROL.ReportOutput('OnOut',CALLER,ACTIVATOR)0-1"
 		"OnIn" "sprite_deaerator_overflowShowSprite0-1"
 		"OnOut" "sprite_deaerator_overflowHideSprite0-1"
-		"OnOut" "RBMK_SYSTEMRunPassedCodeLUASQUARE_DEAERATOR.SetOverflowValvePercent('main_deaerator', 0)0-1"
-		"OnIn" "RBMK_SYSTEMRunPassedCodeLUASQUARE_DEAERATOR.SetOverflowValvePercent('main_deaerator', 100)0-1"
 	}
 	solid
 	{

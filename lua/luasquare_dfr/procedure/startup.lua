@@ -55,7 +55,7 @@ function DFR.ArmStartupLever(id, activator)
 end
 
 function DFR.RegisterStartupLever(id, label)
-    return DFR.RegisterControl(id, {
+    return DFR.RegisterOperatorAction(id, {
         label = label or id,
         allowedStates = {[DFR.STATE_OFFLINE] = true},
         callback = function(activator) return DFR.ArmStartupLever(id, activator) end
@@ -94,12 +94,12 @@ function DFR.TickManualStartup(dt)
 end
 
 function DFR.RegisterStartupPrepControls()
-    DFR.RegisterControl('manual_startup_begin', {
+    DFR.RegisterOperatorAction('manual_startup_begin', {
         label = 'Begin Manual Startup',
         allowedStates = {[DFR.STATE_STARTUP_PREP] = true},
         callback = function(activator) return DFR.BeginManualStartup(activator) end
     })
-    DFR.RegisterControl('startup_prep_abort', {
+    DFR.RegisterOperatorAction('startup_prep_abort', {
         label = 'Abort Startup Prep',
         allowedStates = {[DFR.STATE_STARTUP_PREP] = true},
         callback = function(activator) return DFR.AbortStartupPrep(activator) end
@@ -107,48 +107,48 @@ function DFR.RegisterStartupPrepControls()
 end
 
 function DFR.RegisterManualStartupControls()
-    DFR.RegisterControl('stabilizer_enable', {
+    DFR.RegisterOperatorAction('stabilizer_enable', {
         label = 'Enable Stabilizer',
         allowedStates = {[DFR.STATE_MANUAL_STARTUP] = true},
         callback = function() return DFR.SetStabilizerActive(true) end
     })
-    DFR.RegisterControl('stabilizer_disable', {
+    DFR.RegisterOperatorAction('stabilizer_disable', {
         label = 'Disable Stabilizer',
         allowedStates = {[DFR.STATE_MANUAL_STARTUP] = true},
         callback = function() return DFR.SetStabilizerActive(false) end
     })
-    DFR.RegisterControl('containment_raise', {
+    DFR.RegisterOperatorAction('containment_raise', {
         label = 'Raise Containment Field',
         allowedStates = {[DFR.STATE_MANUAL_STARTUP] = true},
         callback = function()
             return DFR.AdjustContainmentField(DFR.Config.ContainmentFieldStepPercent or 5)
         end
     })
-    DFR.RegisterControl('containment_lower', {
+    DFR.RegisterOperatorAction('containment_lower', {
         label = 'Lower Containment Field',
         allowedStates = {[DFR.STATE_MANUAL_STARTUP] = true},
         callback = function()
             return DFR.AdjustContainmentField(-(DFR.Config.ContainmentFieldStepPercent or 5))
         end
     })
-    DFR.RegisterControl('director_beam_enable', {
+    DFR.RegisterOperatorAction('director_beam_enable', {
         label = 'Enable Director Beam',
         allowedStates = {[DFR.STATE_MANUAL_STARTUP] = true},
         callback = function() return DFR.SetDirectorBeamActive(true) end
     })
-    DFR.RegisterControl('director_beam_disable', {
+    DFR.RegisterOperatorAction('director_beam_disable', {
         label = 'Disable Director Beam',
         allowedStates = {[DFR.STATE_MANUAL_STARTUP] = true},
         callback = function() return DFR.SetDirectorBeamActive(false) end
     })
     local step = DFR.Config.LensOffsetStep or 0.025
     for _, axis in ipairs({'x', 'y', 'z'}) do
-        DFR.RegisterControl('lens_' .. axis .. '_plus', {
+        DFR.RegisterOperatorAction('lens_' .. axis .. '_plus', {
             label = 'Lens ' .. string.upper(axis) .. ' Plus',
             allowedStates = {[DFR.STATE_MANUAL_STARTUP] = true},
             callback = function() return DFR.AdjustLens(axis, step) end
         })
-        DFR.RegisterControl('lens_' .. axis .. '_minus', {
+        DFR.RegisterOperatorAction('lens_' .. axis .. '_minus', {
             label = 'Lens ' .. string.upper(axis) .. ' Minus',
             allowedStates = {[DFR.STATE_MANUAL_STARTUP] = true},
             callback = function() return DFR.AdjustLens(axis, -step) end

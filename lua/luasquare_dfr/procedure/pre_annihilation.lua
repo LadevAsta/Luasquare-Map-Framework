@@ -2,7 +2,7 @@ DFR = DFR or {}
 DFR.PreAnnihilation = DFR.PreAnnihilation or {}
 
 local TIMELINE_NAME = 'run'
-local LOCK_OWNER = 'timeline:pre_annihilation'
+local LOCK_OWNER = 'timeline.pre_annihilation'
 local CONFLICTING_CONTROLS = {
     'stabilizer_enable',
     'stabilizer_disable',
@@ -36,7 +36,7 @@ end
 
 local function lockConflictingControls()
     for _, id in ipairs(CONFLICTING_CONTROLS) do
-        DFR.LockControl(id, LOCK_OWNER, 'pre-annihilation procedure active')
+        LUASQUARE_CONTROL.Lock(id, LOCK_OWNER, 'pre-annihilation procedure active')
     end
 end
 
@@ -59,7 +59,7 @@ local function cleanupPresentation()
     DFR.PreAnnihilation.Phase = nil
     DFR.PreAnnihilation.Actor = nil
     if DFR.SetCoreBeamActive then DFR.SetCoreBeamActive('annihilation', false) end
-    DFR.UnlockControlsByOwner(LOCK_OWNER)
+    LUASQUARE_CONTROL.UnlockOwner(LOCK_OWNER)
 end
 
 function DFR.GetPreAnnihilationUnavailableReason()
@@ -197,7 +197,7 @@ function DFR.RegisterPreAnnihilationProcedure(options)
     local owner = DFR.GetTimelineOwner(ownerId)
     DFR.PreAnnihilation.TimelineOwner = owner
 
-    DFR.RegisterControl('pre_annihilation_begin', {
+    DFR.RegisterOperatorAction('pre_annihilation_begin', {
         label = 'Begin Pre-Annihilation',
         allowedStates = {[DFR.STATE_MANUAL_STARTUP] = true},
         canUse = function()
@@ -206,7 +206,7 @@ function DFR.RegisterPreAnnihilationProcedure(options)
         end,
         callback = function(actor) return DFR.StartPreAnnihilation(actor) end
     })
-    DFR.RegisterControl('pre_annihilation_cancel', {
+    DFR.RegisterOperatorAction('pre_annihilation_cancel', {
         label = 'Cancel Pre-Annihilation',
         allowedStates = {[DFR.STATE_MANUAL_STARTUP] = true},
         canUse = function()

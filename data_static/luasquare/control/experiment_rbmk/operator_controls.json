@@ -1,0 +1,1696 @@
+{
+  "schema": "luasquare.control/v1",
+  "id": "experiment_rbmk_controls",
+  "controls": [
+    {
+      "id": "aprctrl",
+      "label": "APR Thermal Target MW",
+      "kind": "keypad",
+      "maxDigits": 4,
+      "maxValue": 9999,
+      "initialValue": 0,
+      "clearOnSubmit": false,
+      "display": "aprctrl",
+      "cooldown": 0.25,
+      "actions": {
+        "submit": {
+          "id": "rbmk.apr_target",
+          "params": {}
+        }
+      },
+      "keys": {
+        "0": "CTRLI_KPD_0_aprctrl",
+        "1": "CTRLI_KPD_1_aprctrl",
+        "2": "CTRLI_KPD_2_aprctrl",
+        "3": "CTRLI_KPD_3_aprctrl",
+        "4": "CTRLI_KPD_4_aprctrl",
+        "5": "CTRLI_KPD_5_aprctrl",
+        "6": "CTRLI_KPD_6_aprctrl",
+        "7": "CTRLI_KPD_7_aprctrl",
+        "8": "CTRLI_KPD_8_aprctrl",
+        "9": "CTRLI_KPD_9_aprctrl",
+        "s": "CTRLI_KPD_s_aprctrl",
+        "c": "CTRLI_KPD_c_aprctrl"
+      }
+    },
+    {
+      "id": "pump_speed_feedwater_pump_a_level_2",
+      "label": "Feedwater Pump A",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_feedwater_pump_a_level_2",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "feedwater_pump_a",
+            "level": 2
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_feedwater_pump_a_level_3",
+      "label": "Feedwater Pump A",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_feedwater_pump_a_level_3",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "feedwater_pump_a",
+            "level": 3
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_feedwater_pump_a_level_4",
+      "label": "Feedwater Pump A",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_feedwater_pump_a_level_4",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "feedwater_pump_a",
+            "level": 4
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_feedwater_pump_b_level_4",
+      "label": "Feedwater Pump B",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_feedwater_pump_b_level_4",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "feedwater_pump_b",
+            "level": 4
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_feedwater_pump_b_level_3",
+      "label": "Feedwater Pump B",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_feedwater_pump_b_level_3",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "feedwater_pump_b",
+            "level": 3
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_feedwater_pump_b_level_2",
+      "label": "Feedwater Pump B",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_feedwater_pump_b_level_2",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "feedwater_pump_b",
+            "level": 2
+          }
+        }
+      }
+    },
+    {
+      "id": "alarm_reset",
+      "label": "Alarm Reset",
+      "kind": "momentary",
+      "target": "CTRLI_alarm_reset",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.alarm_reset",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "alarm_ack",
+      "label": "Alarm Ack",
+      "kind": "momentary",
+      "target": "CTRLI_alarm_ack",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.alarm_ack",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "alarm_mute",
+      "label": "Alarm Mute",
+      "kind": "momentary",
+      "target": "CTRLI_alarm_mute",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.alarm_mute",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "alarm_test",
+      "label": "Alarm Test",
+      "kind": "momentary",
+      "target": "CTRLI_alarm_test",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.alarm_test",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "pump_speed_circulating_water_pump_a1_level_4",
+      "label": "Circulating Water Pump A1",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_circulating_water_pump_a1_level_4",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "circulating_water_pump_a1",
+            "level": 4
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_circulating_water_pump_a1_level_1",
+      "label": "Circulating Water Pump A1",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_circulating_water_pump_a1_level_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "circulating_water_pump_a1",
+            "level": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_circulating_water_pump_a1_level_2",
+      "label": "Circulating Water Pump A1",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_circulating_water_pump_a1_level_2",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "circulating_water_pump_a1",
+            "level": 2
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_circulating_water_pump_a1_level_3",
+      "label": "Circulating Water Pump A1",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_circulating_water_pump_a1_level_3",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "circulating_water_pump_a1",
+            "level": 3
+          }
+        }
+      }
+    },
+    {
+      "id": "reactor_neutron_source_3_5",
+      "label": "Neutron Source 3,5",
+      "kind": "toggle",
+      "target": "CTRLI_reactor_neutron_source_3_5",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "out": {
+          "id": "rbmk.neutron_source",
+          "params": {
+            "x": 3,
+            "y": 5,
+            "enabled": true
+          }
+        },
+        "in": {
+          "id": "rbmk.neutron_source",
+          "params": {
+            "x": 3,
+            "y": 5,
+            "enabled": false
+          }
+        }
+      }
+    },
+    {
+      "id": "turbine_valve_tg1_decrease_5",
+      "label": "Tg1",
+      "kind": "momentary",
+      "target": "CTRLI_turbine_valve_tg1_decrease_5",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.turbine_valve",
+          "params": {
+            "name": "tg1",
+            "percent": -5
+          }
+        }
+      }
+    },
+    {
+      "id": "turbine_valve_tg1_increase_5",
+      "label": "Tg1",
+      "kind": "momentary",
+      "target": "CTRLI_turbine_valve_tg1_increase_5",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.turbine_valve",
+          "params": {
+            "name": "tg1",
+            "percent": 5
+          }
+        }
+      }
+    },
+    {
+      "id": "turbine_bypass_tg1_increase_5",
+      "label": "Tg1",
+      "kind": "momentary",
+      "target": "CTRLI_turbine_bypass_tg1_increase_5",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.turbine_bypass",
+          "params": {
+            "name": "tg1",
+            "percent": 5
+          }
+        }
+      }
+    },
+    {
+      "id": "turbine_bypass_tg1_decrease_5",
+      "label": "Tg1",
+      "kind": "momentary",
+      "target": "CTRLI_turbine_bypass_tg1_decrease_5",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.turbine_bypass",
+          "params": {
+            "name": "tg1",
+            "percent": -5
+          }
+        }
+      }
+    },
+    {
+      "id": "rod_toggle_u1",
+      "label": "U1",
+      "kind": "momentary",
+      "target": "CTRLI_rod_toggle_u1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.rod_toggle",
+          "params": {
+            "name": "U1"
+          }
+        }
+      }
+    },
+    {
+      "id": "rod_toggle_u2",
+      "label": "U2",
+      "kind": "momentary",
+      "target": "CTRLI_rod_toggle_u2",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.rod_toggle",
+          "params": {
+            "name": "U2"
+          }
+        }
+      }
+    },
+    {
+      "id": "rod_toggle_u3",
+      "label": "U3",
+      "kind": "momentary",
+      "target": "CTRLI_rod_toggle_u3",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.rod_toggle",
+          "params": {
+            "name": "U3"
+          }
+        }
+      }
+    },
+    {
+      "id": "rod_toggle_u4",
+      "label": "U4",
+      "kind": "momentary",
+      "target": "CTRLI_rod_toggle_u4",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.rod_toggle",
+          "params": {
+            "name": "U4"
+          }
+        }
+      }
+    },
+    {
+      "id": "turbine_bypass_tg1_increase_1",
+      "label": "Tg1",
+      "kind": "momentary",
+      "target": "CTRLI_turbine_bypass_tg1_increase_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.turbine_bypass",
+          "params": {
+            "name": "tg1",
+            "percent": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "turbine_bypass_tg1_decrease_1",
+      "label": "Tg1",
+      "kind": "momentary",
+      "target": "CTRLI_turbine_bypass_tg1_decrease_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.turbine_bypass",
+          "params": {
+            "name": "tg1",
+            "percent": -1
+          }
+        }
+      }
+    },
+    {
+      "id": "turbine_bypass_tg1_increase_0_1",
+      "label": "Tg1",
+      "kind": "momentary",
+      "target": "CTRLI_turbine_bypass_tg1_increase_0_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.turbine_bypass",
+          "params": {
+            "name": "tg1",
+            "percent": 0.1
+          }
+        }
+      }
+    },
+    {
+      "id": "turbine_bypass_tg1_decrease_0_1",
+      "label": "Tg1",
+      "kind": "momentary",
+      "target": "CTRLI_turbine_bypass_tg1_decrease_0_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.turbine_bypass",
+          "params": {
+            "name": "tg1",
+            "percent": -0.1
+          }
+        }
+      }
+    },
+    {
+      "id": "turbine_valve_tg1_decrease_1",
+      "label": "Tg1",
+      "kind": "momentary",
+      "target": "CTRLI_turbine_valve_tg1_decrease_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.turbine_valve",
+          "params": {
+            "name": "tg1",
+            "percent": -1
+          }
+        }
+      }
+    },
+    {
+      "id": "turbine_valve_tg1_increase_1",
+      "label": "Tg1",
+      "kind": "momentary",
+      "target": "CTRLI_turbine_valve_tg1_increase_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.turbine_valve",
+          "params": {
+            "name": "tg1",
+            "percent": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "turbine_valve_tg1_decrease_0_1",
+      "label": "Tg1",
+      "kind": "momentary",
+      "target": "CTRLI_turbine_valve_tg1_decrease_0_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.turbine_valve",
+          "params": {
+            "name": "tg1",
+            "percent": -0.1
+          }
+        }
+      }
+    },
+    {
+      "id": "turbine_valve_tg1_increase_0_1",
+      "label": "Tg1",
+      "kind": "momentary",
+      "target": "CTRLI_turbine_valve_tg1_increase_0_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.turbine_valve",
+          "params": {
+            "name": "tg1",
+            "percent": 0.1
+          }
+        }
+      }
+    },
+    {
+      "id": "rod_clear",
+      "label": "Rod Clear",
+      "kind": "momentary",
+      "target": "CTRLI_rod_clear",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.rod_clear",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "alarm_reset_secondary",
+      "label": "Alarm Reset",
+      "kind": "momentary",
+      "target": "CTRLI_alarm_reset_35565",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.alarm_reset",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "alarm_ack_secondary",
+      "label": "Alarm Ack",
+      "kind": "momentary",
+      "target": "CTRLI_alarm_ack_35569",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.alarm_ack",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "valve_hotwell_drain_valve",
+      "label": "Hotwell Drain Valve",
+      "kind": "toggle",
+      "target": "CTRLI_valve_hotwell_drain_valve",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "out": {
+          "id": "rbmk.valve",
+          "params": {
+            "name": "hotwell_drain_valve",
+            "enabled": false
+          }
+        },
+        "in": {
+          "id": "rbmk.valve",
+          "params": {
+            "name": "hotwell_drain_valve",
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "electrical_transformer_startup_station_transformer",
+      "label": "Startup Station Transformer",
+      "kind": "toggle",
+      "target": "CTRLI_electrical_transformer_startup_station_transformer",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "out": {
+          "id": "rbmk.transformer",
+          "params": {
+            "name": "startup_station_transformer",
+            "enabled": false
+          }
+        },
+        "in": {
+          "id": "rbmk.transformer",
+          "params": {
+            "name": "startup_station_transformer",
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "turbine_repair_tg1",
+      "label": "Tg1",
+      "kind": "momentary",
+      "target": "CTRLI_turbine_repair_tg1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.turbine_repair",
+          "params": {
+            "name": "tg1"
+          }
+        }
+      }
+    },
+    {
+      "id": "turbine_extreme_trip_tg1",
+      "label": "Tg1",
+      "kind": "momentary",
+      "target": "CTRLI_turbine_extreme_trip_tg1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.turbine_extreme_trip",
+          "params": {
+            "name": "tg1"
+          }
+        }
+      }
+    },
+    {
+      "id": "electrical_transformer_station_generator_transformer",
+      "label": "Station Generator Transformer",
+      "kind": "toggle",
+      "target": "CTRLI_electrical_transformer_station_generator_transformer",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "out": {
+          "id": "rbmk.transformer",
+          "params": {
+            "name": "station_generator_transformer",
+            "enabled": false
+          }
+        },
+        "in": {
+          "id": "rbmk.transformer",
+          "params": {
+            "name": "station_generator_transformer",
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "electrical_diesel_edg1",
+      "label": "Edg1",
+      "kind": "toggle",
+      "target": "CTRLI_electrical_diesel_edg1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "out": {
+          "id": "rbmk.diesel",
+          "params": {
+            "name": "edg1",
+            "enabled": false
+          }
+        },
+        "in": {
+          "id": "rbmk.diesel",
+          "params": {
+            "name": "edg1",
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "electrical_generator_auto_sync_tg1_generator",
+      "label": "Tg1 Generator",
+      "kind": "toggle",
+      "target": "CTRLI_electrical_generator_auto_sync_tg1_generator",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "out": {
+          "id": "rbmk.generator_auto_sync",
+          "params": {
+            "name": "tg1_generator",
+            "enabled": false
+          }
+        },
+        "in": {
+          "id": "rbmk.generator_auto_sync",
+          "params": {
+            "name": "tg1_generator",
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "electrical_transformer_station_control_room_transformer",
+      "label": "Station Control Room Transformer",
+      "kind": "toggle",
+      "target": "CTRLI_electrical_transformer_station_control_room_transformer",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "out": {
+          "id": "rbmk.transformer",
+          "params": {
+            "name": "station_control_room_transformer",
+            "enabled": false
+          }
+        },
+        "in": {
+          "id": "rbmk.transformer",
+          "params": {
+            "name": "station_control_room_transformer",
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "electrical_transformer_generator_export_transformer",
+      "label": "Generator Export Transformer",
+      "kind": "toggle",
+      "target": "CTRLI_electrical_transformer_generator_export_transformer",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "out": {
+          "id": "rbmk.transformer",
+          "params": {
+            "name": "generator_export_transformer",
+            "enabled": false
+          }
+        },
+        "in": {
+          "id": "rbmk.transformer",
+          "params": {
+            "name": "generator_export_transformer",
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_condensate_pump_a1_level_1",
+      "label": "Condensate Pump A1",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_condensate_pump_a1_level_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "condensate_pump_a1",
+            "level": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_condensate_pump_a1_level_2",
+      "label": "Condensate Pump A1",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_condensate_pump_a1_level_2",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "condensate_pump_a1",
+            "level": 2
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_condensate_pump_a1_level_3",
+      "label": "Condensate Pump A1",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_condensate_pump_a1_level_3",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "condensate_pump_a1",
+            "level": 3
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_condensate_pump_a1_level_4",
+      "label": "Condensate Pump A1",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_condensate_pump_a1_level_4",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "condensate_pump_a1",
+            "level": 4
+          }
+        }
+      }
+    },
+    {
+      "id": "deaerator_steam_main_deaerator_increase_1",
+      "label": "Main Deaerator",
+      "kind": "momentary",
+      "target": "CTRLI_deaerator_steam_main_deaerator_increase_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.deaerator_steam",
+          "params": {
+            "name": "main_deaerator",
+            "percent": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "deaerator_steam_main_deaerator_decrease_1",
+      "label": "Main Deaerator",
+      "kind": "momentary",
+      "target": "CTRLI_deaerator_steam_main_deaerator_decrease_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.deaerator_steam",
+          "params": {
+            "name": "main_deaerator",
+            "percent": -1
+          }
+        }
+      }
+    },
+    {
+      "id": "deaerator_relief_main_deaerator_increase_1",
+      "label": "Main Deaerator",
+      "kind": "momentary",
+      "target": "CTRLI_deaerator_relief_main_deaerator_increase_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.deaerator_relief",
+          "params": {
+            "name": "main_deaerator",
+            "percent": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "deaerator_relief_main_deaerator_decrease_1",
+      "label": "Main Deaerator",
+      "kind": "momentary",
+      "target": "CTRLI_deaerator_relief_main_deaerator_decrease_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.deaerator_relief",
+          "params": {
+            "name": "main_deaerator",
+            "percent": -1
+          }
+        }
+      }
+    },
+    {
+      "id": "deaerator_auto_main_deaerator",
+      "label": "Main Deaerator",
+      "kind": "toggle",
+      "target": "CTRLI_deaerator_auto_main_deaerator",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "out": {
+          "id": "rbmk.deaerator_auto",
+          "params": {
+            "name": "main_deaerator",
+            "enabled": false
+          }
+        },
+        "in": {
+          "id": "rbmk.deaerator_auto",
+          "params": {
+            "name": "main_deaerator",
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_enabled_cooling_water_makeup_pump",
+      "label": "Cooling Water Makeup Pump",
+      "kind": "toggle",
+      "target": "CTRLI_pump_enabled_cooling_water_makeup_pump",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "out": {
+          "id": "rbmk.pump_enabled",
+          "params": {
+            "name": "cooling_water_makeup_pump",
+            "enabled": false
+          }
+        },
+        "in": {
+          "id": "rbmk.pump_enabled",
+          "params": {
+            "name": "cooling_water_makeup_pump",
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_enabled_hotwell_makeup_pump",
+      "label": "Hotwell Makeup Pump",
+      "kind": "toggle",
+      "target": "CTRLI_pump_enabled_hotwell_makeup_pump",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "out": {
+          "id": "rbmk.pump_enabled",
+          "params": {
+            "name": "hotwell_makeup_pump",
+            "enabled": false
+          }
+        },
+        "in": {
+          "id": "rbmk.pump_enabled",
+          "params": {
+            "name": "hotwell_makeup_pump",
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "rod_group_yellow",
+      "label": "Yellow",
+      "kind": "momentary",
+      "target": "CTRLI_rod_group_yellow",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.rod_group",
+          "params": {
+            "name": "yellow"
+          }
+        }
+      }
+    },
+    {
+      "id": "rod_group_red",
+      "label": "Red",
+      "kind": "momentary",
+      "target": "CTRLI_rod_group_red",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.rod_group",
+          "params": {
+            "name": "red"
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_main_circulation_pump_a_level_2",
+      "label": "Main Circulation Pump A",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_main_circulation_pump_a_level_2",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "main_circulation_pump_a",
+            "level": 2
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_main_circulation_pump_a_level_3",
+      "label": "Main Circulation Pump A",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_main_circulation_pump_a_level_3",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "main_circulation_pump_a",
+            "level": 3
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_main_circulation_pump_a_level_4",
+      "label": "Main Circulation Pump A",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_main_circulation_pump_a_level_4",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "main_circulation_pump_a",
+            "level": 4
+          }
+        }
+      }
+    },
+    {
+      "id": "rod_toggle_r1",
+      "label": "R1",
+      "kind": "momentary",
+      "target": "CTRLI_rod_toggle_r1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.rod_toggle",
+          "params": {
+            "name": "R1"
+          }
+        }
+      }
+    },
+    {
+      "id": "rod_toggle_r2",
+      "label": "R2",
+      "kind": "momentary",
+      "target": "CTRLI_rod_toggle_r2",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.rod_toggle",
+          "params": {
+            "name": "R2"
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_main_circulation_pump_b_level_2",
+      "label": "Main Circulation Pump B",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_main_circulation_pump_b_level_2",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "main_circulation_pump_b",
+            "level": 2
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_main_circulation_pump_b_level_3",
+      "label": "Main Circulation Pump B",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_main_circulation_pump_b_level_3",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "main_circulation_pump_b",
+            "level": 3
+          }
+        }
+      }
+    },
+    {
+      "id": "pump_speed_main_circulation_pump_b_level_4",
+      "label": "Main Circulation Pump B",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_main_circulation_pump_b_level_4",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "main_circulation_pump_b",
+            "level": 4
+          }
+        }
+      }
+    },
+    {
+      "id": "rod_toggle_r3",
+      "label": "R3",
+      "kind": "momentary",
+      "target": "CTRLI_rod_toggle_r3",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.rod_toggle",
+          "params": {
+            "name": "R3"
+          }
+        }
+      }
+    },
+    {
+      "id": "rod_toggle_r4",
+      "label": "R4",
+      "kind": "momentary",
+      "target": "CTRLI_rod_toggle_r4",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.rod_toggle",
+          "params": {
+            "name": "R4"
+          }
+        }
+      }
+    },
+    {
+      "id": "rod_toggle_r5",
+      "label": "R5",
+      "kind": "momentary",
+      "target": "CTRLI_rod_toggle_r5",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.rod_toggle",
+          "params": {
+            "name": "R5"
+          }
+        }
+      }
+    },
+    {
+      "id": "rod_toggle_r6",
+      "label": "R6",
+      "kind": "momentary",
+      "target": "CTRLI_rod_toggle_r6",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.rod_toggle",
+          "params": {
+            "name": "R6"
+          }
+        }
+      }
+    },
+    {
+      "id": "rod_toggle_r7",
+      "label": "R7",
+      "kind": "momentary",
+      "target": "CTRLI_rod_toggle_r7",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.rod_toggle",
+          "params": {
+            "name": "R7"
+          }
+        }
+      }
+    },
+    {
+      "id": "rod_toggle_r8",
+      "label": "R8",
+      "kind": "momentary",
+      "target": "CTRLI_rod_toggle_r8",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.rod_toggle",
+          "params": {
+            "name": "R8"
+          }
+        }
+      }
+    },
+    {
+      "id": "reactor_reflector_5_2",
+      "label": "Reflector 5,2",
+      "kind": "toggle",
+      "target": "CTRLI_reactor_reflector_5_2",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "out": {
+          "id": "rbmk.reflector",
+          "params": {
+            "x": 5,
+            "y": 2,
+            "enabled": true
+          }
+        },
+        "in": {
+          "id": "rbmk.reflector",
+          "params": {
+            "x": 5,
+            "y": 2,
+            "enabled": false
+          }
+        }
+      }
+    },
+    {
+      "id": "valve_recirc_drain_valve",
+      "label": "Recirc Drain Valve",
+      "kind": "toggle",
+      "target": "CTRLI_valve_recirc_drain_valve",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "out": {
+          "id": "rbmk.valve",
+          "params": {
+            "name": "recirc_drain_valve",
+            "enabled": false
+          }
+        },
+        "in": {
+          "id": "rbmk.valve",
+          "params": {
+            "name": "recirc_drain_valve",
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "id": "deaerator_overflow_main_deaerator",
+      "label": "Main Deaerator",
+      "kind": "toggle",
+      "target": "CTRLI_deaerator_overflow_main_deaerator",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "out": {
+          "id": "rbmk.deaerator_overflow",
+          "params": {
+            "name": "main_deaerator",
+            "percent": 0
+          }
+        },
+        "in": {
+          "id": "rbmk.deaerator_overflow",
+          "params": {
+            "name": "main_deaerator",
+            "percent": 100
+          }
+        }
+      }
+    },
+    {
+      "id": "button_fwpa_0",
+      "label": "Feedwater Pump A",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_feedwater_pump_a_level_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "feedwater_pump_a",
+            "level": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "button_fwpb_0",
+      "label": "Feedwater Pump B",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_feedwater_pump_b_level_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "feedwater_pump_b",
+            "level": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "button_generatorgrid_resettrip",
+      "label": "Generator Grid",
+      "kind": "momentary",
+      "target": "CTRLI_electrical_grid_reset_generator_grid",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.grid_reset",
+          "params": {
+            "name": "generator_grid"
+          }
+        }
+      }
+    },
+    {
+      "id": "button_recircpa_0",
+      "label": "Main Circulation Pump A",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_main_circulation_pump_a_level_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "main_circulation_pump_a",
+            "level": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "button_recircpb_0",
+      "label": "Main Circulation Pump B",
+      "kind": "momentary",
+      "target": "CTRLI_pump_speed_main_circulation_pump_b_level_1",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.pump_speed",
+          "params": {
+            "name": "main_circulation_pump_b",
+            "level": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "button_scram",
+      "label": "Scram",
+      "kind": "momentary",
+      "target": "CTRLI_reactor_scram",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.scram",
+          "params": {}
+        }
+      },
+      "predicates": [
+        {
+          "id": "control.position",
+          "params": {
+            "control": "safety_scram",
+            "position": "in"
+          }
+        }
+      ]
+    },
+    {
+      "id": "button_stationgrid_resettrip",
+      "label": "Station Grid",
+      "kind": "momentary",
+      "target": "CTRLI_electrical_grid_reset_station_grid",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.grid_reset",
+          "params": {
+            "name": "station_grid"
+          }
+        }
+      }
+    },
+    {
+      "id": "button_tg_1_resettrip",
+      "label": "Tg1 Generator",
+      "kind": "momentary",
+      "target": "CTRLI_electrical_generator_reset_tg1_generator",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.generator_reset",
+          "params": {
+            "name": "tg1_generator"
+          }
+        }
+      }
+    },
+    {
+      "id": "button_tg1_sync",
+      "label": "Tg1 Generator",
+      "kind": "momentary",
+      "target": "CTRLI_electrical_generator_sync_tg1_generator",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.generator_sync",
+          "params": {
+            "name": "tg1_generator"
+          }
+        }
+      },
+      "predicates": [
+        {
+          "id": "control.position",
+          "params": {
+            "control": "safety_tg1_sync",
+            "position": "in"
+          }
+        }
+      ]
+    },
+    {
+      "id": "button_tg1_trip",
+      "label": "Tg1 Generator",
+      "kind": "momentary",
+      "target": "CTRLI_electrical_generator_trip_tg1_generator",
+      "class": "func_button",
+      "cooldown": 0.25,
+      "actions": {
+        "press": {
+          "id": "rbmk.generator_trip",
+          "params": {
+            "name": "tg1_generator"
+          }
+        }
+      },
+      "predicates": [
+        {
+          "id": "control.position",
+          "params": {
+            "control": "safety_tg1_trip",
+            "position": "in"
+          }
+        }
+      ]
+    },
+    {
+      "id": "control_isolationvalve_steam",
+      "label": "Steam Outlet",
+      "kind": "toggle",
+      "target": "CTRLI_reactor_steam_outlet",
+      "class": "func_rot_button",
+      "cooldown": 0.25,
+      "actions": {
+        "out": {
+          "id": "rbmk.steam_outlet",
+          "params": {
+            "enabled": true
+          }
+        },
+        "in": {
+          "id": "rbmk.steam_outlet",
+          "params": {
+            "enabled": false
+          }
+        }
+      }
+    },
+    {
+      "id": "control_isolationvalve_water",
+      "label": "Feedwater Inlet",
+      "kind": "toggle",
+      "target": "CTRLI_reactor_feedwater_inlet",
+      "class": "func_rot_button",
+      "cooldown": 0.25,
+      "actions": {
+        "out": {
+          "id": "rbmk.feedwater_inlet",
+          "params": {
+            "enabled": true
+          }
+        },
+        "in": {
+          "id": "rbmk.feedwater_inlet",
+          "params": {
+            "enabled": false
+          }
+        }
+      }
+    },
+    {
+      "id": "fwlevelctrl",
+      "label": "Feedwater Level Target %",
+      "kind": "keypad",
+      "maxDigits": 3,
+      "maxValue": 100,
+      "initialValue": 80,
+      "clearOnSubmit": false,
+      "display": "fwlevelctrl",
+      "cooldown": 0.25,
+      "actions": {
+        "submit": {
+          "id": "rbmk.feedwater_target",
+          "params": {}
+        }
+      },
+      "keys": {
+        "0": "CTRLI_KPD_0_fwlevelctrl",
+        "1": "CTRLI_KPD_1_fwlevelctrl",
+        "2": "CTRLI_KPD_2_fwlevelctrl",
+        "3": "CTRLI_KPD_3_fwlevelctrl",
+        "4": "CTRLI_KPD_4_fwlevelctrl",
+        "5": "CTRLI_KPD_5_fwlevelctrl",
+        "6": "CTRLI_KPD_6_fwlevelctrl",
+        "7": "CTRLI_KPD_7_fwlevelctrl",
+        "8": "CTRLI_KPD_8_fwlevelctrl",
+        "9": "CTRLI_KPD_9_fwlevelctrl",
+        "c": "CTRLI_KPD_c_fwlevelctrl",
+        "s": "CTRLI_KPD_s_fwlevelctrl"
+      }
+    },
+    {
+      "id": "safety_tg1_sync",
+      "label": "Safety Cover: TG1 SYNC",
+      "kind": "momentary",
+      "target": "CTRLI_safety_tg1_sync",
+      "class": "func_rot_button",
+      "cooldown": 0.25,
+      "actions": {}
+    },
+    {
+      "id": "safety_tg1_trip",
+      "label": "Safety Cover: TG1 TRIP",
+      "kind": "momentary",
+      "target": "CTRLI_safety_tg1_trip",
+      "class": "func_rot_button",
+      "cooldown": 0.25,
+      "actions": {}
+    },
+    {
+      "id": "safety_scram",
+      "label": "Safety Cover: SCRAM",
+      "kind": "momentary",
+      "target": "CTRLI_safety_scram",
+      "class": "func_rot_button",
+      "cooldown": 0.25,
+      "actions": {}
+    },
+    {
+      "id": "hotwellctrl",
+      "label": "Hotwell Level Target %",
+      "kind": "keypad",
+      "maxDigits": 3,
+      "maxValue": 100,
+      "initialValue": 35,
+      "clearOnSubmit": false,
+      "display": "hotwellctrl",
+      "cooldown": 0.25,
+      "actions": {
+        "submit": {
+          "id": "rbmk.hotwell_target",
+          "params": {}
+        }
+      },
+      "keys": {
+        "0": "CTRLI_KPD_0_hotwellctrl",
+        "1": "CTRLI_KPD_1_hotwellctrl",
+        "2": "CTRLI_KPD_2_hotwellctrl",
+        "3": "CTRLI_KPD_3_hotwellctrl",
+        "4": "CTRLI_KPD_4_hotwellctrl",
+        "5": "CTRLI_KPD_5_hotwellctrl",
+        "6": "CTRLI_KPD_6_hotwellctrl",
+        "7": "CTRLI_KPD_7_hotwellctrl",
+        "8": "CTRLI_KPD_8_hotwellctrl",
+        "9": "CTRLI_KPD_9_hotwellctrl",
+        "c": "CTRLI_KPD_c_hotwellctrl",
+        "s": "CTRLI_KPD_s_hotwellctrl"
+      }
+    },
+    {
+      "id": "rodctrl",
+      "label": "Control Rod Withdrawal %",
+      "kind": "keypad",
+      "maxDigits": 3,
+      "maxValue": 100,
+      "initialValue": 0,
+      "clearOnSubmit": true,
+      "display": "rodctrl",
+      "cooldown": 0.25,
+      "actions": {
+        "submit": {
+          "id": "rbmk.rod_target",
+          "params": {}
+        }
+      },
+      "keys": {
+        "0": "CTRLI_KPD_0_rodctrl",
+        "1": "CTRLI_KPD_1_rodctrl",
+        "2": "CTRLI_KPD_2_rodctrl",
+        "3": "CTRLI_KPD_3_rodctrl",
+        "4": "CTRLI_KPD_4_rodctrl",
+        "5": "CTRLI_KPD_5_rodctrl",
+        "6": "CTRLI_KPD_6_rodctrl",
+        "7": "CTRLI_KPD_7_rodctrl",
+        "8": "CTRLI_KPD_8_rodctrl",
+        "9": "CTRLI_KPD_9_rodctrl",
+        "c": "CTRLI_KPD_c_rodctrl",
+        "s": "CTRLI_KPD_s_rodctrl"
+      }
+    }
+  ]
+}

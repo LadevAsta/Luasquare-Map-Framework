@@ -211,20 +211,22 @@ function DFR.RegisterDefaultTelemetryDisplays(options)
     LUASQUARE_3D2D.RegisterAction('dfr.pre_annihilation_begin', {
         label = 'Begin pre-annihilation',
         cooldown = 1,
-        callback = function(actor) return DFR.StartPreAnnihilation(actor) end
+        callback = function(actor)
+            return LUASQUARE_CONTROL.Request('pre_annihilation_begin', 'press', {actor = actor, owner = 'display'}) ~= nil
+        end
     })
     LUASQUARE_3D2D.RegisterAction('dfr.pre_annihilation_cancel', {
         label = 'Cancel pre-annihilation',
         cooldown = 0.5,
-        callback = function() return DFR.CancelPreAnnihilation('3D2D operator action') end
+        callback = function(actor)
+            return LUASQUARE_CONTROL.Request('pre_annihilation_cancel', 'press', {actor = actor, owner = 'display'}) ~= nil
+        end
     })
     LUASQUARE_3D2D.RegisterAction('dfr.core_pulse', {
         label = 'Pulse core presentation',
         cooldown = 0.5,
-        callback = function()
-            local sphere = DFR.PulseCoreVisual and DFR.PulseCoreVisual('core_sphere')
-            local shield = DFR.PulseCoreVisual and DFR.PulseCoreVisual('core_shield')
-            return sphere or shield
+        callback = function(actor)
+            return LUASQUARE_CONTROL.Request('core_pulse', 'press', {actor = actor, owner = 'display'}) ~= nil
         end
     })
 

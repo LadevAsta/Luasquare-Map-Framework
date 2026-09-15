@@ -499,6 +499,13 @@ local function callAction(run, component, clip, phase, value)
     touch(run, component)
     local ok, result = pcall(callback, component.context, params, value, run, clip, phase)
     if not ok then return false, result end
+    if type(result) == 'table' and result.controlRequestId then
+        run.controlRequests = run.controlRequests or {}
+        local pending = {id = result.controlRequestId, clipId = clip.id, required = clip.required,
+            request = LUASQUARE_CONTROL and LUASQUARE_CONTROL.GetRequest(result.controlRequestId)}
+        table.insert(run.controlRequests, pending)
+        return true, nil, pending
+    end
     return result ~= false, result == false and 'action returned false' or nil
 end
 
@@ -510,9 +517,13 @@ end
 local function runMarker(run, clip)
     local targets = resolveTargets(run, clip.target)
     local success = 0
+    local group = {clipId = clip.id, required = clip.required, minimum = requiredSuccess(clip, #targets),
+        completed = 0, remaining = 0}
     for _, component in ipairs(targets) do
-        local ok = callAction(run, component, clip, 'execute')
+        local ok, _, pending = callAction(run, component, clip, 'execute')
         if ok then success = success + 1 end
+        if pending then pending.group = group; group.remaining = group.remaining + 1
+        elseif ok then group.completed = group.completed + 1 end
     end
     return success >= requiredSuccess(clip, #targets), success
 end
@@ -643,6 +654,17 @@ end
 
 function TIMELINE.StartCompiled(ownerId, localName, definition, context, options)
     options = options or {}
+    if options.preview or (tonumber(options.seekTo) or 0) > 0 then
+        local candidate = {ownerId = ownerId, context = context or {}, definition = definition}
+        for _, clip in ipairs(definition.clips or {}) do
+            for _, component in ipairs(resolveTargets(candidate, clip.target)) do
+                if component.type == 'control' then
+                    return false, options.preview and 'controls are excluded from timeline live preview'
+                        or 'control markers cannot reconstruct from a nonzero playhead'
+                end
+            end
+        end
+    end
     if options.preview then
         local previewComponent = TIMELINE.Components[ownerId]
         if not previewComponent or type(previewComponent.safeReset) ~= 'function' then
@@ -682,6 +704,7 @@ function TIMELINE.StartCompiled(ownerId, localName, definition, context, options
     local run = {
         id = key,
         runId = key .. '#' .. TIMELINE.RunSerial,
+        controlOwner = 'timeline.' .. TIMELINE.RunSerial,
         ownerId = ownerId,
         localName = localName,
         channel = options.channel or definition.channel,
@@ -757,6 +780,9 @@ local function cancelClipStates(run)
 end
 
 local function cancelChildren(run, reason)
+    if LUASQUARE_CONTROL then
+        for _, pending in ipairs(run.controlRequests or {}) do LUASQUARE_CONTROL.CancelRequest(pending.id) end
+    end
     for _, child in ipairs(run.children or {}) do
         if TIMELINE.IsRunning(child) then TIMELINE.CancelRun(child, reason or 'parent ended') end
     end
@@ -893,6 +919,10 @@ local function processDueClip(run, clip, current)
 end
 
 local function hasPendingClips(run)
+    for _, pending in ipairs(run.controlRequests or {}) do
+        local request = pending.request or LUASQUARE_CONTROL and LUASQUARE_CONTROL.GetRequest(pending.id)
+        if request and not LUASQUARE_CONTROL.IsTerminal(request) then return true end
+    end
     for _, clip in ipairs(run.definition.clips) do
         local state = run.clipStates[clip.id]
         if clip.at <= run.definition.duration and (not state or not state.finished) then
@@ -939,6 +969,30 @@ function TIMELINE.Tick()
                     end
                 end
                 run.seeking = false
+                for _, pending in ipairs(run.controlRequests or {}) do
+                    if not pending.checked then
+                        local request = pending.request or LUASQUARE_CONTROL and LUASQUARE_CONTROL.GetRequest(pending.id)
+                        if not request or LUASQUARE_CONTROL.IsTerminal(request) then
+                            pending.checked = true
+                            local completed = request and request.status == 'completed'
+                            local group = pending.group
+                            if group then
+                                group.remaining = group.remaining - 1
+                                if completed then group.completed = group.completed + 1 end
+                            end
+                            if not completed then
+                                local message = 'control request failed: ' .. pending.clipId .. ': ' .. tostring(request and request.reason or 'request missing')
+                                log(message)
+                            end
+                            if group and group.remaining == 0 and group.completed < group.minimum then
+                                local message = 'control marker completion threshold failed: ' .. pending.clipId
+                                if group.required then TIMELINE.FailRun(run, message); break else log(message) end
+                            elseif not group and not completed and pending.required then
+                                TIMELINE.FailRun(run, 'required control request failed: ' .. pending.clipId); break
+                            end
+                        end
+                    end
+                end
                 if run.status == 'running' and current >= run.definition.duration
                     and not hasPendingClips(run) then
                     TIMELINE.CompleteRun(run)

@@ -389,7 +389,7 @@ function Editor:BuildUI()
     self.Inspector.Paint = paintInspector
     self.Inspector:GetCanvas().Paint = paintInspector
 
-    self.Status = self:Add('DLabel')
+    self.Status = LUASQUARE_EDITOR_THEME.CreateTextArea(self)
     self.Status:Dock(BOTTOM)
     self.Status:SetTall(30)
     self.Status:SetContentAlignment(4)

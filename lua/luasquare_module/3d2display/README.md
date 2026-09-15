@@ -322,3 +322,7 @@ The Themes window opens packed theme packs read-only and saves editable drafts
 under `data/luasquare/3d2display/drafts/_themes/`. Its working theme is simulated
 only in the editor viewport. Copy the completed JSON into
 `data_static/luasquare/3d2display/_themes/` before packing.
+
+## Control Layer operator actions
+
+Operator interactions route through `LUASQUARE_CONTROL`; registered `control.<id>` display actions accept payload `operation` and integer keypad `value`. They retain this engine's server interaction validation. Existing DFR operator display actions also request packed controls. Page navigation remains presentation-only. See [Control Layer](../control/README.md).

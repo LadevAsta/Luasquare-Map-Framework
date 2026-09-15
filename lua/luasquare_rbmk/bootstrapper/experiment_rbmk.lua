@@ -22,6 +22,20 @@ if LUASQUARE_FRAMEWORK_INITIALIZED then
     print('[LUASQUARE FRAMEWORK] BOOTSTRAP SKIPPED!\n[LUASQUARE FRAMEWORK] It already ran for the current map state.')
 return end
 
+-- Run-on-spawn lua_run executes during entity creation, before later brush
+-- buttons have initialized their movement endpoints. Wait for that pass to end.
+if not LUASQUARE_RBMK_BOOTSTRAP_READY then
+    if not timer.Exists('LUASQUARE_RBMK_BOOTSTRAP_DEFER') then
+        timer.Create('LUASQUARE_RBMK_BOOTSTRAP_DEFER', 0, 1, function()
+            LUASQUARE_RBMK_BOOTSTRAP_READY = true
+            local ok, message = pcall(include, 'luasquare_rbmk/bootstrapper/experiment_rbmk.lua')
+            LUASQUARE_RBMK_BOOTSTRAP_READY = nil
+            if not ok then ErrorNoHalt('[LUASQUARE FRAMEWORK] Deferred bootstrap failed: ' .. tostring(message) .. '\n') end
+        end)
+    end
+    return
+end
+
 -- Addon Dependencies
 -- NYI.
 -- Detect if the player (or server) has Luasquare Modules installed. if not, fire a map relay 'relay_NO_LUASQUARE' if mapper made a relay for it.
@@ -37,7 +51,7 @@ include('luasquare_module/timeline/engine.lua') -- JSON timelines and annunciato
 include('luasquare_module/audio/engine.lua') -- Source-driven audio
 include('luasquare_module/annunciator/engine.lua') -- Source-driven annunciator system
 include('luasquare_module/gaugedisplay.lua') -- Gauge display
-include('luasquare_module/keypad_controller.lua') -- Numeric Keypads
+include('luasquare_module/control/engine.lua') -- Source-driven controls and keypads
 include('luasquare_module/rod_selector.lua') -- RBMK Control Rod Selector
 include('luasquare_powerplant/init.lua') -- Balance of plant systems
 include('luasquare_rbmk/init.lua') -- RBMK Core
@@ -179,8 +193,6 @@ RBMK.AddInitialWater(85)
 -- =========================================
 
 local MAPDEF_monitorZoffset = 128
-local MAPDEF_feedwaterTargetPercent = 80
-local MAPDEF_hotwellTargetPercent = 35
 -- Debug monitor positions can be Vector(...) or monitorTarget = 'named_info_target'.
 
 -- Power Grid
@@ -589,7 +601,7 @@ LUASQUARE_PUMP.RegisterPump('feedwater_pump_a', {
     regulate = true,
     regulationMode = 'fill',
     regulationSensor = 'main_steam_separator',
-    regulationTarget = MAPDEF_feedwaterTargetPercent,
+    regulationTarget = 0, -- Reconstructed from the keypad source before simulation starts.
     regulationDeadband = 0.5,
     regulationGain = 0.3,
     regulationMinOutput = 0.1,
@@ -613,7 +625,7 @@ LUASQUARE_PUMP.RegisterPump('feedwater_pump_b', {
     regulate = true,
     regulationMode = 'fill',
     regulationSensor = 'main_steam_separator',
-    regulationTarget = MAPDEF_feedwaterTargetPercent,
+    regulationTarget = 0, -- Reconstructed from the keypad source before simulation starts.
     regulationDeadband = 0.5,
     regulationGain = 0.3,
     regulationMinOutput = 0.1,
@@ -687,7 +699,7 @@ LUASQUARE_PUMP.RegisterPump('hotwell_makeup_pump', {
     regulate = true,
     regulationMode = 'fill',
     regulationSensor = 'hotwell',
-    regulationTarget = MAPDEF_hotwellTargetPercent,
+    regulationTarget = 0, -- Reconstructed from the keypad source before simulation starts.
     regulationDeadband = 2,
     regulationGain = 0.08,
     regulationMinOutput = 0.1,
@@ -1133,7 +1145,7 @@ LUASQUARE_3D2D.RegisterDataProvider('rbmk.fw_flow', function()
             MAPDEF_pumpColumn('FW PUMP B', 'feedwater_pump_b')
         },
         row2 = {
-            MAPDEF_levelTargetColumn('SEP TARGET', separatorLevel, MAPDEF_feedwaterTargetPercent),
+            MAPDEF_levelTargetColumn('SEP TARGET', separatorLevel, LUASQUARE_CONTROL.GetControl('fwlevelctrl') and LUASQUARE_CONTROL.GetControl('fwlevelctrl').acceptedValue or 0),
             MAPDEF_separatorColumn('SEPARATOR', 'main_steam_separator')
         },
         row3 = {
@@ -1312,91 +1324,32 @@ end, {interval = 0.2})
 -- OPERATOR INTERFACES
 -- =========================================
 
-local function MAPDEF_setFeedwaterTarget(percent)
-    MAPDEF_feedwaterTargetPercent = math.Clamp(tonumber(percent) or 0, 0, 100)
-    LUASQUARE_PUMP.SetRegulationTarget('feedwater_pump_a', MAPDEF_feedwaterTargetPercent)
-    LUASQUARE_PUMP.SetRegulationTarget('feedwater_pump_b', MAPDEF_feedwaterTargetPercent)
-end
-
-local function MAPDEF_setHotwellTarget(percent)
-    MAPDEF_hotwellTargetPercent = math.Clamp(tonumber(percent) or 0, 0, 100)
-    LUASQUARE_PUMP.SetRegulationTarget('hotwell_makeup_pump', MAPDEF_hotwellTargetPercent)
-end
-
--- Feedwater pump regulator target keypad, value is RPV water level percent.
 LUASQUARE_SEG7.RegisterDisplay('fwlevelctrl', {
     'fwlevelctrl_0',
     'fwlevelctrl_1',
     'fwlevelctrl_2'
 })
-LUASQUARE_KEYPAD.RegisterKeypad('fwlevelctrl',
-    {
-        maxDigits = 3,
-        maxValue = 100,
-        display = 'fwlevelctrl',
-        initialValue = MAPDEF_feedwaterTargetPercent,
-        clearOnSubmit = false,
-        onSubmit = function(value)
-            MAPDEF_setFeedwaterTarget(value)
-        end
-    }
-)
 
--- Hotwell make-up regulator target keypad, value is hotwell level percent.
 LUASQUARE_SEG7.RegisterDisplay('hotwellctrl', {
     'hotwellctrl_0',
     'hotwellctrl_1',
     'hotwellctrl_2'
 })
-LUASQUARE_KEYPAD.RegisterKeypad('hotwellctrl',
-    {
-        maxDigits = 3,
-        maxValue = 100,
-        display = 'hotwellctrl',
-        initialValue = MAPDEF_hotwellTargetPercent,
-        clearOnSubmit = false,
-        onSubmit = function(value)
-            MAPDEF_setHotwellTarget(value)
-        end
-    }
-)
 
--- Manual Control Rod Keypad and Selector Panel
 LUASQUARE_SEG7.RegisterDisplay('rodctrl', {
     'rodctrl_0',
     'rodctrl_1',
     'rodctrl_2'
 })
-LUASQUARE_KEYPAD.RegisterKeypad('rodctrl',
-    {
-        maxDigits = 3,
-        maxValue = 100,
-        display = 'rodctrl',
-        onSubmit = function(value)
-            LUASQUARE_ROD_SELECTOR.Apply(value)
-        end
-    }
-)
 
--- Automatic Power Regulator target keypad, value is MW thermal.
 LUASQUARE_SEG7.RegisterDisplay('aprctrl', {
     'aprctrl_0',
     'aprctrl_1',
     'aprctrl_2',
     'aprctrl_3'
 })
-LUASQUARE_KEYPAD.RegisterKeypad('aprctrl',
-    {
-        maxDigits = 4,
-        maxValue = 9999,
-        display = 'aprctrl',
-        clearOnSubmit = false,
-        onSubmit = function(value)
-            RBMK.SetAutoRegulatorTargetMW(value)
-            RBMK.SetAutoRegulatorEnabled(value > 0)
-        end
-    }
-)
+
+include('luasquare_rbmk/bootstrapper/experiment_controls.lua')
 
 -- =========================================
 -- ANNUNCIATOR
@@ -1524,6 +1477,9 @@ end, {
 -- =========================================
 -- END DEFINITION
 -- =========================================
+
+local controlsOK, controlsError = LUASQUARE_CONTROL.Start(MAPNAME)
+if not controlsOK then error(controlsError) end
 
 RBMK.Start()
 

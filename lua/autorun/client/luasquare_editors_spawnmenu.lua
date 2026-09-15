@@ -11,6 +11,9 @@ hook.Add('PopulateToolMenu', 'LUASQUARE_EditorsMenu', function()
         panel:Button('Timeline Editor').DoClick = function()
             if LUASQUARE_TIMELINE and LUASQUARE_TIMELINE.Editor then LUASQUARE_TIMELINE.Editor.Open() end
         end
+        panel:Button('Control Layer Editor').DoClick = function()
+            if LUASQUARE_CONTROL and LUASQUARE_CONTROL.Editor then LUASQUARE_CONTROL.Editor.Open() end
+        end
         panel:Button('Annunciator Editor').DoClick = function()
             if LUASQUARE_ANNUNCIATOR and LUASQUARE_ANNUNCIATOR.Editor then
                 LUASQUARE_ANNUNCIATOR.Editor.Open()

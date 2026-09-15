@@ -16,7 +16,10 @@ luasquare_module
             - Packed sources live in map-owned data_static; editor drafts live in data/.
             - Runtime values/actions are named server registrations, never source Lua.
         gaugedisplay.lua (Source entity gauge display driver) [existing]
-        keypad_controller.lua (numeric keypad state and callbacks) [existing]
+        control/ (JSON compiler, authoritative physical/virtual controls, owned keypads/targets,
+            requests/owner locks/faults/history, display/timeline adapters and admin editor) [implemented; rebuilt-map acceptance pending]
+            - Map-owned luasquare.control/v1 sources replace controlbinding.lua and keypad_controller.lua.
+            - Actual/accepted positions are separate; combined presses lock on the next tick without bypass.
         seg7display.lua (skin-based pseudo 7-segment displays) [existing]
         annunciator/ (v1 JSON compiler, authoritative lifecycle/audio runtime, bounded networking,
             3D2D/timeline actions, client state, and admin editor) [implemented]
@@ -52,10 +55,11 @@ luasquare_module
         - Later should support listening to Source outputs as well as firing Source inputs.
         - Current prototype supports first/all entity resolution for shared targetnames and Source input firing.
 
-    controlbinding.lua (Lua-authoritative Hammer control model) [prototype implemented in luasquare_module/controlbinding.lua]
-        - Defines controls, allowed states, cooldown/lock, callbacks, logical state.
-        - Can fire Source inputs to lock/unlock, force press, reset, animate, or reject controls.
-        - Should stay generic; DFR only registers control instances.
+    control/ (shared JSON-driven Control Layer) [implemented; replaces removed prototype]
+        - Trusted registrations own behavior; map JSON owns control instances and keypads.
+        - One keypad member declares mandatory digit/submit keys and optional clear/backspace; compiler owns physical subcomponents.
+        - Server validates physical outputs, actor context, owner locks and asynchronous requests.
+        - RBMK/DFR operators use this layer; local previews are isolated from packed gameplay.
 
     machinery.lua (Hammer movable entity controller) [prototype implemented in luasquare_module/machinery.lua]
         - Controls func_tracktrain, func_rotating, func_door_rotating, func_movelinear, doors, relays.
@@ -212,7 +216,7 @@ Map repository bootstrapper scripts
 Migration notes
     - Move generic DFR prototypes into luasquare_module:
         runtime/binding.lua -> luasquare_module/sourcebinding.lua
-        runtime/control.lua -> luasquare_module/controlbinding.lua
+        runtime/control.lua -> luasquare_module/control/ (complete; DFR retains trusted reactor actions/predicates)
         runtime/machinery.lua -> luasquare_module/machinery.lua
         DFR.Log parts -> luasquare_module/logging.lua
         DFR.Halt/tick safety parts -> luasquare_module/runtime.lua

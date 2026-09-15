@@ -131,3 +131,7 @@ Packed sources open read-only. Save one as a draft before editing. The component
 Simulation preview changes only the editor playhead. Live preview requires confirmation, rejects production channel conflicts, and invokes real component actions. Every live-previewable component must provide `safeReset`; preview stop, failure, editor closure, cleanup, or completion invokes that reset. This is a safe-state reset, not an exact restoration of prior entity state.
 
 Reference audio is client-side editor metadata. It uses a seekable `IGModAudioChannel`, is removed from live-preview uploads, and never becomes a runtime sound action. Audio bytes are never networked.
+
+## Control Layer request markers
+
+Packed controls register `control.<id>` components with lowercase marker actions, including `presslock`, `pressinlock`, `pressoutlock`, and integer keypad `submitvalue`. Their asynchronous terminal results determine marker success thresholds; required expiry/failure fails the run, optional failures log diagnostics, and cancellation removes pending requests. Runs wait for outstanding requests. Control markers reject nonzero seek and live preview; use the Control Editor for packed live testing. Orchestration may release its independent locks with `LUASQUARE_CONTROL.UnlockOwner(run.controlOwner)`. See [Control Layer](../control/README.md).

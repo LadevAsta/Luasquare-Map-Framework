@@ -258,10 +258,8 @@ function PANEL:Init()
         button.DoClick = states[name]
     end
 
-    self.Diagnostics = self.Center:Add('DTextEntry')
+    self.Diagnostics = LUASQUARE_EDITOR_THEME.CreateTextArea(self.Center)
     self.Diagnostics:Dock(FILL)
-    self.Diagnostics:SetMultiline(true)
-    self.Diagnostics:SetEditable(false)
 
     self.Right = self.Body:Add('DScrollPanel')
     self.Right:Dock(RIGHT)

@@ -422,7 +422,7 @@ function EditorPanel:Init()
     self.Inspector = self.Right:Add('DScrollPanel')
     self.Right:SetRight(self.Inspector)
 
-    self.Status = self:Add('DLabel')
+    self.Status = LUASQUARE_EDITOR_THEME.CreateTextArea(self)
     self.Status:Dock(BOTTOM)
     self.Status:SetTall(42)
     self.Status:SetWrap(true)

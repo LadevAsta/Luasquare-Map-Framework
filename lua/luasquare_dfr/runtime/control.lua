@@ -1,46 +1,18 @@
 DFR = DFR or {}
-if not LUASQUARE_CONTROLBINDING then include('luasquare_module/controlbinding.lua') end
+local CONTROL = LUASQUARE_CONTROL
 
-DFR.ControlRegistry = LUASQUARE_CONTROLBINDING.CreateRegistry('DFR', {
-    time = function() return DFR.GetTime() end,
-    getState = function() return DFR.GetState() end,
-    isHalted = function() return DFR.Halted and true or false end,
-    log = function(message) DFR.Log(message) end,
-    halt = function(reason) DFR.Halt(reason) end,
-    actorName = function(actor) return DFR.GetActorName(actor) end,
-    defaultLockSeconds = DFR.Config.DefaultControlLockSeconds
-})
-
-DFR.Controls = DFR.ControlRegistry.Controls
-
-function DFR.RegisterControl(id, data)
-    return DFR.ControlRegistry:Register(id, data)
-end
-
-function DFR.IsControlAvailable(id)
-    return DFR.ControlRegistry:IsAvailable(id)
-end
-
-function DFR.GetControlUnavailableReason(id)
-    return DFR.ControlRegistry:GetUnavailableReason(id)
-end
-
-function DFR.LockControl(id, owner, reason)
-    return DFR.ControlRegistry:Lock(id, owner, reason)
-end
-
-function DFR.UnlockControl(id, owner)
-    return DFR.ControlRegistry:Unlock(id, owner)
-end
-
-function DFR.UnlockControlsByOwner(owner)
-    return DFR.ControlRegistry:UnlockOwner(owner)
-end
-
-function DFR.UseControl(id, activator, value)
-    return DFR.ControlRegistry:Use(id, activator, value)
-end
-
-function DFR.GetControlSnapshot()
-    return DFR.ControlRegistry:GetSnapshot()
+-- Trusted reactor behavior only. Map control instances are owned by JSON packs.
+function DFR.RegisterOperatorAction(id, definition)
+    local actionId = 'dfr.' .. id
+    CONTROL.RegisterAction(actionId, {label = definition.label or id, parameters = {},
+        callback = function(actor, _, control) return definition.callback(actor, nil, control) end})
+    CONTROL.RegisterPredicate(actionId, {label = definition.label or id, parameters = {},
+        callback = function(_, _, control)
+            if DFR.Halted then return false, 'DFR simulation halted' end
+            local states = definition.allowedStates
+            if states and not states[DFR.GetState()] then return false, 'unavailable in current DFR state' end
+            if definition.canUse then return definition.canUse(control) end
+            return true
+        end})
+    return true
 end

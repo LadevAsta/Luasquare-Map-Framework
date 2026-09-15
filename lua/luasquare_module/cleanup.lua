@@ -131,6 +131,7 @@ local function resetRuntime(reason)
     -- Let timeline owners restore their own machinery and presentation while
     -- the component registries and map entities are still available.
     cancelRuntimeTimelines(reason)
+    if LUASQUARE_CONTROL and LUASQUARE_CONTROL.Stop then LUASQUARE_CONTROL.Stop() end
     -- Stop client music, Source loops, PA queues, subtitles, and soundscapes
     -- before their catalog and cached entity references are discarded.
     resetRuntimeAudio(reason)

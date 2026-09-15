@@ -15,6 +15,16 @@ This file applies to the entire repository. Luasquare is an actively developed G
 
 When documentation and code disagree, establish what the runtime currently does before editing. Treat the current consolidated data paths under `data_static/luasquare/` as canonical. Report stale documentation rather than copying an obsolete path into new code.
 
+## Token efficiency
+
+- Read and follow C:\Users\chang\.codex\RTK.md.
+- Use RTK for supported shell commands. Use `rtk proxy` when complete, unfiltered output is needed.
+- Use Headroom's MCP compression selectively for large, repetitive content when it reduces total context usage.
+- Do not resend content already read merely to compress it.
+- Retrieve original content whenever omitted details are needed for editing, debugging, or verification.
+- Preserve required documentation reads, complete source inspection, diagnostics, and validation.
+- If either tool is unavailable, report it briefly and continue with normal tools.
+
 ## Architecture boundaries
 
 - `lua/luasquare_module/` is reusable Garry's Mod map-simulation infrastructure. It must not know DFR or map-specific targetnames.
@@ -80,11 +90,16 @@ Most APIs live in persistent global namespaces such as `LUASQUARE_3D2D`, `LUASQU
 - Do not hand-edit compiled models, textures, audio, or BSP binary output. Edit source assets or the scripts under `tools/` and regenerate only when the task requires it. Treat `maps/experiment_rbmk.vmf` as map source and `maps/experiment_rbmk.bsp` as compiled output.
 
 ## In-game Editor standards
+- When developing in-game gui editor, see documentation on https://wiki.facepunch.com/gmod/VGUI_Element_List for available elements to be used. The design should empathize the user.
 - All editor GUIs shall use gray and dark-gray surfaces with white text. Avoid white controls and white title/tool bars background because default light-gray text becomes difficult to read.
-- Editors shall not have locked gui window and can be vgui-natively drag-rescaled, set fullscreen/windowed via top right buttons, or dragged around. Unless explicitly stated otherwise in the task.
-- Editors shall have a separate subwindow for finding, loading, and saving packed sources and drafts.
+- Editors shall not have locked gui window and have drag-rescale enabled, Unless explicitly stated otherwise in the task.
+- New vgui have disabled fullscreen/windowed icon button disabled by default, if editor needs a fullscreen/windowed option, enable that button rather than inventing a new one.
+- Editors shall have a separate subwindow for creating, finding, loading, and saving packed sources and drafts.
 - Editors shall prefer searchable, categorized asset browsers over dropdowns when selecting registered assets whose catalogs may grow substantially.
-- Editor diagnostics and informational hints shall print to the console (and may also use an in-window status area); do not use notification or message popups which has been confirmed to be occluded by editor windows when testing. onfirmation dialogs that require an explicit user choice remain appropriate. do note that console is only accessible after editor is closed. otherwise they are occluded as well. Important hints and diagnostics should use an in-window status area.
+- To prevent subwindow being occluded by the main window when the main window is focused, make the subwindow focus itself when cursor is hovered above.
+- AVOID relying too much on freeform text input fields in editor such as JSON, or input fields that can obviously replaced with dropdowns for example, When choosing Enums, choosing cases, choosing type, choosing kind. This is to avoid author error.
+- Text fields that should only accept numbers should just use DNumberWang. If the value may be large, make it wide too.
+- Editor diagnostics and informational hints shall print to the console (and may also use a scrollable in-window status area); do not use notification or message popups which has been confirmed to be occluded by editor windows when testing. confirmation dialogs that require an explicit user choice remain appropriate. do note that console is only accessible after editor is closed. otherwise they are occluded as well. Important hints and diagnostics should use an in-window status area.
 
 ## Validation
 
@@ -96,6 +111,10 @@ Always perform available static checks:
 - Verify server/client inclusion and `AddCSLuaFile` paths for every new Lua file.
 - Check cleanup registration and late-join synchronization for new persistent or networked state.
 
+VMF source editing, BSP Rebuilds and Real in-game testing are Manual workflow on user's side.
+So, when the testing needs to edit the map vmf, provide a list of needed change or new things to add to the user so that the changes are developed properly in Hammer++ Editor.
+DO NOT directly edit the vmf as this expose the risks of vmf corruption and user may lose track of the change.
+IF vmf edit is prompted make sure that it will not corrupt the vmf structure, and do not attempt to edit world geometry at all.
 For in-game verification, Tell the user to test it in a real Garry's Mod map session, provide a numbered list of testing needed. (What need to be tested? And how it is tested while considering the available gameplay implementation or tool or debug utilities).
 
 ## Documentation and handoff
