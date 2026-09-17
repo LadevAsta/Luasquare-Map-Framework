@@ -17,7 +17,7 @@ When documentation and code disagree, establish what the runtime currently does 
 
 ## Token efficiency
 
-- Read and follow C:\Users\chang\.codex\RTK.md.
+- Read and follow RTK.md, the path is as the instruction.
 - Use RTK for supported shell commands. Use `rtk proxy` when complete, unfiltered output is needed.
 - Use Headroom's MCP compression selectively for large, repetitive content when it reduces total context usage.
 - Do not resend content already read merely to compress it.
