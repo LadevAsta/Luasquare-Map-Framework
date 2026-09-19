@@ -354,6 +354,8 @@ end
 
 local function addToOverflowTarget(target, amount, temperature)
     amount = math.max(tonumber(amount) or 0, 0)
+    local endpoint = LUASQUARE_ENDPOINT and LUASQUARE_ENDPOINT.Get(target)
+    if endpoint then return endpoint.add and endpoint.add(amount, 0, temperature) or 0 end
     if target == 'void' or target == nil then return amount end
     if LUASQUARE_FLUID and LUASQUARE_FLUID.GetNetwork(target) then
         return LUASQUARE_FLUID.AddFluid(target, amount, temperature)

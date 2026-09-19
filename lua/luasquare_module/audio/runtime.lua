@@ -347,9 +347,19 @@ local function loadDirectory(root)
     return count
 end
 
-function AUDIO.LoadMapSources(mapName)
+function AUDIO.LoadMapSources(mapName, deferStart)
     AUDIO.Sources = {}
     AUDIO.SourceDiagnostics = {}
+    if AUDIO.ManifestSources then
+        for _, path in ipairs(AUDIO.ManifestSources) do
+            local ok, err = AUDIO.LoadSource(path, true)
+            if not ok then return false, err end
+        end
+        local _, diagnostics = AUDIO.RebuildCatalog()
+        if AUDIO.HasErrors(diagnostics) then return false, AUDIO.DiagnosticsText(diagnostics) end
+        if not deferStart then AUDIO.Start() end
+        return #AUDIO.ManifestSources
+    end
     local count = loadDirectory(AUDIO.SourceRoot .. '/_shared')
     local map = string.lower(tostring(mapName or game.GetMap() or ''))
     if map ~= '' then
@@ -1076,4 +1086,4 @@ function AUDIO.Reset(reason)
     return true
 end
 
-AUDIO.Start()
+if not (LUASQUARE_MAP and LUASQUARE_MAP.LoadingPackages) then AUDIO.Start() end

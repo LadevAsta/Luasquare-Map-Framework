@@ -2652,7 +2652,9 @@ function EditorPanel:RebuildInspectorLegacy()
         self:AddVariantEditor(object)
         self:AddFeatureButton(object, 'element')
     elseif selection.kind == 'line' then
-        self:AddChoiceField('Line type', object, 'type', {'text', 'value', 'bar', 'phase', 'graph', 'columns'}, 'text')
+        local lineTypes = {'text', 'value', 'bar', 'phase', 'graph'}
+        if self.Session.source.buildMode ~= 'simple' then lineTypes[#lineTypes + 1] = 'columns' end
+        self:AddChoiceField('Line type', object, 'type', lineTypes, 'text')
         self:AddTextField('Label / text', object, object.type == 'text' and 'text' or 'label')
         self:AddBindingField('Provider value binding', object, 'value')
         if object.type == 'value' or object.type == 'bar' or object.type == 'phase' or object.type == 'graph' then
@@ -2836,7 +2838,9 @@ function EditorPanel:RebuildInspector()
         self:EndInspectorCategory()
     elseif kind == 'line' then
         self:BeginInspectorCategory('Content', 'line.content', true)
-        self:AddChoiceField('Line type', object, 'type', {'text', 'value', 'bar', 'phase', 'graph', 'columns'}, 'text')
+        local lineTypes = {'text', 'value', 'bar', 'phase', 'graph'}
+        if self.Session.source.buildMode ~= 'simple' then lineTypes[#lineTypes + 1] = 'columns' end
+        self:AddChoiceField('Line type', object, 'type', lineTypes, 'text')
         self:AddTextField('Label / text', object, object.type == 'text' and 'text' or 'label')
         if object.type == 'value' or object.type == 'bar' or object.type == 'phase' or object.type == 'graph' then
             self:AddNumberField('Decimals', object, 'decimals', 0, 8, 0, 0) self:AddTextField('Unit', object, 'unit')

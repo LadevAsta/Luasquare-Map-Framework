@@ -10,11 +10,11 @@
       "maxValue": 9999,
       "initialValue": 0,
       "clearOnSubmit": false,
-      "display": "aprctrl",
+      "display": "reference.instrument.aprctrl",
       "cooldown": 0.25,
       "actions": {
         "submit": {
-          "id": "rbmk.apr_target",
+          "id": "reference.apr_target",
           "params": {}
         }
       },
@@ -42,10 +42,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.feedwater_pump_a.speed",
           "params": {
-            "name": "feedwater_pump_a",
-            "level": 2
+            "value": 2
           }
         }
       }
@@ -59,10 +58,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.feedwater_pump_a.speed",
           "params": {
-            "name": "feedwater_pump_a",
-            "level": 3
+            "value": 3
           }
         }
       }
@@ -76,10 +74,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.feedwater_pump_a.speed",
           "params": {
-            "name": "feedwater_pump_a",
-            "level": 4
+            "value": 4
           }
         }
       }
@@ -93,10 +90,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.feedwater_pump_b.speed",
           "params": {
-            "name": "feedwater_pump_b",
-            "level": 4
+            "value": 4
           }
         }
       }
@@ -110,10 +106,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.feedwater_pump_b.speed",
           "params": {
-            "name": "feedwater_pump_b",
-            "level": 3
+            "value": 3
           }
         }
       }
@@ -127,10 +122,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.feedwater_pump_b.speed",
           "params": {
-            "name": "feedwater_pump_b",
-            "level": 2
+            "value": 2
           }
         }
       }
@@ -144,7 +138,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.alarm_reset",
+          "id": "reference.alarms.reset",
           "params": {}
         }
       }
@@ -158,7 +152,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.alarm_ack",
+          "id": "reference.alarms.ack",
           "params": {}
         }
       }
@@ -172,7 +166,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.alarm_mute",
+          "id": "reference.alarms.mute",
           "params": {}
         }
       }
@@ -186,7 +180,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.alarm_test",
+          "id": "reference.alarms.test",
           "params": {}
         }
       }
@@ -200,10 +194,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.circulating_water_pump_a1.speed",
           "params": {
-            "name": "circulating_water_pump_a1",
-            "level": 4
+            "value": 4
           }
         }
       }
@@ -217,10 +210,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.circulating_water_pump_a1.speed",
           "params": {
-            "name": "circulating_water_pump_a1",
-            "level": 1
+            "value": 1
           }
         }
       }
@@ -234,10 +226,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.circulating_water_pump_a1.speed",
           "params": {
-            "name": "circulating_water_pump_a1",
-            "level": 2
+            "value": 2
           }
         }
       }
@@ -251,10 +242,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.circulating_water_pump_a1.speed",
           "params": {
-            "name": "circulating_water_pump_a1",
-            "level": 3
+            "value": 3
           }
         }
       }
@@ -268,7 +258,7 @@
       "cooldown": 0.25,
       "actions": {
         "out": {
-          "id": "rbmk.neutron_source",
+          "id": "reference.neutron_source",
           "params": {
             "x": 3,
             "y": 5,
@@ -276,7 +266,7 @@
           }
         },
         "in": {
-          "id": "rbmk.neutron_source",
+          "id": "reference.neutron_source",
           "params": {
             "x": 3,
             "y": 5,
@@ -294,10 +284,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.turbine_valve",
+          "id": "reference.tg1.valve",
           "params": {
-            "name": "tg1",
-            "percent": -5
+            "value": -5
           }
         }
       }
@@ -311,10 +300,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.turbine_valve",
+          "id": "reference.tg1.valve",
           "params": {
-            "name": "tg1",
-            "percent": 5
+            "value": 5
           }
         }
       }
@@ -328,10 +316,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.turbine_bypass",
+          "id": "reference.tg1.bypass",
           "params": {
-            "name": "tg1",
-            "percent": 5
+            "value": 5
           }
         }
       }
@@ -345,10 +332,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.turbine_bypass",
+          "id": "reference.tg1.bypass",
           "params": {
-            "name": "tg1",
-            "percent": -5
+            "value": -5
           }
         }
       }
@@ -362,7 +348,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.rod_toggle",
+          "id": "reference.rod_toggle",
           "params": {
             "name": "U1"
           }
@@ -378,7 +364,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.rod_toggle",
+          "id": "reference.rod_toggle",
           "params": {
             "name": "U2"
           }
@@ -394,7 +380,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.rod_toggle",
+          "id": "reference.rod_toggle",
           "params": {
             "name": "U3"
           }
@@ -410,7 +396,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.rod_toggle",
+          "id": "reference.rod_toggle",
           "params": {
             "name": "U4"
           }
@@ -426,10 +412,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.turbine_bypass",
+          "id": "reference.tg1.bypass",
           "params": {
-            "name": "tg1",
-            "percent": 1
+            "value": 1
           }
         }
       }
@@ -443,10 +428,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.turbine_bypass",
+          "id": "reference.tg1.bypass",
           "params": {
-            "name": "tg1",
-            "percent": -1
+            "value": -1
           }
         }
       }
@@ -460,10 +444,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.turbine_bypass",
+          "id": "reference.tg1.bypass",
           "params": {
-            "name": "tg1",
-            "percent": 0.1
+            "value": 0.1
           }
         }
       }
@@ -477,10 +460,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.turbine_bypass",
+          "id": "reference.tg1.bypass",
           "params": {
-            "name": "tg1",
-            "percent": -0.1
+            "value": -0.1
           }
         }
       }
@@ -494,10 +476,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.turbine_valve",
+          "id": "reference.tg1.valve",
           "params": {
-            "name": "tg1",
-            "percent": -1
+            "value": -1
           }
         }
       }
@@ -511,10 +492,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.turbine_valve",
+          "id": "reference.tg1.valve",
           "params": {
-            "name": "tg1",
-            "percent": 1
+            "value": 1
           }
         }
       }
@@ -528,10 +508,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.turbine_valve",
+          "id": "reference.tg1.valve",
           "params": {
-            "name": "tg1",
-            "percent": -0.1
+            "value": -0.1
           }
         }
       }
@@ -545,10 +524,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.turbine_valve",
+          "id": "reference.tg1.valve",
           "params": {
-            "name": "tg1",
-            "percent": 0.1
+            "value": 0.1
           }
         }
       }
@@ -562,7 +540,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.rod_clear",
+          "id": "reference.rod_clear",
           "params": {}
         }
       }
@@ -576,7 +554,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.alarm_reset",
+          "id": "reference.alarms.reset",
           "params": {}
         }
       }
@@ -590,7 +568,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.alarm_ack",
+          "id": "reference.alarms.ack",
           "params": {}
         }
       }
@@ -604,17 +582,15 @@
       "cooldown": 0.25,
       "actions": {
         "out": {
-          "id": "rbmk.valve",
+          "id": "reference.hotwell_drain_valve.enabled",
           "params": {
-            "name": "hotwell_drain_valve",
-            "enabled": false
+            "value": false
           }
         },
         "in": {
-          "id": "rbmk.valve",
+          "id": "reference.hotwell_drain_valve.enabled",
           "params": {
-            "name": "hotwell_drain_valve",
-            "enabled": true
+            "value": true
           }
         }
       }
@@ -628,17 +604,15 @@
       "cooldown": 0.25,
       "actions": {
         "out": {
-          "id": "rbmk.transformer",
+          "id": "reference.startup_station_transformer.enabled",
           "params": {
-            "name": "startup_station_transformer",
-            "enabled": false
+            "value": false
           }
         },
         "in": {
-          "id": "rbmk.transformer",
+          "id": "reference.startup_station_transformer.enabled",
           "params": {
-            "name": "startup_station_transformer",
-            "enabled": true
+            "value": true
           }
         }
       }
@@ -652,10 +626,8 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.turbine_repair",
-          "params": {
-            "name": "tg1"
-          }
+          "id": "reference.tg1.repair",
+          "params": {}
         }
       }
     },
@@ -668,10 +640,8 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.turbine_extreme_trip",
-          "params": {
-            "name": "tg1"
-          }
+          "id": "reference.tg1.extreme_trip",
+          "params": {}
         }
       }
     },
@@ -684,17 +654,15 @@
       "cooldown": 0.25,
       "actions": {
         "out": {
-          "id": "rbmk.transformer",
+          "id": "reference.station_generator_transformer.enabled",
           "params": {
-            "name": "station_generator_transformer",
-            "enabled": false
+            "value": false
           }
         },
         "in": {
-          "id": "rbmk.transformer",
+          "id": "reference.station_generator_transformer.enabled",
           "params": {
-            "name": "station_generator_transformer",
-            "enabled": true
+            "value": true
           }
         }
       }
@@ -708,17 +676,15 @@
       "cooldown": 0.25,
       "actions": {
         "out": {
-          "id": "rbmk.diesel",
+          "id": "reference.edg1.enabled",
           "params": {
-            "name": "edg1",
-            "enabled": false
+            "value": false
           }
         },
         "in": {
-          "id": "rbmk.diesel",
+          "id": "reference.edg1.enabled",
           "params": {
-            "name": "edg1",
-            "enabled": true
+            "value": true
           }
         }
       }
@@ -732,17 +698,15 @@
       "cooldown": 0.25,
       "actions": {
         "out": {
-          "id": "rbmk.generator_auto_sync",
+          "id": "reference.tg1_generator.auto_sync",
           "params": {
-            "name": "tg1_generator",
-            "enabled": false
+            "value": false
           }
         },
         "in": {
-          "id": "rbmk.generator_auto_sync",
+          "id": "reference.tg1_generator.auto_sync",
           "params": {
-            "name": "tg1_generator",
-            "enabled": true
+            "value": true
           }
         }
       }
@@ -756,17 +720,15 @@
       "cooldown": 0.25,
       "actions": {
         "out": {
-          "id": "rbmk.transformer",
+          "id": "reference.station_control_room_transformer.enabled",
           "params": {
-            "name": "station_control_room_transformer",
-            "enabled": false
+            "value": false
           }
         },
         "in": {
-          "id": "rbmk.transformer",
+          "id": "reference.station_control_room_transformer.enabled",
           "params": {
-            "name": "station_control_room_transformer",
-            "enabled": true
+            "value": true
           }
         }
       }
@@ -780,17 +742,15 @@
       "cooldown": 0.25,
       "actions": {
         "out": {
-          "id": "rbmk.transformer",
+          "id": "reference.generator_export_transformer.enabled",
           "params": {
-            "name": "generator_export_transformer",
-            "enabled": false
+            "value": false
           }
         },
         "in": {
-          "id": "rbmk.transformer",
+          "id": "reference.generator_export_transformer.enabled",
           "params": {
-            "name": "generator_export_transformer",
-            "enabled": true
+            "value": true
           }
         }
       }
@@ -804,10 +764,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.condensate_pump_a1.speed",
           "params": {
-            "name": "condensate_pump_a1",
-            "level": 1
+            "value": 1
           }
         }
       }
@@ -821,10 +780,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.condensate_pump_a1.speed",
           "params": {
-            "name": "condensate_pump_a1",
-            "level": 2
+            "value": 2
           }
         }
       }
@@ -838,10 +796,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.condensate_pump_a1.speed",
           "params": {
-            "name": "condensate_pump_a1",
-            "level": 3
+            "value": 3
           }
         }
       }
@@ -855,10 +812,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.condensate_pump_a1.speed",
           "params": {
-            "name": "condensate_pump_a1",
-            "level": 4
+            "value": 4
           }
         }
       }
@@ -872,10 +828,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.deaerator_steam",
+          "id": "reference.main_deaerator.steam",
           "params": {
-            "name": "main_deaerator",
-            "percent": 1
+            "value": 1
           }
         }
       }
@@ -889,10 +844,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.deaerator_steam",
+          "id": "reference.main_deaerator.steam",
           "params": {
-            "name": "main_deaerator",
-            "percent": -1
+            "value": -1
           }
         }
       }
@@ -906,10 +860,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.deaerator_relief",
+          "id": "reference.main_deaerator.relief",
           "params": {
-            "name": "main_deaerator",
-            "percent": 1
+            "value": 1
           }
         }
       }
@@ -923,10 +876,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.deaerator_relief",
+          "id": "reference.main_deaerator.relief",
           "params": {
-            "name": "main_deaerator",
-            "percent": -1
+            "value": -1
           }
         }
       }
@@ -940,17 +892,15 @@
       "cooldown": 0.25,
       "actions": {
         "out": {
-          "id": "rbmk.deaerator_auto",
+          "id": "reference.main_deaerator.auto",
           "params": {
-            "name": "main_deaerator",
-            "enabled": false
+            "value": false
           }
         },
         "in": {
-          "id": "rbmk.deaerator_auto",
+          "id": "reference.main_deaerator.auto",
           "params": {
-            "name": "main_deaerator",
-            "enabled": true
+            "value": true
           }
         }
       }
@@ -964,17 +914,15 @@
       "cooldown": 0.25,
       "actions": {
         "out": {
-          "id": "rbmk.pump_enabled",
+          "id": "reference.cooling_water_makeup_pump.enabled",
           "params": {
-            "name": "cooling_water_makeup_pump",
-            "enabled": false
+            "value": false
           }
         },
         "in": {
-          "id": "rbmk.pump_enabled",
+          "id": "reference.cooling_water_makeup_pump.enabled",
           "params": {
-            "name": "cooling_water_makeup_pump",
-            "enabled": true
+            "value": true
           }
         }
       }
@@ -988,17 +936,15 @@
       "cooldown": 0.25,
       "actions": {
         "out": {
-          "id": "rbmk.pump_enabled",
+          "id": "reference.hotwell_makeup_pump.enabled",
           "params": {
-            "name": "hotwell_makeup_pump",
-            "enabled": false
+            "value": false
           }
         },
         "in": {
-          "id": "rbmk.pump_enabled",
+          "id": "reference.hotwell_makeup_pump.enabled",
           "params": {
-            "name": "hotwell_makeup_pump",
-            "enabled": true
+            "value": true
           }
         }
       }
@@ -1012,7 +958,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.rod_group",
+          "id": "reference.rod_group",
           "params": {
             "name": "yellow"
           }
@@ -1028,7 +974,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.rod_group",
+          "id": "reference.rod_group",
           "params": {
             "name": "red"
           }
@@ -1044,10 +990,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.main_circulation_pump_a.speed",
           "params": {
-            "name": "main_circulation_pump_a",
-            "level": 2
+            "value": 2
           }
         }
       }
@@ -1061,10 +1006,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.main_circulation_pump_a.speed",
           "params": {
-            "name": "main_circulation_pump_a",
-            "level": 3
+            "value": 3
           }
         }
       }
@@ -1078,10 +1022,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.main_circulation_pump_a.speed",
           "params": {
-            "name": "main_circulation_pump_a",
-            "level": 4
+            "value": 4
           }
         }
       }
@@ -1095,7 +1038,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.rod_toggle",
+          "id": "reference.rod_toggle",
           "params": {
             "name": "R1"
           }
@@ -1111,7 +1054,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.rod_toggle",
+          "id": "reference.rod_toggle",
           "params": {
             "name": "R2"
           }
@@ -1127,10 +1070,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.main_circulation_pump_b.speed",
           "params": {
-            "name": "main_circulation_pump_b",
-            "level": 2
+            "value": 2
           }
         }
       }
@@ -1144,10 +1086,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.main_circulation_pump_b.speed",
           "params": {
-            "name": "main_circulation_pump_b",
-            "level": 3
+            "value": 3
           }
         }
       }
@@ -1161,10 +1102,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.main_circulation_pump_b.speed",
           "params": {
-            "name": "main_circulation_pump_b",
-            "level": 4
+            "value": 4
           }
         }
       }
@@ -1178,7 +1118,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.rod_toggle",
+          "id": "reference.rod_toggle",
           "params": {
             "name": "R3"
           }
@@ -1194,7 +1134,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.rod_toggle",
+          "id": "reference.rod_toggle",
           "params": {
             "name": "R4"
           }
@@ -1210,7 +1150,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.rod_toggle",
+          "id": "reference.rod_toggle",
           "params": {
             "name": "R5"
           }
@@ -1226,7 +1166,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.rod_toggle",
+          "id": "reference.rod_toggle",
           "params": {
             "name": "R6"
           }
@@ -1242,7 +1182,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.rod_toggle",
+          "id": "reference.rod_toggle",
           "params": {
             "name": "R7"
           }
@@ -1258,7 +1198,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.rod_toggle",
+          "id": "reference.rod_toggle",
           "params": {
             "name": "R8"
           }
@@ -1274,7 +1214,7 @@
       "cooldown": 0.25,
       "actions": {
         "out": {
-          "id": "rbmk.reflector",
+          "id": "reference.reflector",
           "params": {
             "x": 5,
             "y": 2,
@@ -1282,7 +1222,7 @@
           }
         },
         "in": {
-          "id": "rbmk.reflector",
+          "id": "reference.reflector",
           "params": {
             "x": 5,
             "y": 2,
@@ -1300,17 +1240,15 @@
       "cooldown": 0.25,
       "actions": {
         "out": {
-          "id": "rbmk.valve",
+          "id": "reference.recirc_drain_valve.enabled",
           "params": {
-            "name": "recirc_drain_valve",
-            "enabled": false
+            "value": false
           }
         },
         "in": {
-          "id": "rbmk.valve",
+          "id": "reference.recirc_drain_valve.enabled",
           "params": {
-            "name": "recirc_drain_valve",
-            "enabled": true
+            "value": true
           }
         }
       }
@@ -1324,17 +1262,15 @@
       "cooldown": 0.25,
       "actions": {
         "out": {
-          "id": "rbmk.deaerator_overflow",
+          "id": "reference.main_deaerator.overflow",
           "params": {
-            "name": "main_deaerator",
-            "percent": 0
+            "value": 0
           }
         },
         "in": {
-          "id": "rbmk.deaerator_overflow",
+          "id": "reference.main_deaerator.overflow",
           "params": {
-            "name": "main_deaerator",
-            "percent": 100
+            "value": 100
           }
         }
       }
@@ -1348,10 +1284,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.feedwater_pump_a.speed",
           "params": {
-            "name": "feedwater_pump_a",
-            "level": 1
+            "value": 1
           }
         }
       }
@@ -1365,10 +1300,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.feedwater_pump_b.speed",
           "params": {
-            "name": "feedwater_pump_b",
-            "level": 1
+            "value": 1
           }
         }
       }
@@ -1382,10 +1316,8 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.grid_reset",
-          "params": {
-            "name": "generator_grid"
-          }
+          "id": "reference.generator_grid.reset",
+          "params": {}
         }
       }
     },
@@ -1398,10 +1330,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.main_circulation_pump_a.speed",
           "params": {
-            "name": "main_circulation_pump_a",
-            "level": 1
+            "value": 1
           }
         }
       }
@@ -1415,10 +1346,9 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.pump_speed",
+          "id": "reference.main_circulation_pump_b.speed",
           "params": {
-            "name": "main_circulation_pump_b",
-            "level": 1
+            "value": 1
           }
         }
       }
@@ -1432,7 +1362,7 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.scram",
+          "id": "reference.scram",
           "params": {}
         }
       },
@@ -1455,10 +1385,8 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.grid_reset",
-          "params": {
-            "name": "station_grid"
-          }
+          "id": "reference.station_grid.reset",
+          "params": {}
         }
       }
     },
@@ -1471,10 +1399,8 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.generator_reset",
-          "params": {
-            "name": "tg1_generator"
-          }
+          "id": "reference.tg1_generator.reset",
+          "params": {}
         }
       }
     },
@@ -1487,10 +1413,8 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.generator_sync",
-          "params": {
-            "name": "tg1_generator"
-          }
+          "id": "reference.tg1_generator.sync",
+          "params": {}
         }
       },
       "predicates": [
@@ -1512,10 +1436,8 @@
       "cooldown": 0.25,
       "actions": {
         "press": {
-          "id": "rbmk.generator_trip",
-          "params": {
-            "name": "tg1_generator"
-          }
+          "id": "reference.tg1_generator.trip",
+          "params": {}
         }
       },
       "predicates": [
@@ -1537,13 +1459,13 @@
       "cooldown": 0.25,
       "actions": {
         "out": {
-          "id": "rbmk.steam_outlet",
+          "id": "reference.steam_outlet",
           "params": {
             "enabled": true
           }
         },
         "in": {
-          "id": "rbmk.steam_outlet",
+          "id": "reference.steam_outlet",
           "params": {
             "enabled": false
           }
@@ -1559,13 +1481,13 @@
       "cooldown": 0.25,
       "actions": {
         "out": {
-          "id": "rbmk.feedwater_inlet",
+          "id": "reference.feedwater_inlet",
           "params": {
             "enabled": true
           }
         },
         "in": {
-          "id": "rbmk.feedwater_inlet",
+          "id": "reference.feedwater_inlet",
           "params": {
             "enabled": false
           }
@@ -1580,11 +1502,11 @@
       "maxValue": 100,
       "initialValue": 80,
       "clearOnSubmit": false,
-      "display": "fwlevelctrl",
+      "display": "reference.instrument.fwlevelctrl",
       "cooldown": 0.25,
       "actions": {
         "submit": {
-          "id": "rbmk.feedwater_target",
+          "id": "reference.feedwater_target.target",
           "params": {}
         }
       },
@@ -1638,11 +1560,11 @@
       "maxValue": 100,
       "initialValue": 35,
       "clearOnSubmit": false,
-      "display": "hotwellctrl",
+      "display": "reference.instrument.hotwellctrl",
       "cooldown": 0.25,
       "actions": {
         "submit": {
-          "id": "rbmk.hotwell_target",
+          "id": "reference.hotwell_target.target",
           "params": {}
         }
       },
@@ -1669,11 +1591,11 @@
       "maxValue": 100,
       "initialValue": 0,
       "clearOnSubmit": true,
-      "display": "rodctrl",
+      "display": "reference.instrument.rodctrl",
       "cooldown": 0.25,
       "actions": {
         "submit": {
-          "id": "rbmk.rod_target",
+          "id": "reference.rod_target",
           "params": {}
         }
       },

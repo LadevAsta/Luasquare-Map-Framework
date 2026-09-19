@@ -137,10 +137,7 @@ function LUASQUARE_PUMP.SetRegulationEnabled(name, enabled)
 end
 
 function LUASQUARE_PUMP.GetEndpointLevelPercent(endpoint)
-    if endpoint == 'rbmk' or endpoint == 'rbmk_water' or endpoint == 'rbmk_water_percent' then
-        if not RBMK or not RBMK.MaxWater or RBMK.MaxWater <= 0 then return 0 end
-        return math.Clamp(((RBMK.Water or 0) / RBMK.MaxWater) * 100, 0, 100)
-    end
+    if LUASQUARE_ENDPOINT and LUASQUARE_ENDPOINT.Get(endpoint) then return LUASQUARE_ENDPOINT.Read(endpoint, 'levelPercent', 0) end
 
     local network = LUASQUARE_FLUID and LUASQUARE_FLUID.GetNetwork(endpoint)
     if network then return math.Clamp((network.amount or 0) / math.max(network.maxAmount or 1, 0.0001) * 100, 0, 100) end
@@ -194,10 +191,7 @@ function LUASQUARE_PUMP.GetRegulationFactor(pump)
 end
 
 function LUASQUARE_PUMP.GetTargetPressure(target)
-    if target == 'rbmk' then
-        if not RBMK then return 0 end
-        return RBMK.RPVPressure or 0
-    end
+    if LUASQUARE_ENDPOINT and LUASQUARE_ENDPOINT.Get(target) then return LUASQUARE_ENDPOINT.Read(target, 'pressure', 0) end
 
     local network = LUASQUARE_FLUID and LUASQUARE_FLUID.GetNetwork(target)
     if not network then
@@ -209,10 +203,6 @@ function LUASQUARE_PUMP.GetTargetPressure(target)
             LUASQUARE_DEAERATOR.UpdatePressure(deaerator)
             return deaerator.pressure or 0
         end
-        if target == 'rbmk_recirc' then
-            if not RBMK then return 0 end
-            return RBMK.RPVPressure or 0
-        end
         if LUASQUARE_STEAMSEPARATOR and LUASQUARE_STEAMSEPARATOR.GetSteamSeparator(target) then
             return LUASQUARE_STEAMSEPARATOR.GetPressure(target)
         end
@@ -222,10 +212,8 @@ function LUASQUARE_PUMP.GetTargetPressure(target)
 end
 
 function LUASQUARE_PUMP.AddToTarget(target, amount, dischargePressure, temperature)
-    if target == 'rbmk' then
-        if not RBMK or not RBMK.AddWaterFromPump then return 0 end
-        return RBMK.AddWaterFromPump(amount, dischargePressure, temperature)
-    end
+    local endpoint = LUASQUARE_ENDPOINT and LUASQUARE_ENDPOINT.Get(target)
+    if endpoint then return endpoint.add and endpoint.add(amount, dischargePressure, temperature) or 0 end
 
     if LUASQUARE_COOLINGTOWER and LUASQUARE_COOLINGTOWER.GetCoolingTower(target) then
         return LUASQUARE_COOLINGTOWER.AddToBasin(target, amount, temperature)
@@ -235,10 +223,6 @@ function LUASQUARE_PUMP.AddToTarget(target, amount, dischargePressure, temperatu
         return LUASQUARE_DEAERATOR.AddWater(target, amount, temperature)
     end
 
-    if target == 'rbmk_recirc' then
-        if not RBMK or not RBMK.AddRecirculationWater then return 0 end
-        return RBMK.AddRecirculationWater(amount, dischargePressure, temperature)
-    end
 
     if LUASQUARE_STEAMSEPARATOR and LUASQUARE_STEAMSEPARATOR.GetSteamSeparator(target) then
         return LUASQUARE_STEAMSEPARATOR.AddWater(target, amount, temperature)
@@ -249,6 +233,12 @@ function LUASQUARE_PUMP.AddToTarget(target, amount, dischargePressure, temperatu
 end
 
 function LUASQUARE_PUMP.GetSourceEndpoint(sourceName)
+    local endpoint = LUASQUARE_ENDPOINT and LUASQUARE_ENDPOINT.Get(sourceName)
+    if endpoint then
+        local snapshot = endpoint.snapshot()
+        return {amount = snapshot.amount, pressure = snapshot.pressure, temperature = snapshot.temperature,
+            remove = endpoint.remove or function() return 0 end, addBack = endpoint.restore or function() return 0 end}
+    end
     if sourceName == 'service' or sourceName == 'makeup' or sourceName == 'void' then
         return {
             amount = math.huge,

@@ -1,13 +1,36 @@
 {
-  "schema": "luasquare.3d2display/v1", "id": "electrical_status_panel", "buildMode": "simple",
-  "target": "tar_display_electricals", "unitWidth": 58, "unitHeight": 38, "scale": 0.1,
-  "title": "ELECTRICALS", "themeGroup": "rbmk", "padding": 10, "lineHeight": 16, "titleHeight": 28,
-  "lines": [
-    {"type": "value", "label": "Station Load", "value": {"provider": "rbmk.electrical", "path": "load"}, "decimals": 1, "unit": "MW", "warn": {"provider": "rbmk.electrical", "path": "overload"}},
-    {"type": "value", "label": "Export Demand", "value": {"provider": "rbmk.electrical", "path": "exportDemand"}, "decimals": 1, "unit": "MW"},
-    {"type": "bar", "label": "Load / Capacity", "fraction": {"provider": "rbmk.electrical", "path": "loadFraction"}, "height": 5, "warn": {"provider": "rbmk.electrical", "path": "overload"}},
-    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.electrical", "path": "row1"}},
-    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.electrical", "path": "row2"}},
-    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.electrical", "path": "row3"}}
+  "schema": "luasquare.3d2display/v1",
+  "id": "electrical_status_panel",
+  "buildMode": "complex",
+  "target": "tar_display_electricals",
+  "unitWidth": 58,
+  "unitHeight": 38,
+  "scale": 0.1,
+  "themeGroup": "rbmk",
+  "defaultPage": "overview",
+  "showPageTabs": false,
+  "pages": [
+    {
+      "id": "overview",
+      "label": "ELECTRICALS",
+      "elements": [
+        {"id": "summary", "type": "LinePanel", "x": 10, "y": 10, "width": 560, "height": 82, "title": "SYSTEM LOAD", "lines": [
+          {"type": "value", "label": "STATION", "value": {"provider": "reference.station_grid", "path": "lastLoadMW"}, "decimals": 1, "unit": "MW", "warn": {"provider": "reference.station_grid", "path": "overload"}},
+          {"type": "value", "label": "EXPORT DEMAND", "value": {"provider": "reference.export_grid", "path": "demandMW"}, "decimals": 1, "unit": "MW"},
+          {"type": "bar", "label": "LOAD / CAPACITY", "fraction": {"provider": "reference.station_grid", "path": "loadFraction"}, "height": 5, "warn": {"provider": "reference.station_grid", "path": "overload"}}
+        ]},
+        {"id": "gen_bus", "type": "LinePanel", "x": 10, "y": 102, "width": 132, "height": 82, "title": "GEN BUS", "lines": [{"type": "value", "label": "FREQ", "value": {"provider": "reference.generator_grid", "path": "frequency"}, "decimals": 2, "unit": "Hz"}]},
+        {"id": "station", "type": "LinePanel", "x": 152, "y": 102, "width": 132, "height": 82, "title": "STATION", "lines": [{"type": "value", "label": "FREQ", "value": {"provider": "reference.station_grid", "path": "frequency"}, "decimals": 2, "unit": "Hz"}]},
+        {"id": "startup", "type": "LinePanel", "x": 294, "y": 102, "width": 132, "height": 82, "title": "STARTUP", "lines": [{"type": "value", "label": "FREQ", "value": {"provider": "reference.startup_grid", "path": "frequency"}, "decimals": 2, "unit": "Hz"}]},
+        {"id": "export", "type": "LinePanel", "x": 436, "y": 102, "width": 134, "height": 82, "title": "EXPORT", "lines": [{"type": "value", "label": "FREQ", "value": {"provider": "reference.export_grid", "path": "frequency"}, "decimals": 2, "unit": "Hz"}]},
+        {"id": "start_xfmr", "type": "LinePanel", "x": 10, "y": 194, "width": 132, "height": 82, "title": "START XFMR", "lines": [{"type": "value", "label": "ON", "value": {"provider": "reference.startup_station_transformer", "path": "enabled"}}]},
+        {"id": "gen_xfmr", "type": "LinePanel", "x": 152, "y": 194, "width": 132, "height": 82, "title": "GEN XFMR", "lines": [{"type": "value", "label": "ON", "value": {"provider": "reference.station_generator_transformer", "path": "enabled"}}]},
+        {"id": "export_xfmr", "type": "LinePanel", "x": 294, "y": 194, "width": 132, "height": 82, "title": "EXPORT XFMR", "lines": [{"type": "value", "label": "ON", "value": {"provider": "reference.generator_export_transformer", "path": "enabled"}}]},
+        {"id": "control_ups", "type": "LinePanel", "x": 436, "y": 194, "width": 134, "height": 82, "title": "CONTROL UPS", "lines": [{"type": "value", "label": "FREQ", "value": {"provider": "reference.control_room_grid", "path": "frequency"}, "decimals": 2, "unit": "Hz"}]},
+        {"id": "tg1", "type": "LinePanel", "x": 10, "y": 286, "width": 180, "height": 82, "title": "TG1 GENERATOR", "lines": [{"type": "value", "label": "OUTPUT", "value": {"provider": "reference.tg1_generator", "path": "lastAcceptedMW"}, "decimals": 1, "unit": "MW"}]},
+        {"id": "edg1_gen", "type": "LinePanel", "x": 200, "y": 286, "width": 180, "height": 82, "title": "EDG1 GENERATOR", "lines": [{"type": "value", "label": "OUTPUT", "value": {"provider": "reference.edg1_generator", "path": "lastAcceptedMW"}, "decimals": 1, "unit": "MW"}]},
+        {"id": "edg1", "type": "LinePanel", "x": 390, "y": 286, "width": 180, "height": 82, "title": "EDG1 FUEL", "lines": [{"type": "value", "label": "TANK", "value": {"provider": "reference.edg1", "path": "fuelTankAmount"}, "decimals": 0, "unit": "L"}]}
+      ]
+    }
   ]
 }

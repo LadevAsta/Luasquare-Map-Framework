@@ -1,0 +1,63 @@
+{
+  "schema": "luasquare.map/v1",
+  "id": "experiment_rbmk",
+  "packages": [
+    "source",
+    "powerplant",
+    "rbmk",
+    "instruments",
+    "presentation"
+  ],
+  "packs": [
+    "experiment_rbmk/core.json",
+    "experiment_rbmk/plant.json",
+    "experiment_rbmk/bindings.json",
+    "experiment_rbmk/instruments.json",
+    "experiment_rbmk/presentation.json"
+  ],
+  "sources": {
+    "control": [
+      "experiment_rbmk/operator_controls.json"
+    ],
+    "3d2display": [
+      "_themes/rbmk.json",
+      "experiment_rbmk/condensate_pump_status_panel.json",
+      "experiment_rbmk/deaerator_status_panel.json",
+      "experiment_rbmk/electrical_status_panel.json",
+      "experiment_rbmk/fw_flow_panel.json",
+      "experiment_rbmk/graph_avgxenon.json",
+      "experiment_rbmk/graph_deaeratorlevel.json",
+      "experiment_rbmk/graph_rpv_pres.json",
+      "experiment_rbmk/graph_rpv_waterlevel.json",
+      "experiment_rbmk/graph_steamlinepres.json",
+      "experiment_rbmk/rpv_status_panel.json",
+      "experiment_rbmk/tg1_status_panel.json"
+    ],
+    "annunciator": [
+      "experiment_rbmk/rbmk_annunciators.json"
+    ],
+    "audio": [
+      "_shared/luasquare/sounds/foundation_buses.json",
+      "_shared/luasquare/sounds/rbmk_annunciators.json",
+      "_shared/luasquare/subtitle_styles/foundation_styles.json"
+    ]
+  },
+  "startup": {
+    "intervals": {
+      "LUASQUARE_3D2D": 0.2,
+      "LUASQUARE_ANNUNCIATOR": 0.5,
+      "LUASQUARE_FLUID": 0.1,
+      "LUASQUARE_VALVE": 0.1,
+      "LUASQUARE_PUMP": 0.1,
+      "LUASQUARE_HEATEXCHANGER": 0.1,
+      "LUASQUARE_POWERGRID": 0.1,
+      "LUASQUARE_CONDENSER": 0.1,
+      "LUASQUARE_DEAERATOR": 0.1,
+      "LUASQUARE_STEAMSEPARATOR": 0.1,
+      "LUASQUARE_TURBINE": 0.1,
+      "LUASQUARE_POWERGENERATOR": 0.1,
+      "LUASQUARE_DIESELGENERATOR": 0.1,
+      "LUASQUARE_COOLINGTOWER": 0.1
+    }
+  }
+}

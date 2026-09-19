@@ -1,0 +1,10 @@
+{
+  "schema": "luasquare.map/v1",
+  "id": "fixture.heat_exchanger",
+  "packages": [
+    "powerplant"
+  ],
+  "packs": [
+    "_fixtures/heat_exchanger.json"
+  ]
+}

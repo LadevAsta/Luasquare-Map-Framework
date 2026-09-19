@@ -1,0 +1,32 @@
+{
+  "schema": "luasquare.components/v1",
+  "id": "reference.presentation",
+  "components": [
+    {
+      "id": "reference.presentation",
+      "type": "rbmk.presentation",
+      "config": {
+        "core": "reference",
+        "separator": "reference.main_steam_separator",
+        "turbine": "reference.tg1",
+        "generator": "reference.tg1_generator",
+        "grid": "reference.station_grid",
+        "coolant": "reference.cooling_water",
+        "deaerator": "reference.main_deaerator"
+      },
+      "editor": {
+        "label": "ALARM TELEMETRY",
+        "group": "integrations"
+      }
+    },
+    {
+      "id": "reference.alarms",
+      "type": "annunciator.console",
+      "config": {},
+      "editor": {
+        "label": "ALARM CONTROLS",
+        "group": "integrations"
+      }
+    }
+  ]
+}

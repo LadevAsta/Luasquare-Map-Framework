@@ -1,0 +1,1628 @@
+{
+  "schema": "luasquare.components/v1",
+  "id": "reference.plant",
+  "components": [
+    {
+      "id": "reference.startup_grid",
+      "type": "plant.grid",
+      "config": {
+        "type": "offsite",
+        "nominalFrequency": 60,
+        "voltage": 13800,
+        "sourceCapacityMW": 80,
+        "stiff": true,
+        "enabled": true,
+        "monitorPos": "tar_grid_offsite"
+      },
+      "editor": {
+        "x": -200,
+        "y": 900,
+        "label": "STARTUP GRID",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.export_grid",
+      "type": "plant.grid",
+      "config": {
+        "type": "offsite",
+        "nominalFrequency": 60,
+        "voltage": 230000,
+        "sourceCapacityMW": 0,
+        "demandMW": 120,
+        "minDemandMW": 40,
+        "maxDemandMW": 480,
+        "demandRampMWPerSecond": 80,
+        "stiff": true,
+        "enabled": true,
+        "monitorPos": "tar_grid_offsite",
+        "monitorOffset": [
+          0,
+          0,
+          96
+        ]
+      },
+      "editor": {
+        "x": -200,
+        "y": 996,
+        "label": "EXPORT GRID",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.generator_grid",
+      "type": "plant.grid",
+      "config": {
+        "type": "onsite",
+        "nominalFrequency": 60,
+        "voltage": 13800,
+        "sourceCapacityMW": 0,
+        "enabled": true,
+        "inertia": 8,
+        "droopHz": 1.25,
+        "tripRelay": "reference.binding.grid_generator_trip_relay",
+        "resetRelay": "reference.binding.grid_generator_reset_relay",
+        "monitorPos": "tar_grid_station",
+        "monitorOffset": [
+          0,
+          0,
+          96
+        ]
+      },
+      "editor": {
+        "x": -200,
+        "y": 1092,
+        "label": "GENERATOR GRID",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.station_grid",
+      "type": "plant.grid",
+      "config": {
+        "type": "onsite",
+        "nominalFrequency": 60,
+        "voltage": 13800,
+        "sourceCapacityMW": 0,
+        "enabled": true,
+        "inertia": 6,
+        "droopHz": 1.5,
+        "tripRelay": "reference.binding.grid_station_trip_relay",
+        "resetRelay": "reference.binding.grid_station_reset_relay",
+        "monitorPos": "tar_grid_station"
+      },
+      "editor": {
+        "x": -200,
+        "y": 1188,
+        "label": "STATION GRID",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.control_room_grid",
+      "type": "plant.grid",
+      "config": {
+        "type": "auxiliary",
+        "nominalFrequency": 60,
+        "voltage": 480,
+        "baseLoadMW": 0.08,
+        "enabled": true,
+        "inertia": 2,
+        "droopHz": 2,
+        "batteryCapacityMWh": 0.2,
+        "batteryMWh": 0.2,
+        "batteryMaxDischargeMW": 0.2,
+        "batteryMaxChargeMW": 0.05,
+        "batteryTripOnEmpty": false,
+        "monitorPos": "tar_grid_station",
+        "monitorOffset": [
+          0,
+          0,
+          160
+        ]
+      },
+      "editor": {
+        "x": -200,
+        "y": 1284,
+        "label": "CONTROL ROOM GRID",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.startup_station_transformer",
+      "type": "plant.transformer",
+      "config": {
+        "from": "reference.startup_grid",
+        "to": "reference.station_grid",
+        "maxMW": 40,
+        "closed": true,
+        "enabled": true,
+        "bidirectional": false,
+        "monitorPos": "tar_transformer_offsite_station"
+      },
+      "editor": {
+        "x": 100,
+        "y": 900,
+        "label": "STARTUP STATION TRANSFORMER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.station_generator_transformer",
+      "type": "plant.transformer",
+      "config": {
+        "from": "reference.station_grid",
+        "to": "reference.generator_grid",
+        "maxMW": 120,
+        "closed": true,
+        "enabled": true,
+        "bidirectional": true,
+        "monitorPos": "tar_transformer_offsite_station",
+        "monitorOffset": [
+          0,
+          0,
+          64
+        ]
+      },
+      "editor": {
+        "x": 100,
+        "y": 996,
+        "label": "STATION GENERATOR TRANSFORMER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.generator_export_transformer",
+      "type": "plant.transformer",
+      "config": {
+        "from": "reference.generator_grid",
+        "to": "reference.export_grid",
+        "maxMW": 500,
+        "closed": false,
+        "enabled": true,
+        "bidirectional": false,
+        "monitorPos": "tar_transformer_offsite_station",
+        "monitorOffset": [
+          0,
+          0,
+          128
+        ]
+      },
+      "editor": {
+        "x": 100,
+        "y": 1092,
+        "label": "GENERATOR EXPORT TRANSFORMER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.station_control_room_transformer",
+      "type": "plant.transformer",
+      "config": {
+        "from": "reference.station_grid",
+        "to": "reference.control_room_grid",
+        "maxMW": 0.5,
+        "closed": true,
+        "enabled": true,
+        "bidirectional": false,
+        "monitorPos": "tar_transformer_offsite_station",
+        "monitorOffset": [
+          0,
+          0,
+          192
+        ]
+      },
+      "editor": {
+        "x": 100,
+        "y": 1188,
+        "label": "STATION CONTROL ROOM TRANSFORMER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.rbmk_control_rods_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "reference.station_grid",
+        "owner": "rbmk_control_rods",
+        "kind": "rbmk_control_rods",
+        "closed": true,
+        "maxMW": 8,
+        "monitorPos": "tar_grid_station",
+        "monitorOffset": [
+          0,
+          0,
+          288
+        ]
+      },
+      "editor": {
+        "x": 400,
+        "y": 900,
+        "label": "RBMK CONTROL RODS BREAKER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.station_light_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "reference.station_grid",
+        "owner": "control_room_lighting",
+        "kind": "lighting",
+        "closed": true,
+        "maxMW": 0.2,
+        "demandMW": 0.1,
+        "monitorPos": "tar_lightning_breaker",
+        "demandMetRelay": "reference.binding.lightning_on_relay",
+        "demandUnmetRelay": "reference.binding.lightning_off_relay",
+        "tripRelay": "reference.binding.lightning_off_relay"
+      },
+      "editor": {
+        "x": 400,
+        "y": 996,
+        "label": "STATION LIGHT BREAKER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.tg1",
+      "type": "plant.turbine",
+      "config": {
+        "input": "reference.main_steam",
+        "condenser": "reference.main_condenser",
+        "bypassCondenser": "reference.main_condenser",
+        "useSteamEnergy": true,
+        "cycleEfficiency": 0.32,
+        "exhaustTripPressure": 6,
+        "exhaustTripDelay": 2.5,
+        "exhaustHardMaxPressure": 15,
+        "condenserOutputTemperature": 80,
+        "bypassCondenserOutputTemperature": 95,
+        "maxSteamRate": 500000,
+        "ratedSteamRate": 300000,
+        "bypassMaxSteamRate": 500000,
+        "ratedInletPressure": 10,
+        "valve": 0,
+        "bypassValve": 0,
+        "enabled": true,
+        "soundEntity": "reference.binding.tg1_turbine_sound",
+        "soundEntity2": "reference.binding.tg1_turbine_sound2",
+        "soundMinVolume": 4,
+        "soundMaxVolume": 10,
+        "soundMinPitch": 80,
+        "soundMaxPitch": 140,
+        "shakeEntity": "reference.binding.tg1_turbine_shake",
+        "shakeMaxAmplitude": 16,
+        "shakeMaxFrequency": 255,
+        "tripVibration": 50,
+        "tripRelay": "reference.binding.tg1_trip_relay",
+        "severeTripRelay": "reference.binding.tg1_severe_trip_relay",
+        "severeTripStopRelay": "reference.binding.tg1_severe_trip_stop_relay",
+        "extremeTripRelay": "reference.binding.tg1_extreme_trip_relay",
+        "repairRelay": "reference.binding.tg1_repair_relay",
+        "monitorPos": "tar_turbine_a"
+      },
+      "derived": {
+        "exhaustVolume": {
+          "component": "reference",
+          "field": "SteamSpace",
+          "scale": 1,
+          "unit": "L"
+        },
+        "exhaustMaxAmount": {
+          "component": "reference",
+          "field": "MaxSteam",
+          "scale": 1,
+          "unit": "L"
+        },
+        "exhaustHardMaxAmount": {
+          "component": "reference",
+          "field": "HardMaxSteam",
+          "scale": 1,
+          "unit": "L"
+        }
+      },
+      "editor": {
+        "x": 300,
+        "y": 0,
+        "label": "TG1",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.tg1_generator",
+      "type": "plant.generator",
+      "config": {
+        "turbine": "reference.tg1",
+        "grid": "reference.generator_grid",
+        "breaker": "reference.tg1_generator_breaker",
+        "ratedMW": 160,
+        "maxMW": 480,
+        "motoringMW": 1.6,
+        "reversePowerTripMW": 0.8,
+        "reversePowerTripDelay": 10,
+        "reversePowerTrips": true,
+        "gridRPM": 1800,
+        "autoSync": false,
+        "syncRPMTolerance": 8,
+        "syncPhaseTolerance": 8,
+        "syncFailureTrips": true,
+        "gridLossTrips": true,
+        "enabled": true,
+        "syncRelay": "reference.binding.tg1_sync_relay",
+        "unsyncRelay": "reference.binding.tg1_unsync_relay",
+        "monitorPos": "tar_turbine_generator_a",
+        "type": "turbine"
+      },
+      "dependsOn": [
+        "reference.tg1_generator_breaker"
+      ],
+      "editor": {
+        "x": 700,
+        "y": 900,
+        "label": "TG1 GENERATOR",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.tg1_generator_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "reference.generator_grid",
+        "owner": "reference.tg1_generator",
+        "kind": "generator",
+        "maxMW": 480,
+        "monitorPos": "tar_turbine_generator_a_breaker"
+      },
+      "editor": {
+        "x": 400,
+        "y": 1092,
+        "label": "TG1 GENERATOR BREAKER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.edg1",
+      "type": "plant.diesel",
+      "config": {
+        "generator": "reference.edg1_generator",
+        "fuelNetwork": "reference.diesel_fuel",
+        "ratedMW": 12,
+        "maxMW": 16,
+        "targetMW": 12,
+        "fuelTankCapacity": 200,
+        "fuelTankAmount": 25,
+        "refuelRate": 4,
+        "fuelConsumptionPerMWSecond": 0.02,
+        "idleFuelRate": 0.02,
+        "enabled": false,
+        "monitorPos": "tar_diesel_generator_a"
+      },
+      "dependsOn": [
+        "reference.edg1_generator"
+      ],
+      "editor": {
+        "x": 950,
+        "y": 900,
+        "label": "EDG1",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.edg1_generator",
+      "type": "plant.generator",
+      "config": {
+        "type": "static",
+        "grid": "reference.station_grid",
+        "breaker": "reference.edg1_generator_breaker",
+        "ratedMW": 12,
+        "maxMW": 16,
+        "outputMW": 0,
+        "targetMW": 0,
+        "rampRateMW": 4,
+        "autoStart": true,
+        "enabled": false,
+        "monitorPos": "tar_diesel_generator_a",
+        "monitorOffset": [
+          0,
+          0,
+          -32
+        ]
+      },
+      "dependsOn": [
+        "reference.edg1_generator_breaker"
+      ],
+      "editor": {
+        "x": 700,
+        "y": 996,
+        "label": "EDG1 GENERATOR",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.edg1_generator_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "reference.station_grid",
+        "owner": "reference.edg1_generator",
+        "kind": "generator",
+        "closed": true,
+        "maxMW": 16,
+        "monitorPos": "tar_diesel_generator_a",
+        "monitorOffset": [
+          0,
+          0,
+          -64
+        ]
+      },
+      "editor": {
+        "x": 400,
+        "y": 1188,
+        "label": "EDG1 GENERATOR BREAKER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.main_cooling_tower",
+      "type": "plant.cooling_tower",
+      "config": {
+        "output": "reference.cooling_water",
+        "coolantNetwork": "reference.cooling_water",
+        "basinMaxPressure": 20,
+        "basinAmount": 30000,
+        "basinTemperature": 40,
+        "maxRate": 8000,
+        "evaporationFraction": 0.001,
+        "enabled": true,
+        "outputTemperature": 20,
+        "workRelay": "reference.binding.cooling_tower_on",
+        "idleRelay": "reference.binding.cooling_tower_off",
+        "monitorPos": "tar_coolingtower_a"
+      },
+      "derived": {
+        "basinMaxAmount": {
+          "component": "reference",
+          "field": "MaxWater",
+          "scale": 1,
+          "unit": "L"
+        }
+      },
+      "editor": {
+        "x": 900,
+        "y": 0,
+        "label": "MAIN COOLING TOWER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.main_condenser",
+      "type": "plant.condenser",
+      "config": {
+        "output": "reference.hotwell",
+        "ratio": 400,
+        "maxRate": 200000,
+        "enabled": true,
+        "outputTemperature": 55,
+        "steamMaxPressure": 5,
+        "coolantNetwork": "reference.cooling_water",
+        "effectiveness": 0.85,
+        "approachTemperature": 8,
+        "steamLatentHeatKJPerL": 2257,
+        "monitorPos": "tar_hotwell",
+        "monitorOffset": [
+          0,
+          0,
+          64
+        ]
+      },
+      "derived": {
+        "steamMaxAmount": {
+          "component": "reference",
+          "field": "MaxSteam",
+          "scale": 1,
+          "unit": "L"
+        },
+        "steamHardMaxAmount": {
+          "component": "reference",
+          "field": "HardMaxSteam",
+          "scale": 1,
+          "unit": "L"
+        },
+        "steamVolume": {
+          "component": "reference",
+          "field": "SteamSpace",
+          "scale": 1,
+          "unit": "L"
+        }
+      },
+      "editor": {
+        "x": 600,
+        "y": 0,
+        "label": "MAIN CONDENSER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.main_deaerator",
+      "type": "plant.deaerator",
+      "config": {
+        "steamSource": "reference.tg1",
+        "enabled": true,
+        "maxPressure": 12,
+        "hardMaxPressure": 20,
+        "pressureFactor": 1,
+        "temperature": 85,
+        "steamTemperature": 100,
+        "targetTemperature": 105,
+        "targetPressure": 6,
+        "highTemperature": 120,
+        "highPressure": 10,
+        "autoRegulator": false,
+        "maxSteamRate": 50000,
+        "maxReliefRate": 50000,
+        "floodedReliefFactor": 0.2,
+        "overflowValve": 1,
+        "overflowLevelFraction": 0.7,
+        "overflowRate": 2000,
+        "steamToWaterRatio": 1600,
+        "monitorPos": [
+          352,
+          -576,
+          640
+        ]
+      },
+      "derived": {
+        "amount": {
+          "component": "reference",
+          "field": "MaxWater",
+          "scale": 0.6666666666666666,
+          "unit": "L"
+        },
+        "maxAmount": {
+          "component": "reference",
+          "field": "MaxWater",
+          "scale": 1,
+          "unit": "L"
+        },
+        "hardMaxAmount": {
+          "component": "reference",
+          "field": "MaxWater",
+          "scale": 1.05,
+          "unit": "L"
+        },
+        "steamSpace": {
+          "component": "reference",
+          "field": "SteamSpace",
+          "scale": 0.25,
+          "unit": "L"
+        },
+        "steamMaxAmount": {
+          "component": "reference",
+          "field": "SteamSpace",
+          "scale": 1.5,
+          "unit": "L"
+        }
+      },
+      "editor": {
+        "x": 0,
+        "y": 0,
+        "label": "MAIN DEAERATOR",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.main_steam_separator",
+      "type": "plant.separator",
+      "config": {
+        "drySteamNetwork": "reference.main_steam",
+        "enabled": true,
+        "waterTemperature": 100,
+        "steamAmount": 0,
+        "outputMaxSteamRate": 500000,
+        "ratedOutputPressure": 10,
+        "outletValve": 1,
+        "separationEfficiency": 0.995,
+        "highLevelFraction": 0.85,
+        "lowLevelFraction": 0.15,
+        "monitorPos": [
+          352,
+          -672,
+          768
+        ]
+      },
+      "derived": {
+        "waterAmount": {
+          "component": "reference",
+          "field": "MaxWater",
+          "scale": 0.8,
+          "unit": "L"
+        },
+        "maxWaterAmount": {
+          "component": "reference",
+          "field": "MaxWater",
+          "scale": 1.2,
+          "unit": "L"
+        },
+        "hardMaxWaterAmount": {
+          "component": "reference",
+          "field": "MaxWater",
+          "scale": 1.35,
+          "unit": "L"
+        },
+        "maxSteamAmount": {
+          "component": "reference",
+          "field": "MaxSteam",
+          "scale": 1,
+          "unit": "L"
+        },
+        "hardMaxSteamAmount": {
+          "component": "reference",
+          "field": "HardMaxSteam",
+          "scale": 1,
+          "unit": "L"
+        },
+        "steamVolume": {
+          "component": "reference",
+          "field": "SteamSpace",
+          "scale": 1,
+          "unit": "L"
+        },
+        "maxPressure": {
+          "component": "reference",
+          "field": "RPVMaxPressure",
+          "scale": 1,
+          "unit": "bar"
+        },
+        "hardMaxPressure": {
+          "component": "reference",
+          "field": "RPVHardPressure",
+          "scale": 1,
+          "unit": "bar"
+        },
+        "steamRatio": {
+          "component": "reference",
+          "field": "SteamExpansionRatio",
+          "scale": 1,
+          "unit": "ratio"
+        },
+        "steamLatentHeatKJPerL": {
+          "component": "reference",
+          "field": "WaterLatentHeatKJPerL",
+          "scale": 1,
+          "unit": "kJ/L"
+        }
+      },
+      "editor": {
+        "x": -300,
+        "y": 0,
+        "label": "MAIN STEAM SEPARATOR",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.main_steam",
+      "type": "plant.fluid",
+      "config": {
+        "type": "steamline",
+        "fluidType": "steam",
+        "amount": 0,
+        "maxPressure": 150,
+        "temperature": 100,
+        "thermalEnergyKJ": 0,
+        "steamQuality": 1,
+        "wetCarryover": 0,
+        "thermalLossRate": 0.002,
+        "monitorPos": [
+          352,
+          -672,
+          672
+        ]
+      },
+      "derived": {
+        "volume": {
+          "component": "reference",
+          "field": "SteamSpace",
+          "scale": 0.5,
+          "unit": "L"
+        },
+        "maxAmount": {
+          "component": "reference",
+          "field": "MaxSteam",
+          "scale": 0.5,
+          "unit": "L"
+        },
+        "hardMaxAmount": {
+          "component": "reference",
+          "field": "HardMaxSteam",
+          "scale": 0.5,
+          "unit": "L"
+        }
+      },
+      "editor": {
+        "x": -1150,
+        "y": 0,
+        "label": "MAIN STEAM",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.hotwell",
+      "type": "plant.fluid",
+      "config": {
+        "type": "simple",
+        "fluidType": "water",
+        "amount": 20000,
+        "maxPressure": 20,
+        "temperature": 80,
+        "thermalLossRate": 0.001,
+        "serviceRate": 0,
+        "overflowEnabled": true,
+        "overflowLevelFraction": 0.99,
+        "overflowRate": 10000,
+        "monitorPos": "tar_hotwell"
+      },
+      "derived": {
+        "maxAmount": {
+          "component": "reference",
+          "field": "MaxWater",
+          "scale": 1,
+          "unit": "L"
+        },
+        "hardMaxAmount": {
+          "component": "reference",
+          "field": "MaxWater",
+          "scale": 1.2,
+          "unit": "L"
+        }
+      },
+      "editor": {
+        "x": -1150,
+        "y": 96,
+        "label": "HOTWELL",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.cooling_water",
+      "type": "plant.fluid",
+      "config": {
+        "type": "coolant",
+        "fluidType": "coolant",
+        "coolingTower": "reference.main_cooling_tower",
+        "amount": 60000,
+        "maxAmount": 60000,
+        "hardMaxAmount": 70000,
+        "maxPressure": 20,
+        "temperature": 35,
+        "coolantCoolingDelta": 1,
+        "coolantHighTemperature": 60,
+        "thermalLossRate": 0.001,
+        "serviceRate": 0,
+        "monitorPos": "tar_coolingtower_a",
+        "monitorOffset": [
+          0,
+          0,
+          64
+        ]
+      },
+      "editor": {
+        "x": -1150,
+        "y": 192,
+        "label": "COOLING WATER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.diesel_fuel",
+      "type": "plant.fluid",
+      "config": {
+        "type": "simple",
+        "fluidType": "diesel",
+        "amount": 500,
+        "maxAmount": 1000,
+        "serviceRate": 0,
+        "monitorPos": "tar_diesel_fuel"
+      },
+      "editor": {
+        "x": -1150,
+        "y": 288,
+        "label": "DIESEL FUEL",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.recirc_drain_valve",
+      "type": "plant.valve",
+      "config": {
+        "maxFlow": 500,
+        "minFlowFraction": 0.2,
+        "open": false,
+        "bidirectional": false,
+        "monitorPos": [
+          352,
+          -288,
+          672
+        ]
+      },
+      "editor": {
+        "x": -600,
+        "y": 0,
+        "label": "RECIRC DRAIN VALVE",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.hotwell_drain_valve",
+      "type": "plant.valve",
+      "config": {
+        "maxFlow": 500,
+        "minFlowFraction": 0.2,
+        "open": false,
+        "bidirectional": false,
+        "monitorPos": "tar_hotwell_drain"
+      },
+      "editor": {
+        "x": -600,
+        "y": 96,
+        "label": "HOTWELL DRAIN VALVE",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.feedwater_pump_a",
+      "type": "plant.pump",
+      "config": {
+        "rate": 500,
+        "headPressure": 120,
+        "minFlowFraction": 0.25,
+        "regulate": true,
+        "regulationMode": "fill",
+        "regulationTarget": 0,
+        "regulationDeadband": 0.5,
+        "regulationGain": 0.3,
+        "regulationMinOutput": 0.1,
+        "speedLevels": [
+          0,
+          0.25,
+          0.5,
+          1
+        ],
+        "speedLevel": 1,
+        "enabled": true,
+        "grid": "reference.station_grid",
+        "peakMW": 30,
+        "breaker": "reference.feedwater_pump_a_breaker",
+        "monitorPos": [
+          352,
+          -480,
+          672
+        ]
+      },
+      "dependsOn": [
+        "reference.feedwater_pump_a_breaker"
+      ],
+      "editor": {
+        "x": -850,
+        "y": 0,
+        "label": "FEEDWATER PUMP A",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.feedwater_pump_a_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "reference.station_grid",
+        "owner": "reference.feedwater_pump_a",
+        "kind": "pump",
+        "closed": true,
+        "maxMW": 30,
+        "monitorPos": [
+          352,
+          -416,
+          672
+        ]
+      },
+      "editor": {
+        "x": 400,
+        "y": 1284,
+        "label": "FEEDWATER PUMP A BREAKER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.feedwater_pump_b",
+      "type": "plant.pump",
+      "config": {
+        "rate": 500,
+        "headPressure": 120,
+        "minFlowFraction": 0.25,
+        "regulate": true,
+        "regulationMode": "fill",
+        "regulationTarget": 0,
+        "regulationDeadband": 0.5,
+        "regulationGain": 0.3,
+        "regulationMinOutput": 0.1,
+        "speedLevels": [
+          0,
+          0.25,
+          0.5,
+          1
+        ],
+        "speedLevel": 1,
+        "enabled": false,
+        "grid": "reference.station_grid",
+        "peakMW": 30,
+        "breaker": "reference.feedwater_pump_b_breaker",
+        "monitorPos": [
+          352,
+          -480,
+          704
+        ]
+      },
+      "dependsOn": [
+        "reference.feedwater_pump_b_breaker"
+      ],
+      "editor": {
+        "x": -850,
+        "y": 96,
+        "label": "FEEDWATER PUMP B",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.feedwater_pump_b_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "reference.station_grid",
+        "owner": "reference.feedwater_pump_b",
+        "kind": "pump",
+        "closed": true,
+        "maxMW": 30,
+        "monitorPos": [
+          352,
+          -416,
+          704
+        ]
+      },
+      "editor": {
+        "x": 400,
+        "y": 1380,
+        "label": "FEEDWATER PUMP B BREAKER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.main_circulation_pump_a",
+      "type": "plant.pump",
+      "config": {
+        "rate": 8000,
+        "headPressure": 120,
+        "minFlowFraction": 0.25,
+        "speedLevels": [
+          0,
+          0.25,
+          0.5,
+          1
+        ],
+        "speedLevel": 2,
+        "enabled": true,
+        "grid": "reference.station_grid",
+        "peakMW": 12,
+        "breaker": "reference.main_circulation_pump_a_breaker",
+        "monitorPos": [
+          352,
+          -352,
+          672
+        ]
+      },
+      "dependsOn": [
+        "reference.main_circulation_pump_a_breaker"
+      ],
+      "editor": {
+        "x": -850,
+        "y": 192,
+        "label": "MAIN CIRCULATION PUMP A",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.main_circulation_pump_a_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "reference.station_grid",
+        "owner": "reference.main_circulation_pump_a",
+        "kind": "pump",
+        "closed": true,
+        "maxMW": 12,
+        "monitorPos": [
+          352,
+          -288,
+          672
+        ]
+      },
+      "editor": {
+        "x": 400,
+        "y": 1476,
+        "label": "MAIN CIRCULATION PUMP A BREAKER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.main_circulation_pump_b",
+      "type": "plant.pump",
+      "config": {
+        "rate": 8000,
+        "headPressure": 120,
+        "minFlowFraction": 0.25,
+        "speedLevels": [
+          0,
+          0.25,
+          0.5,
+          1
+        ],
+        "speedLevel": 2,
+        "enabled": true,
+        "grid": "reference.station_grid",
+        "peakMW": 12,
+        "breaker": "reference.main_circulation_pump_b_breaker",
+        "monitorPos": [
+          352,
+          -352,
+          704
+        ]
+      },
+      "dependsOn": [
+        "reference.main_circulation_pump_b_breaker"
+      ],
+      "editor": {
+        "x": -850,
+        "y": 288,
+        "label": "MAIN CIRCULATION PUMP B",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.main_circulation_pump_b_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "reference.station_grid",
+        "owner": "reference.main_circulation_pump_b",
+        "kind": "pump",
+        "closed": true,
+        "maxMW": 12,
+        "monitorPos": [
+          352,
+          -288,
+          704
+        ]
+      },
+      "editor": {
+        "x": 400,
+        "y": 1572,
+        "label": "MAIN CIRCULATION PUMP B BREAKER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.condensate_pump_a1",
+      "type": "plant.pump",
+      "config": {
+        "rate": 1000,
+        "headPressure": 60,
+        "regulate": false,
+        "speedLevels": [
+          0,
+          0.25,
+          0.5,
+          1
+        ],
+        "speedLevel": 2,
+        "enabled": true,
+        "grid": "reference.station_grid",
+        "peakMW": 30,
+        "breaker": "reference.condensate_pump_a1_breaker",
+        "monitorPos": "tar_condpump_a1"
+      },
+      "dependsOn": [
+        "reference.condensate_pump_a1_breaker"
+      ],
+      "editor": {
+        "x": -850,
+        "y": 384,
+        "label": "CONDENSATE PUMP A1",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.condensate_pump_a1_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "reference.station_grid",
+        "owner": "reference.condensate_pump_a1",
+        "kind": "pump",
+        "closed": true,
+        "maxMW": 30,
+        "monitorPos": "tar_condpump_a1_breaker"
+      },
+      "editor": {
+        "x": 400,
+        "y": 1668,
+        "label": "CONDENSATE PUMP A1 BREAKER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.hotwell_makeup_pump",
+      "type": "plant.pump",
+      "config": {
+        "rate": 250,
+        "headPressure": 30,
+        "regulate": true,
+        "regulationMode": "fill",
+        "regulationTarget": 0,
+        "regulationDeadband": 2,
+        "regulationGain": 0.08,
+        "regulationMinOutput": 0.1,
+        "speedLevels": [
+          0,
+          0.25,
+          0.5,
+          1
+        ],
+        "speedLevel": 4,
+        "enabled": false,
+        "grid": "reference.station_grid",
+        "peakMW": 2,
+        "breaker": "reference.hotwell_makeup_pump_breaker",
+        "monitorPos": "tar_hotwell",
+        "monitorOffset": [
+          0,
+          0,
+          -64
+        ]
+      },
+      "dependsOn": [
+        "reference.hotwell_makeup_pump_breaker"
+      ],
+      "editor": {
+        "x": -850,
+        "y": 480,
+        "label": "HOTWELL MAKEUP PUMP",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.hotwell_makeup_pump_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "reference.station_grid",
+        "owner": "reference.hotwell_makeup_pump",
+        "kind": "pump",
+        "closed": true,
+        "maxMW": 2,
+        "monitorPos": "tar_hotwell",
+        "monitorOffset": [
+          0,
+          0,
+          -96
+        ]
+      },
+      "editor": {
+        "x": 400,
+        "y": 1764,
+        "label": "HOTWELL MAKEUP PUMP BREAKER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.circulating_water_pump_a1",
+      "type": "plant.pump",
+      "config": {
+        "rate": 8000,
+        "headPressure": 25,
+        "minFlowFraction": 0.25,
+        "speedLevels": [
+          0,
+          0.25,
+          0.5,
+          1
+        ],
+        "speedLevel": 2,
+        "enabled": true,
+        "grid": "reference.station_grid",
+        "peakMW": 8,
+        "breaker": "reference.circulating_water_pump_a1_breaker",
+        "monitorPos": "tar_coolingtower_a",
+        "monitorOffset": [
+          0,
+          0,
+          -64
+        ]
+      },
+      "dependsOn": [
+        "reference.circulating_water_pump_a1_breaker"
+      ],
+      "editor": {
+        "x": -850,
+        "y": 576,
+        "label": "CIRCULATING WATER PUMP A1",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.circulating_water_pump_a1_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "reference.station_grid",
+        "owner": "reference.circulating_water_pump_a1",
+        "kind": "pump",
+        "closed": true,
+        "maxMW": 8,
+        "monitorPos": "tar_coolingtower_a",
+        "monitorOffset": [
+          0,
+          0,
+          -96
+        ]
+      },
+      "editor": {
+        "x": 400,
+        "y": 1860,
+        "label": "CIRCULATING WATER PUMP A1 BREAKER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.cooling_water_makeup_pump",
+      "type": "plant.pump",
+      "config": {
+        "rate": 500,
+        "headPressure": 25,
+        "regulate": true,
+        "regulationMode": "fill",
+        "regulationTarget": 90,
+        "regulationDeadband": 2,
+        "regulationGain": 0.08,
+        "regulationMinOutput": 0.1,
+        "speedLevels": [
+          0,
+          0.25,
+          0.5,
+          1
+        ],
+        "speedLevel": 4,
+        "enabled": false,
+        "grid": "reference.station_grid",
+        "peakMW": 2,
+        "breaker": "reference.cooling_water_makeup_pump_breaker",
+        "monitorPos": "tar_coolingtower_a",
+        "monitorOffset": [
+          0,
+          0,
+          -128
+        ]
+      },
+      "dependsOn": [
+        "reference.cooling_water_makeup_pump_breaker"
+      ],
+      "editor": {
+        "x": -850,
+        "y": 672,
+        "label": "COOLING WATER MAKEUP PUMP",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.cooling_water_makeup_pump_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "reference.station_grid",
+        "owner": "reference.cooling_water_makeup_pump",
+        "kind": "pump",
+        "closed": true,
+        "maxMW": 2,
+        "monitorPos": "tar_coolingtower_a",
+        "monitorOffset": [
+          0,
+          0,
+          -160
+        ]
+      },
+      "editor": {
+        "x": 400,
+        "y": 1956,
+        "label": "COOLING WATER MAKEUP PUMP BREAKER",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.supply",
+      "type": "plant.boundary",
+      "config": {
+        "mode": "supply"
+      },
+      "editor": {
+        "x": -1400,
+        "y": 0,
+        "label": "SUPPLY",
+        "group": "plant"
+      }
+    },
+    {
+      "id": "reference.drain",
+      "type": "plant.boundary",
+      "config": {
+        "mode": "drain"
+      },
+      "editor": {
+        "x": -1400,
+        "y": 96,
+        "label": "DRAIN",
+        "group": "plant"
+      }
+    }
+  ],
+  "links": [
+    {
+      "from": {
+        "component": "reference.main_deaerator",
+        "port": "overflowTarget"
+      },
+      "to": {
+        "component": "reference.hotwell",
+        "port": "fluid"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.hotwell",
+        "port": "overflowTarget"
+      },
+      "to": {
+        "component": "reference.drain",
+        "port": "fluid"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.main_steam_separator",
+        "port": "fluid"
+      },
+      "to": {
+        "component": "reference.recirc_drain_valve",
+        "port": "a"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.recirc_drain_valve",
+        "port": "b"
+      },
+      "to": {
+        "component": "reference.drain",
+        "port": "fluid"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.hotwell",
+        "port": "fluid"
+      },
+      "to": {
+        "component": "reference.hotwell_drain_valve",
+        "port": "a"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.hotwell_drain_valve",
+        "port": "b"
+      },
+      "to": {
+        "component": "reference.drain",
+        "port": "fluid"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.main_deaerator",
+        "port": "fluid"
+      },
+      "to": {
+        "component": "reference.feedwater_pump_a",
+        "port": "source"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.feedwater_pump_a",
+        "port": "target"
+      },
+      "to": {
+        "component": "reference.main_steam_separator",
+        "port": "fluid"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.main_steam_separator",
+        "port": "fluid"
+      },
+      "to": {
+        "component": "reference.feedwater_pump_a",
+        "port": "regulationSensor"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.main_deaerator",
+        "port": "fluid"
+      },
+      "to": {
+        "component": "reference.feedwater_pump_b",
+        "port": "source"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.feedwater_pump_b",
+        "port": "target"
+      },
+      "to": {
+        "component": "reference.main_steam_separator",
+        "port": "fluid"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.main_steam_separator",
+        "port": "fluid"
+      },
+      "to": {
+        "component": "reference.feedwater_pump_b",
+        "port": "regulationSensor"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.main_steam_separator",
+        "port": "fluid"
+      },
+      "to": {
+        "component": "reference.main_circulation_pump_a",
+        "port": "source"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.main_circulation_pump_a",
+        "port": "target"
+      },
+      "to": {
+        "component": "reference",
+        "port": "recirculation"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.main_steam_separator",
+        "port": "fluid"
+      },
+      "to": {
+        "component": "reference.main_circulation_pump_b",
+        "port": "source"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.main_circulation_pump_b",
+        "port": "target"
+      },
+      "to": {
+        "component": "reference",
+        "port": "recirculation"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.hotwell",
+        "port": "fluid"
+      },
+      "to": {
+        "component": "reference.condensate_pump_a1",
+        "port": "source"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.condensate_pump_a1",
+        "port": "target"
+      },
+      "to": {
+        "component": "reference.main_deaerator",
+        "port": "fluid"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.supply",
+        "port": "fluid"
+      },
+      "to": {
+        "component": "reference.hotwell_makeup_pump",
+        "port": "source"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.hotwell_makeup_pump",
+        "port": "target"
+      },
+      "to": {
+        "component": "reference.hotwell",
+        "port": "fluid"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.hotwell",
+        "port": "fluid"
+      },
+      "to": {
+        "component": "reference.hotwell_makeup_pump",
+        "port": "regulationSensor"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.cooling_water",
+        "port": "fluid"
+      },
+      "to": {
+        "component": "reference.circulating_water_pump_a1",
+        "port": "source"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.circulating_water_pump_a1",
+        "port": "target"
+      },
+      "to": {
+        "component": "reference.main_cooling_tower",
+        "port": "fluid"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.supply",
+        "port": "fluid"
+      },
+      "to": {
+        "component": "reference.cooling_water_makeup_pump",
+        "port": "source"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.cooling_water_makeup_pump",
+        "port": "target"
+      },
+      "to": {
+        "component": "reference.cooling_water",
+        "port": "fluid"
+      }
+    },
+    {
+      "from": {
+        "component": "reference.cooling_water",
+        "port": "fluid"
+      },
+      "to": {
+        "component": "reference.cooling_water_makeup_pump",
+        "port": "regulationSensor"
+      }
+    }
+  ]
+}

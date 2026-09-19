@@ -1,0 +1,226 @@
+{
+  "schema": "luasquare.components/v1",
+  "id": "fixture.two_core",
+  "components": [
+    {
+      "id": "fixture.alpha.grid",
+      "type": "plant.grid",
+      "config": {
+        "type": "offsite",
+        "sourceCapacityMW": 100,
+        "enabled": true
+      }
+    },
+    {
+      "id": "fixture.alpha.rods",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "fixture.alpha.grid",
+        "closed": true,
+        "maxMW": 10
+      }
+    },
+    {
+      "id": "fixture.alpha.steam",
+      "type": "plant.fluid",
+      "config": {
+        "type": "steamline",
+        "fluidType": "steam",
+        "amount": 0,
+        "maxAmount": 50000,
+        "hardMaxAmount": 100000,
+        "volume": 1000
+      }
+    },
+    {
+      "id": "fixture.alpha.supply",
+      "type": "plant.boundary",
+      "config": {
+        "mode": "supply",
+        "temperature": 20
+      }
+    },
+    {
+      "id": "fixture.alpha.feed",
+      "type": "plant.pump",
+      "config": {
+        "source": {
+          "component": "fixture.alpha.supply",
+          "port": "fluid"
+        },
+        "target": {
+          "component": "fixture.alpha",
+          "port": "water"
+        },
+        "rate": 100,
+        "headPressure": 200,
+        "enabled": false
+      }
+    },
+    {
+      "id": "fixture.alpha",
+      "type": "rbmk.core",
+      "config": {
+        "model": "Isolation alpha",
+        "origin": [
+          0,
+          0,
+          256
+        ],
+        "width": 3,
+        "height": 3,
+        "initialWaterPercent": 85,
+        "steamNetwork": "fixture.alpha.steam",
+        "grid": "fixture.alpha.grid",
+        "breaker": "fixture.alpha.rods",
+        "settings": {
+          "blowoutEnabled": false,
+          "autoRegulatorEnabled": false
+        },
+        "cells": [
+          {
+            "x": 2,
+            "y": 2,
+            "kind": "fuel",
+            "fuel": "MEU"
+          },
+          {
+            "x": 1,
+            "y": 2,
+            "kind": "source",
+            "sourceStrength": 26,
+            "closedSource": false
+          },
+          {
+            "x": 3,
+            "y": 2,
+            "kind": "control",
+            "name": "R1",
+            "group": "test",
+            "insertion": 1,
+            "autoRegulator": true
+          }
+        ],
+        "autofill": {
+          "ignoreEdge": false,
+          "ignoreNearVoid": false
+        }
+      },
+      "editor": {
+        "x": 0,
+        "y": 0,
+        "group": "alpha"
+      }
+    },
+    {
+      "id": "fixture.beta.grid",
+      "type": "plant.grid",
+      "config": {
+        "type": "offsite",
+        "sourceCapacityMW": 100,
+        "enabled": true
+      }
+    },
+    {
+      "id": "fixture.beta.rods",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "fixture.beta.grid",
+        "closed": true,
+        "maxMW": 10
+      }
+    },
+    {
+      "id": "fixture.beta.steam",
+      "type": "plant.fluid",
+      "config": {
+        "type": "steamline",
+        "fluidType": "steam",
+        "amount": 0,
+        "maxAmount": 50000,
+        "hardMaxAmount": 100000,
+        "volume": 1000
+      }
+    },
+    {
+      "id": "fixture.beta.supply",
+      "type": "plant.boundary",
+      "config": {
+        "mode": "supply",
+        "temperature": 20
+      }
+    },
+    {
+      "id": "fixture.beta.feed",
+      "type": "plant.pump",
+      "config": {
+        "source": {
+          "component": "fixture.beta.supply",
+          "port": "fluid"
+        },
+        "target": {
+          "component": "fixture.beta",
+          "port": "water"
+        },
+        "rate": 100,
+        "headPressure": 200,
+        "enabled": false
+      }
+    },
+    {
+      "id": "fixture.beta",
+      "type": "rbmk.core",
+      "config": {
+        "model": "Isolation beta",
+        "origin": [
+          512,
+          0,
+          256
+        ],
+        "width": 3,
+        "height": 3,
+        "initialWaterPercent": 85,
+        "steamNetwork": "fixture.beta.steam",
+        "grid": "fixture.beta.grid",
+        "breaker": "fixture.beta.rods",
+        "settings": {
+          "blowoutEnabled": false,
+          "autoRegulatorEnabled": false
+        },
+        "cells": [
+          {
+            "x": 2,
+            "y": 2,
+            "kind": "fuel",
+            "fuel": "MEU"
+          },
+          {
+            "x": 1,
+            "y": 2,
+            "kind": "source",
+            "sourceStrength": 26,
+            "closedSource": false
+          },
+          {
+            "x": 3,
+            "y": 2,
+            "kind": "control",
+            "name": "R1",
+            "group": "test",
+            "insertion": 1,
+            "autoRegulator": true
+          }
+        ],
+        "autofill": {
+          "ignoreEdge": false,
+          "ignoreNearVoid": false
+        }
+      },
+      "editor": {
+        "x": 400,
+        "y": 0,
+        "group": "beta"
+      }
+    }
+  ]
+}

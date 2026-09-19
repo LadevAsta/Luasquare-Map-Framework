@@ -1,4 +1,4 @@
-RBMK = RBMK or {}
+return function(RBMK)
 RBMK.Debug = RBMK.Debug or {}
 RBMK.Rods = RBMK.Rods or {}
 
@@ -39,3 +39,4 @@ RBMK.TotalFluxSubtractDefine = 0
 
 RBMK.ControlrodScramBoost = 2
 RBMK.RodMoveDistance = 64
+end

@@ -231,6 +231,13 @@ local function loadDirectory(root)
 end
 
 function TIMELINE.LoadMapSources(mapName)
+    if TIMELINE.ManifestSources then
+        for _, path in ipairs(TIMELINE.ManifestSources) do
+            local compiled, diagnostics = TIMELINE.LoadSource(path)
+            if not compiled then return false, TIMELINE.DiagnosticsText(diagnostics) end
+        end
+        return #TIMELINE.ManifestSources
+    end
     local loaded = loadDirectory(TIMELINE.SourceRoot .. '/_components')
     local normalizedMap = string.lower(tostring(mapName or (game and game.GetMap and game.GetMap()) or ''))
     if normalizedMap ~= '' then loaded = loaded + loadDirectory(TIMELINE.SourceRoot .. '/' .. normalizedMap) end

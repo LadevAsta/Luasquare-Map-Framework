@@ -1,0 +1,17 @@
+{
+  "schema": "luasquare.map/v1",
+  "id": "fixture.two_core",
+  "packages": [
+    "powerplant",
+    "rbmk",
+    "presentation"
+  ],
+  "packs": [
+    "_fixtures/two_core.json"
+  ],
+  "sources": {
+    "control": [
+      "_fixtures/two_core_controls.json"
+    ]
+  }
+}

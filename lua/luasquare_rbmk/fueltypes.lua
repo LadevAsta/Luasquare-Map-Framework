@@ -1,4 +1,4 @@
-RBMK = RBMK or {}
+return function(RBMK)
 RBMK.FuelTypes = {}
 
 RBMK.FuelTypes.EMPTY = {
@@ -112,3 +112,4 @@ RBMK.FuelTypes.YMX = {
     xenonGen = function(x) return 0 end,
     xenonBurn = function(x) return 1 end
 }
+end

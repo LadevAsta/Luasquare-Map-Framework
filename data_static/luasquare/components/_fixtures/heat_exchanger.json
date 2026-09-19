@@ -1,0 +1,72 @@
+{
+  "schema": "luasquare.components/v1",
+  "id": "fixture.heat_exchanger",
+  "components": [
+    {
+      "id": "hx.hot",
+      "type": "plant.fluid",
+      "config": {
+        "amount": 1000,
+        "maxAmount": 1000,
+        "temperature": 90
+      }
+    },
+    {
+      "id": "hx.cold",
+      "type": "plant.fluid",
+      "config": {
+        "amount": 1000,
+        "maxAmount": 1000,
+        "temperature": 20
+      }
+    },
+    {
+      "id": "hx.hot_pump",
+      "type": "plant.pump",
+      "config": {
+        "source": {
+          "component": "hx.hot",
+          "port": "fluid"
+        },
+        "target": {
+          "component": "hx.hot",
+          "port": "fluid"
+        },
+        "rate": 100,
+        "headPressure": 10,
+        "enabled": true
+      }
+    },
+    {
+      "id": "hx.cold_pump",
+      "type": "plant.pump",
+      "config": {
+        "source": {
+          "component": "hx.cold",
+          "port": "fluid"
+        },
+        "target": {
+          "component": "hx.cold",
+          "port": "fluid"
+        },
+        "rate": 100,
+        "headPressure": 10,
+        "enabled": true
+      }
+    },
+    {
+      "id": "hx.exchanger",
+      "type": "plant.heat_exchanger",
+      "config": {
+        "hotNetwork": "hx.hot",
+        "coldNetwork": "hx.cold",
+        "hotPump": "hx.hot_pump",
+        "coldPump": "hx.cold_pump",
+        "effectiveness": 0.8,
+        "approachTemperature": 5,
+        "maxThermalMW": 10,
+        "enabled": true
+      }
+    }
+  ]
+}

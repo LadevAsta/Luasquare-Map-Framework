@@ -5,7 +5,23 @@ Put idea or figured implementation pass or long next working changes here.
 Refactor and Migrate all the remaining bootstrap-script-based Luasquare modules and powerplant and RBMK to declarative JSON source-driven engine.
 - The goal is to give mapper(authors) ability to create a map-specific declarative layout of linked powerplant systems(boiler unit, heat exchanger, coolant, electricals) in a Node graphs style editor gui with inspector.
 
-    Migration sub-passes (codebase inventory; all Planned):
+    Migration sub-passes (approved 01–30 implementation; reference-map in-game acceptance passed):
+    - Approved scope: deliver 01–30 together against experiment_rbmk, reusing the implemented Control Layer and
+      existing v1 JSON engines. Subpass 23 includes multiple independent cores; no global RBMK swapping.
+    - New contracts: luasquare.map/v1 and luasquare.components/v1 in matching canonical packed/draft families.
+      Plant changes require map reload. No live replacement or inventory-preserving reload is included.
+    - Implementation includes compiler/lifecycle, adapters, packed reference migration, graph/grid authoring,
+      bounded inspection, opt-in two-core and heat-exchanger fixtures, and accompanying static regression tests.
+      Manual reference-map acceptance passed; the preserved procedure and observations are under
+      luasquare_module/map/archive/. Validation accompanies this work despite the consolidated validation section
+      being numbered 33. Static tests alone must not be used to infer acceptance for future maps or migrations.
+    - The chronological acceptance observations and five remediation rounds are preserved in
+      luasquare_module/map/archive/ACCEPTANCETESTS.md. Reference tests 01-18 passed. Multiplayer late-join test 19
+      and multi-core fixture tests 20-24 remain explicitly deferred until the required environment/editor and target
+      debug-draw capability are available; they do not block the completed experiment_rbmk reference acceptance.
+      The angle-dependent RBMK debug performance observation is retained as a future optimization item.
+    - Keep this parent Planned while subpass 31 (DFR) remains deferred; foundation-0.1 is unchanged.
+      Standalone boiler physics, item receptacles and unrelated unimplemented framework systems are excluded.
     - These subdivide only the parent migration. Existing passes below remain separate and in their current order.
     - Suggested dependencies: source/compiler/lifecycle foundations, component adapters, editors, then map migrations.
     - JSON owns map instances, configuration, links, and registered behavior selections. Physics, trusted callbacks,
@@ -13,10 +29,9 @@ Refactor and Migrate all the remaining bootstrap-script-based Luasquare modules 
     - 3d2display/, timeline/, audio/, and annunciator/ already have JSON engines. Reuse their v1 schemas and editors;
       migrate remaining registration glue rather than rebuilding them. New source-family/schema names need review.
     - data_static/luasquare/ is canonical. Historical Applied notes still mention obsolete pre-consolidation paths;
-      module_checklist.txt also contains stale timeline/audio progress descriptions. Do not copy these into new sources.
-    - control layer system has been implemented. Keep in mind when working with player-interactable control related things.
-      the current system relies on manually registering providers in experiment_controls.lua. 
-      New system should register the provider on their own in their machine declaration. That registry should be customizable as well.
+      current checklist entries have been reconciled. Do not copy historical paths into new sources.
+    - Control Layer is implemented. Component declarations now register instance-qualified actions, predicates and
+      telemetry; experiment_controls.lua is retired. Physical buttons/keypads keep authoritative Control requests.
 
     01. Define the map manifest and component source contracts.
         - Replace bootstrap include/configure/register/start lists with a manifest and referenced component packs.
@@ -63,8 +78,8 @@ Refactor and Migrate all the remaining bootstrap-script-based Luasquare modules 
     07. Migrate controls and Source operator routing.
         - Replace controlbinding.lua callback/onUse and state/availability-function instance glue with registered
           action/condition references, typed values, allowed states, cooldowns, and logical bindings.
-        - Integrate the separately planned Control Layer's physical locks, forced interactions, retry expiry, actor
-          logging, and CTRLI discovery. Its current prototype does not complete these requirements.
+        - Reuse the implemented Control Layer's physical locks, forced interactions, retry expiry, actor
+          logging, and CTRLI discovery; preserve its authoritative request path and cleanup.
         - Audit Hammer RunPassedCode callers; retain a trusted compatibility bridge or explicitly migrate VMF I/O.
           Player, automated, timeline, and display actions must use the same authoritative control path.
 
@@ -151,8 +166,8 @@ Refactor and Migrate all the remaining bootstrap-script-based Luasquare modules 
           leak/meltdown/blowout, rod power/motion, APR/PID, water fill, and initial rod/source/regulator state.
         - Declare steam/separator/drain and grid/breaker links. Resolve derived capacities before plant components
           that currently copy RBMK fields; preserve Hammer-unit volume conversions and simulation units.
-        - RBMK currently uses one global core. Support one explicitly at first, or separately approve a multi-reactor
-          runtime refactor before promising multiple reactor nodes as independent simulations.
+        - Approved expansion: explicitly addressed independent cores own matrices, fuel, rods, selection, regulator,
+          inventories, failures, effects and debug state. They interact only through declared plant connections.
 
     24. Migrate RBMK map effects and rod selection.
         - Declare blowout valve lists/ranges, rod visuals, selector sprites, and failure/leak/meltdown relays through
@@ -203,8 +218,8 @@ Refactor and Migrate all the remaining bootstrap-script-based Luasquare modules 
         - Export its layout/settings, all plant instances/links, physical instruments, operator bindings/targets,
           monitor anchors, and presentation wiring into packed map sources; retain existing JSON assets compatibly.
         - Reduce bootstrapper/experiment_rbmk.lua to cleanup-aware loading and genuine trusted extension setup.
-        - Audit maps/experiment_rbmk.vmf RunPassedCode outputs; keep wrappers until callers migrate. If I/O changes
-          require it, edit VMF source and schedule a BSP rebuild; never hand-edit compiled output.
+        - Audit maps/experiment_rbmk.vmf and BSP RunPassedCode outputs. Current outputs use Control reporting;
+          no reference Hammer changes are required. Future VMF edits/BSP builds remain the user's manual workflow.
         - Add small examples for existing APIs absent from the reference, especially heat exchangers.
 
     31. Migrate shared-module consumers in the external DFR map.
@@ -220,8 +235,8 @@ Refactor and Migrate all the remaining bootstrap-script-based Luasquare modules 
           expose existing thermal sources only. The parent goal's boiler node must not imply an already working module.
         - itemreceptacle.lua is a comments-only design stub. SENT attachment/insertion/extraction, resource access,
           physical locking, and indicators require implementation before a source-driven adapter can be migrated.
-        - Multi-reactor support and unimplemented checklist state-machine/signal-bus/variables/logging systems need
-          separate scope decisions; introduce only minimal shared contracts required by approved migration sub-passes.
+        - Multi-reactor support is approved in 23. Unimplemented checklist state-machine/signal-bus/variables/logging
+          systems remain separate scope; introduce only minimal shared contracts required by this migration.
 
     33. Validate migrations, retire compatibility deliberately, and document authoring.
         - Compare compiled definitions against original registrations: defaults, implicit instances, links, derived

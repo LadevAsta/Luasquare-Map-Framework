@@ -18,7 +18,7 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     DieselGenerators = {}
 }
 
-local DEBUG_WIRE_VERSION = 10
+local DEBUG_WIRE_VERSION = 11
 local DEBUG_PACKET_START = 1
 local DEBUG_PACKET_CATEGORY = 2
 local DEBUG_PACKET_END = 3

@@ -1,0 +1,210 @@
+{
+  "schema": "luasquare.control/v1",
+  "id": "fixture.two_core_controls",
+  "controls": [
+    {
+      "id": "fixture.alpha.scram",
+      "kind": "momentary",
+      "label": "alpha scram",
+      "actions": {
+        "press": {
+          "id": "fixture.alpha.scram",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "fixture.alpha.select",
+      "kind": "momentary",
+      "label": "alpha select",
+      "actions": {
+        "press": {
+          "id": "fixture.alpha.rod_toggle",
+          "params": {
+            "name": "R1"
+          }
+        }
+      }
+    },
+    {
+      "id": "fixture.alpha.feed_on",
+      "kind": "momentary",
+      "label": "alpha feed_on",
+      "actions": {
+        "press": {
+          "id": "fixture.alpha.feed.enabled",
+          "params": {
+            "value": true
+          }
+        }
+      }
+    },
+    {
+      "id": "fixture.alpha.feed_off",
+      "kind": "momentary",
+      "label": "alpha feed_off",
+      "actions": {
+        "press": {
+          "id": "fixture.alpha.feed.enabled",
+          "params": {
+            "value": false
+          }
+        }
+      }
+    },
+    {
+      "id": "fixture.alpha.rods_out",
+      "kind": "momentary",
+      "label": "alpha rods_out",
+      "actions": {
+        "press": {
+          "id": "fixture.alpha.rod_target",
+          "params": {
+            "value": 100
+          }
+        }
+      }
+    },
+    {
+      "id": "fixture.alpha.rods_in",
+      "kind": "momentary",
+      "label": "alpha rods_in",
+      "actions": {
+        "press": {
+          "id": "fixture.alpha.rod_target",
+          "params": {
+            "value": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "fixture.alpha.apr_on",
+      "kind": "momentary",
+      "label": "alpha apr_on",
+      "actions": {
+        "press": {
+          "id": "fixture.alpha.apr_target",
+          "params": {
+            "value": 10
+          }
+        }
+      }
+    },
+    {
+      "id": "fixture.alpha.apr_off",
+      "kind": "momentary",
+      "label": "alpha apr_off",
+      "actions": {
+        "press": {
+          "id": "fixture.alpha.apr_target",
+          "params": {
+            "value": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "fixture.beta.scram",
+      "kind": "momentary",
+      "label": "beta scram",
+      "actions": {
+        "press": {
+          "id": "fixture.beta.scram",
+          "params": {}
+        }
+      }
+    },
+    {
+      "id": "fixture.beta.select",
+      "kind": "momentary",
+      "label": "beta select",
+      "actions": {
+        "press": {
+          "id": "fixture.beta.rod_toggle",
+          "params": {
+            "name": "R1"
+          }
+        }
+      }
+    },
+    {
+      "id": "fixture.beta.feed_on",
+      "kind": "momentary",
+      "label": "beta feed_on",
+      "actions": {
+        "press": {
+          "id": "fixture.beta.feed.enabled",
+          "params": {
+            "value": true
+          }
+        }
+      }
+    },
+    {
+      "id": "fixture.beta.feed_off",
+      "kind": "momentary",
+      "label": "beta feed_off",
+      "actions": {
+        "press": {
+          "id": "fixture.beta.feed.enabled",
+          "params": {
+            "value": false
+          }
+        }
+      }
+    },
+    {
+      "id": "fixture.beta.rods_out",
+      "kind": "momentary",
+      "label": "beta rods_out",
+      "actions": {
+        "press": {
+          "id": "fixture.beta.rod_target",
+          "params": {
+            "value": 100
+          }
+        }
+      }
+    },
+    {
+      "id": "fixture.beta.rods_in",
+      "kind": "momentary",
+      "label": "beta rods_in",
+      "actions": {
+        "press": {
+          "id": "fixture.beta.rod_target",
+          "params": {
+            "value": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "fixture.beta.apr_on",
+      "kind": "momentary",
+      "label": "beta apr_on",
+      "actions": {
+        "press": {
+          "id": "fixture.beta.apr_target",
+          "params": {
+            "value": 10
+          }
+        }
+      }
+    },
+    {
+      "id": "fixture.beta.apr_off",
+      "kind": "momentary",
+      "label": "beta apr_off",
+      "actions": {
+        "press": {
+          "id": "fixture.beta.apr_target",
+          "params": {
+            "value": 0
+          }
+        }
+      }
+    }
+  ]
+}

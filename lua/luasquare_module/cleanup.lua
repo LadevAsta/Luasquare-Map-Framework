@@ -135,6 +135,8 @@ local function resetRuntime(reason)
     -- Stop client music, Source loops, PA queues, subtitles, and soundscapes
     -- before their catalog and cached entity references are discarded.
     resetRuntimeAudio(reason)
+    if LUASQUARE_MAP and LUASQUARE_MAP.StopAll then LUASQUARE_MAP.StopAll(reason) end
+    if LUASQUARE_RBMK and LUASQUARE_RBMK.DestroyAll then LUASQUARE_RBMK.DestroyAll() end
     removeRuntimeTimers()
     removeRuntimeCommands()
     if SetGlobal2Bool then SetGlobal2Bool('LUASQUARE_FRAMEWORK_INITIALIZED_GLOBAL', false) end

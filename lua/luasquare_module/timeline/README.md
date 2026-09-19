@@ -4,6 +4,8 @@ The timeline engine schedules declarative `luasquare.timeline/v1` sources while 
 
 ## Source locations
 
+For [manifest-owned plants](../map/README.md), select each timeline source explicitly and bind it through a `timeline.owner` component. The loader validates registered targets/clip capabilities before activation and cancels runs before destroying their owners. Operator clips target `control.<control_id>` to retain Control Layer authority. Existing v1 schemas/editors are unchanged; the standalone registration workflow below remains supported.
+
 Store reusable component choreography under:
 
 ```text

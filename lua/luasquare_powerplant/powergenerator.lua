@@ -266,7 +266,14 @@ function LUASQUARE_POWERGENERATOR.Sync(name)
         return false
     end
 
-    if generator.synced then LUASQUARE_POWERGENERATOR.Unsync(name) end
+    -- The operator button is a command signal, not an acknowledgement of a
+    -- successful electrical synchronization. Consume every valid press here
+    -- and keep mismatch/trip behavior inside the generator.
+    if generator.tripped or not generator.enabled then return true end
+    if generator.synced then
+        LUASQUARE_POWERGENERATOR.Unsync(name)
+        return true
+    end
 
     if generator.type ~= 'turbine' then
         generator.synced = true
@@ -278,7 +285,7 @@ function LUASQUARE_POWERGENERATOR.Sync(name)
         local reason = generator.lastSyncBlockReason or 'SYNC_FAILURE'
         local hardFailure = reason == 'GENERATOR_OFFLINE' or reason == 'TURBINE_OFFLINE' or reason == 'NO_TURBINE'
         if hardFailure or generator.syncFailureTrips then LUASQUARE_POWERGENERATOR.Trip(name, reason) end
-        return false
+        return true
     end
 
     local turbine = LUASQUARE_TURBINE.GetTurbine(generator.turbine)

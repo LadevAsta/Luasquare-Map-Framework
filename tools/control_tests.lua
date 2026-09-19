@@ -108,6 +108,12 @@ check(button.locked and CONTROL.Controls.button.locks.owner ~= nil, 'combined lo
 button:Complete()
 check(CONTROL.GetRequest(id).status == 'completed' and calls == 1, 'own post-press lock must allow accepted output')
 CONTROL.ReportOutput('button', 'OnIn', button, world)
+
+button = setup('momentary')
+reject = true
+id = CONTROL.Request('button', 'press', {})
+check(CONTROL.GetRequest(id).status == 'failed' and not CONTROL.Controls.button.fault and not button.locked,
+    'expected action rejection is terminal without a persistent control fault')
 check(calls == 1, 'duplicate output must not dispatch twice')
 check(not CONTROL.ReportOutput('button', 'OnIn', world, world), 'caller identity required')
 button = setup('toggle'); button.genericReports = true
@@ -230,7 +236,9 @@ CONTROL.EditKeypad('pad', 'digit', 9); CONTROL.EditKeypad('pad', 'digit', 9); CO
 check(CONTROL.Controls.pad.buffer == '100', 'keypad maximum clamping')
 reject = true
 id = CONTROL.Request('pad', 'submitValue', {})
-check(CONTROL.GetRequest(id).status == 'failed' and CONTROL.Controls.pad.buffer == '100' and CONTROL.Controls.pad.acceptedValue == 20, 'failed submission preserves buffer and target')
+check(CONTROL.GetRequest(id).status == 'failed' and not CONTROL.Controls.pad.fault
+    and CONTROL.Controls.pad.buffer == '100' and CONTROL.Controls.pad.acceptedValue == 20,
+    'expected keypad rejection preserves buffer and target without a sticky fault')
 reject = false; CONTROL.ResetFault('pad')
 id = CONTROL.Request('pad', 'submitValue', {value = 35})
 check(CONTROL.GetRequest(id).status == 'completed' and CONTROL.Controls.pad.acceptedValue == 35 and CONTROL.Controls.pad.buffer == '35', 'direct numeric submit uses same authoritative action')
@@ -284,10 +292,9 @@ check(CONTROL.CompileSource(bad, 'keypad test', keypadCatalog) == nil, 'nonfinit
 bad = CONTROL.DeepCopy(valid); bad.controls[1].display = 'unknown'
 check(CONTROL.CompileSource(bad, 'test', {Actions = CONTROL.Actions, Predicates = CONTROL.Predicates, Displays = LUASQUARE_SEG7.Displays}) == nil, 'unknown SEG7 references rejected')
 
-include('luasquare_rbmk/bootstrapper/experiment_controls.lua')
-local compiled, diagnostics = CONTROL.CompileSource(RBMK_SOURCE, 'packed RBMK', {Actions = CONTROL.Actions,
-    Predicates = CONTROL.Predicates, Displays = LUASQUARE_SEG7.Displays})
-check(compiled ~= nil, CONTROL.DiagnosticsText(diagnostics))
+-- Migrated RBMK sources are compiled against actual component registrations by
+-- check_map.js; this suite keeps the Control Layer behavioral regressions.
+local compiled, diagnostics
 for _, definition in ipairs(DFR_SOURCE.controls) do
     for _, ref in pairs(definition.actions or {}) do CONTROL.RegisterAction(ref.id, {parameters = {}, callback = function() return true end}) end
     for _, ref in ipairs(definition.predicates or {}) do CONTROL.RegisterPredicate(ref.id, {parameters = {}, callback = function() return true end}) end
@@ -505,4 +512,4 @@ check(CONTROL.Serial == serialBefore and button.state == 1, 'inactive discovery 
 hook.Run('PlayerDisconnected', player)
 CONTROL.StopNetwork()
 check(not hooks.PlayerDisconnected.LUASQUARE_CONTROL_EditorDisconnect, 'inactive editor subscription cleans up')
-print('Passed ' .. count .. ' Control Layer/timeline/network assertions and both packed-source compiler checks.')
+print('Passed ' .. count .. ' Control Layer/timeline/network assertions and DFR packed-source compiler check; RBMK compilation is covered by check_map.js.')

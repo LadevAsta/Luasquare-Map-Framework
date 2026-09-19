@@ -39,7 +39,7 @@ if SERVER then
     include('luasquare_module/audio/runtime.lua')
     include('luasquare_module/audio/network_server.lua')
     include('luasquare_module/audio/timeline_adapter.lua')
-    AUDIO.LoadMapSources(game.GetMap())
+    if not (LUASQUARE_MAP and LUASQUARE_MAP.LoadingPackages) then AUDIO.LoadMapSources(game.GetMap()) end
 else
     for _, path in ipairs(clientFiles) do include(path) end
 end

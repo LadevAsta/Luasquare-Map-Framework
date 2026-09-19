@@ -4,6 +4,8 @@ The display engine reads declarative JSON from `data_static`, validates it, and 
 
 ## Loading order
 
+When selected by a [map manifest](../map/README.md), the map loader owns source selection, provider registration, preflight, startup and cleanup. Do not also run automatic discovery or `Start()` from the bootstrap. The reference now uses instance-qualified `reference.*` providers; no legacy `rbmk.*` provider aliases remain. The standalone registration example below remains available for non-manifest integrations.
+
 ```lua
 include('luasquare_module/3d2display/engine.lua')
 
@@ -87,7 +89,7 @@ Copy approved drafts into the map addon's `data_static` tree before running GMAD
 }
 ```
 
-Supported line types are `text`, `value`, `columns`, `bar`, `phase`, and `graph`.
+Supported simple-build line types are `text`, `value`, `bar`, `phase`, and `graph`. The former `columns` line is rejected in simple mode; use positioned `LinePanel` elements in complex mode for dashboards and multi-column layouts.
 
 `DISPLAY64x32_` describes Hammer-unit surface dimensions. The canvas resolution is derived from scale; at `0.1`, a 64×32 HU surface becomes a 640×320 canvas. `unitWidth`/`unitHeight` override parsed surface dimensions, while `width`/`height` explicitly set canvas dimensions.
 

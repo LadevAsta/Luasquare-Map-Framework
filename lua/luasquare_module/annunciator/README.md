@@ -4,6 +4,8 @@
 
 ## Loading and source layout
 
+For [manifest-owned plants](../map/README.md), the loader registers instance-qualified providers, selects/validates sources and owns startup/stop. The reference uses `reference.presentation` alarm telemetry and `reference.alarms` operator actions. No legacy provider aliases are installed. Standalone integrations may continue using the explicit registration workflow below.
+
 Include Timeline and Audio before the annunciator when using every integration:
 
 ```lua

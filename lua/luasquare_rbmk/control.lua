@@ -1,4 +1,4 @@
-RBMK = RBMK or {}
+return function(RBMK)
 local ROD_EPSILON = 0.0001
 
 local function clamp01(value)
@@ -63,7 +63,7 @@ function RBMK.UpdateControlRodPower(movingCount)
     if demandMW > 0 and gridName then
         powered = false
         if LUASQUARE_POWERGRID and LUASQUARE_POWERGRID.CanServeLoad and LUASQUARE_POWERGRID.SubmitLoad and LUASQUARE_POWERGRID.CanServeLoad(gridName, demandMW, breakerName) then
-            acceptedMW = LUASQUARE_POWERGRID.SubmitLoad(gridName, 'rbmk_control_rods', demandMW, breakerName)
+            acceptedMW = LUASQUARE_POWERGRID.SubmitLoad(gridName, 'rbmk.' .. RBMK.Id .. '.control_rods', demandMW, breakerName)
             if RBMK.ControlRodPowerAllOrNothing == false then
                 powered = acceptedMW > 0
             else
@@ -427,4 +427,5 @@ function RBMK.SCRAM()
         RBMK.TryScheduleScramStuck(rod)
         RBMK.UpdateRodVisual(rod)
     end
+end
 end

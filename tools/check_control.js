@@ -12,7 +12,7 @@ function files(directory) {
     return fs.readdirSync(directory, {withFileTypes:true}).flatMap(entry => entry.isDirectory() ? files(path.join(directory, entry.name)) : [path.join(directory, entry.name)]);
 }
 const luaFiles = new Set([...changed.filter(p => p.endsWith('.lua') && fs.existsSync(p)), ...files('lua/luasquare_module/control').filter(p => p.endsWith('.lua')),
-    'lua/autorun/client/luasquare_control_client.lua', 'lua/luasquare_rbmk/bootstrapper/experiment_controls.lua',
+    'lua/autorun/client/luasquare_control_client.lua',
     'tools/control_tests.lua', 'tools/control_editor_tests.lua', path.join(external, 'lua/luasquare_dfr/bootstrapper/gm_darkfusion_v2.lua')]);
 for (const file of luaFiles) luaparse.parse(fs.readFileSync(file, 'utf8'), {luaVersion:'5.1'});
 process.stdout.write('Parsed ' + luaFiles.size + ' changed/new Lua files.\n');
@@ -68,6 +68,8 @@ function compiledEntities(text) {
     return records;
 }
 for (const [directory, map] of [[root, 'experiment_rbmk'], [external, 'gm_darkfusion_v2']]) {
+    const selectedMap = process.argv.find(argument => argument.startsWith('--map='))?.slice(6);
+    if (selectedMap && selectedMap !== map) continue;
     const vmf = entities(fs.readFileSync(path.join(directory, 'maps', map + '.vmf'), 'utf8'));
     const source = JSON.parse(fs.readFileSync(path.join(directory, 'data_static/luasquare/control', map, 'operator_controls.json'), 'utf8'));
     const physical = source.controls.flatMap(control => control.kind === 'keypad'

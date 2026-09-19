@@ -10,6 +10,15 @@ Architecture rule:
 
 luasquare_module
     +existing modules.
+        map/ (manifest/component compiler, trusted package catalog, transactional lifecycle,
+            declarative adapters, graph/cell editor and bounded subscribed inspection) [implemented; experiment_rbmk acceptance passed]
+            - Canonical luasquare.map/v1 and luasquare.components/v1 sources; drafts never auto-load.
+            - Owns source activation and rollback; physical cycles differ from construction dependencies.
+            - experiment_rbmk is migrated; DFR is deferred and parent migration remains Planned.
+            - Canonical source-text inspection preserves empty containers across realms; the graph editor has contextual
+              typed linking, live snapped placement, border-routed links with one draggable anchor, movable generated
+              positions, filters, hover inspection and a splitter. Its source manager uses explicit packed/draft loading,
+              a draft file browser and overwrite confirmation; manifest/startup settings remain in the main toolbar.
         3d2display/ (source compiler, server runtime, chunked networking, client renderers,
             raycast interaction, graph history, shared themes, and admin editor) [implemented]
             - v1 JSON supports Simple lines and Complex pages/layered elements.
@@ -17,16 +26,17 @@ luasquare_module
             - Runtime values/actions are named server registrations, never source Lua.
         gaugedisplay.lua (Source entity gauge display driver) [existing]
         control/ (JSON compiler, authoritative physical/virtual controls, owned keypads/targets,
-            requests/owner locks/faults/history, display/timeline adapters and admin editor) [implemented; rebuilt-map acceptance pending]
+            requests/owner locks/faults/history, display/timeline adapters and admin editor) [implemented; experiment_rbmk acceptance passed]
             - Map-owned luasquare.control/v1 sources replace controlbinding.lua and keypad_controller.lua.
             - Actual/accepted positions are separate; combined presses lock on the next tick without bypass.
-        seg7display.lua (skin-based pseudo 7-segment displays) [existing]
+            - Expected action callback rejection is terminal without a sticky fault; runtime/input failures still lock.
+        seg7display.lua (skin-based pseudo 7-segment displays; explicit bindings and bounded SEG7 prefix discovery) [existing; declarative adapter implemented]
         annunciator/ (v1 JSON compiler, authoritative lifecycle/audio runtime, bounded networking,
             3D2D/timeline actions, client state, and admin editor) [implemented]
             - Packed multi-group sources live in map-owned data_static; drafts live in data/.
             - Conditions consume named telemetry providers and never source Lua.
             - The experiment_rbmk reference owns one provider and a packed 22-alarm source.
-        rod_selector.lua (RBMK-specific enough to eventually move or rename) [existing / review later]
+        RBMK selection is owned by luasquare_rbmk/selector.lua per core; the shared singleton selector is retired.
 
     logging.lua (shared logging, log history, module prefix, severity, developer print policy) [needed]
         - Should replace ad-hoc DFR.Log style later.
@@ -67,19 +77,19 @@ luasquare_module
         - Should not contain DFR-specific shaft or stabilizer names.
         - Current prototype adds path registration, destination-aware tracktrain movement, and path_track pass callbacks.
 
-    timeline.lua (reactive timeline and sequence engine) [prototype implemented in luasquare_module/timeline.lua]
+    timeline/ (v1 source compiler, authoritative choreography, editor and bounded networking) [implemented]
         - Absolute timed events, scoped owners, named channels, parent/child runs,
           failure state, cancellation, pause/resume, owner locks, guards, and state handoff.
         - Wait conditions and branches remain future extensions.
         - Should coordinate presentation with simulation but not replace simulation.
         - Needed later for automatic startup, DECAOS sequences, disasters, music sections.
 
-    audiosystem.lua (map sound and music controller) [needed]
+    audio/ (v1 source-driven music, PA, soundscapes, buses, subtitle sequences and editors) [implemented]
         - Plays map-wide sounds, localized sounds at targetnames, music sections, and soundscape toggles.
         - Should avoid requiring huge ambient_generic chains.
         - Should expose current music/sound state for late join sync where practical.
 
-    subtitle.lua (networked subtitle/display text channel) [needed]
+    audio/ subtitle transport (networked subtitle/display text channel) [implemented]
         - Generic speaker label, text, duration, priority, optional sound id.
         - DECAOS uses this, but the subtitle transport should be reusable.
 
@@ -102,6 +112,10 @@ luasquare_module
 
 luasquare_powerplant
     +existing modules.
+        endpoints.lua / catalog.lua / components.lua (typed reusable fluid/thermal capabilities and
+            declarative plant adapters with explicit/generated electrical dependencies) [implemented; experiment_rbmk acceptance passed]
+        components.lua telemetry snapshots (instance-qualified component data consumed directly by 3D2D) [implemented]
+            - The reference no longer constructs generic telemetry.panel presentation placeholders.
         fluidnetwork.lua [existing]
         fluidvalve.lua [existing]
         fluidpump.lua [existing]
@@ -111,6 +125,8 @@ luasquare_powerplant
         steamseparator.lua [existing]
         turbine.lua [existing]
         powergenerator.lua [existing]
+            - Sync commands are consumed by the generator: tripped generators ignore them, synchronized generators open
+              their breaker, and unsynchronized generators attempt closure while retaining configured mismatch trips.
         powergrid.lua [existing]
         dieselgenerator.lua [existing]
         coolingtower.lua [existing]
@@ -209,8 +225,9 @@ Map repository bootstrapper scripts
         - Should not live in Luasquare framework long-term.
 
     Luasquare-RBMK-Map-Framework/lua/luasquare_rbmk/bootstrapper/experiment_rbmk.lua [framework example map-owned here]
-        - Current RBMK experiment bootstrap.
-        - Do not refactor unless shared luasquare_module APIs change.
+        - Cleanup-aware manifest loader; configuration/wiring live in data_static/luasquare/{map,components}/experiment_rbmk.
+        - Independent cores, layouts/fuel/settings/selector/effects adapters belong in luasquare_rbmk.
+        - Optional two-core and heat-exchanger fixtures require explicit manifest selection and map reload.
 
 
 Migration notes

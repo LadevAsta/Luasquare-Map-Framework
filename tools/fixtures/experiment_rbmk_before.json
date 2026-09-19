@@ -1,0 +1,3309 @@
+{
+  "registrations": [
+    {
+      "id": "startup_grid",
+      "type": "plant.grid",
+      "config": {
+        "type": "offsite",
+        "nominalFrequency": 60,
+        "voltage": 13800,
+        "sourceCapacityMW": 80,
+        "stiff": true,
+        "enabled": true,
+        "monitorPos": "tar_grid_offsite"
+      }
+    },
+    {
+      "id": "export_grid",
+      "type": "plant.grid",
+      "config": {
+        "type": "offsite",
+        "nominalFrequency": 60,
+        "voltage": 230000,
+        "sourceCapacityMW": 0,
+        "demandMW": 120,
+        "minDemandMW": 40,
+        "maxDemandMW": 480,
+        "demandRampMWPerSecond": 80,
+        "stiff": true,
+        "enabled": true,
+        "monitorPos": "tar_grid_offsite",
+        "monitorOffset": [
+          0,
+          0,
+          96
+        ]
+      }
+    },
+    {
+      "id": "generator_grid",
+      "type": "plant.grid",
+      "config": {
+        "type": "onsite",
+        "nominalFrequency": 60,
+        "voltage": 13800,
+        "sourceCapacityMW": 0,
+        "enabled": true,
+        "inertia": 8,
+        "droopHz": 1.25,
+        "tripRelay": "grid_generator_trip_relay",
+        "resetRelay": "grid_generator_reset_relay",
+        "monitorPos": "tar_grid_station",
+        "monitorOffset": [
+          0,
+          0,
+          96
+        ]
+      }
+    },
+    {
+      "id": "station_grid",
+      "type": "plant.grid",
+      "config": {
+        "type": "onsite",
+        "nominalFrequency": 60,
+        "voltage": 13800,
+        "sourceCapacityMW": 0,
+        "enabled": true,
+        "inertia": 6,
+        "droopHz": 1.5,
+        "tripRelay": "grid_station_trip_relay",
+        "resetRelay": "grid_station_reset_relay",
+        "monitorPos": "tar_grid_station"
+      }
+    },
+    {
+      "id": "control_room_grid",
+      "type": "plant.grid",
+      "config": {
+        "type": "auxiliary",
+        "nominalFrequency": 60,
+        "voltage": 480,
+        "baseLoadMW": 0.08,
+        "enabled": true,
+        "inertia": 2,
+        "droopHz": 2,
+        "batteryCapacityMWh": 0.2,
+        "batteryMWh": 0.2,
+        "batteryMaxDischargeMW": 0.2,
+        "batteryMaxChargeMW": 0.05,
+        "batteryTripOnEmpty": false,
+        "monitorPos": "tar_grid_station",
+        "monitorOffset": [
+          0,
+          0,
+          160
+        ]
+      }
+    },
+    {
+      "id": "startup_station_transformer",
+      "type": "plant.transformer",
+      "config": {
+        "from": "startup_grid",
+        "to": "station_grid",
+        "maxMW": 40,
+        "closed": true,
+        "enabled": true,
+        "bidirectional": false,
+        "monitorPos": "tar_transformer_offsite_station"
+      }
+    },
+    {
+      "id": "station_generator_transformer",
+      "type": "plant.transformer",
+      "config": {
+        "from": "station_grid",
+        "to": "generator_grid",
+        "maxMW": 120,
+        "closed": true,
+        "enabled": true,
+        "bidirectional": true,
+        "monitorPos": "tar_transformer_offsite_station",
+        "monitorOffset": [
+          0,
+          0,
+          64
+        ]
+      }
+    },
+    {
+      "id": "generator_export_transformer",
+      "type": "plant.transformer",
+      "config": {
+        "from": "generator_grid",
+        "to": "export_grid",
+        "maxMW": 500,
+        "closed": false,
+        "enabled": true,
+        "bidirectional": false,
+        "monitorPos": "tar_transformer_offsite_station",
+        "monitorOffset": [
+          0,
+          0,
+          128
+        ]
+      }
+    },
+    {
+      "id": "station_control_room_transformer",
+      "type": "plant.transformer",
+      "config": {
+        "from": "station_grid",
+        "to": "control_room_grid",
+        "maxMW": 0.5,
+        "closed": true,
+        "enabled": true,
+        "bidirectional": false,
+        "monitorPos": "tar_transformer_offsite_station",
+        "monitorOffset": [
+          0,
+          0,
+          192
+        ]
+      }
+    },
+    {
+      "id": "rbmk_control_rods_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "station_grid",
+        "owner": "rbmk_control_rods",
+        "kind": "rbmk_control_rods",
+        "closed": true,
+        "maxMW": 8,
+        "monitorPos": "tar_grid_station",
+        "monitorOffset": [
+          0,
+          0,
+          288
+        ]
+      }
+    },
+    {
+      "id": "station_light_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "station_grid",
+        "owner": "control_room_lighting",
+        "kind": "lighting",
+        "closed": true,
+        "maxMW": 0.2,
+        "demandMW": 0.1,
+        "monitorPos": "tar_lightning_breaker",
+        "demandMetRelay": "lightning_on_relay",
+        "demandUnmetRelay": "lightning_off_relay",
+        "tripRelay": "lightning_off_relay"
+      }
+    },
+    {
+      "id": "tg1",
+      "type": "plant.turbine",
+      "config": {
+        "input": "main_steam",
+        "condenser": "main_condenser",
+        "bypassCondenser": "main_condenser",
+        "useSteamEnergy": true,
+        "cycleEfficiency": 0.32,
+        "exhaustVolume": 30431.23825895015,
+        "exhaustMaxAmount": 2130186.6781265107,
+        "exhaustHardMaxAmount": 4564685.738842523,
+        "exhaustTripPressure": 6,
+        "exhaustTripDelay": 2.5,
+        "exhaustHardMaxPressure": 15,
+        "condenserOutputTemperature": 80,
+        "bypassCondenserOutputTemperature": 95,
+        "maxSteamRate": 500000,
+        "ratedSteamRate": 300000,
+        "bypassMaxSteamRate": 500000,
+        "ratedInletPressure": 10,
+        "valve": 0,
+        "bypassValve": 0,
+        "enabled": true,
+        "soundEntity": "tg1_turbine_sound",
+        "soundEntity2": "tg1_turbine_sound2",
+        "soundMinVolume": 4,
+        "soundMaxVolume": 10,
+        "soundMinPitch": 80,
+        "soundMaxPitch": 140,
+        "shakeEntity": "tg1_turbine_shake",
+        "shakeMaxAmplitude": 16,
+        "shakeMaxFrequency": 255,
+        "tripVibration": 50,
+        "tripRelay": "tg1_trip_relay",
+        "severeTripRelay": "tg1_severe_trip_relay",
+        "severeTripStopRelay": "tg1_severe_trip_stop_relay",
+        "extremeTripRelay": "tg1_extreme_trip_relay",
+        "repairRelay": "tg1_repair_relay",
+        "monitorPos": "tar_turbine_a"
+      }
+    },
+    {
+      "id": "tg1_generator",
+      "type": "plant.generator",
+      "config": {
+        "turbine": "tg1",
+        "grid": "generator_grid",
+        "breaker": "tg1_generator_breaker",
+        "ratedMW": 160,
+        "maxMW": 480,
+        "motoringMW": 1.6,
+        "reversePowerTripMW": 0.8,
+        "reversePowerTripDelay": 10,
+        "reversePowerTrips": true,
+        "gridRPM": 1800,
+        "autoSync": false,
+        "syncRPMTolerance": 8,
+        "syncPhaseTolerance": 8,
+        "syncFailureTrips": true,
+        "gridLossTrips": true,
+        "enabled": true,
+        "syncRelay": "tg1_sync_relay",
+        "unsyncRelay": "tg1_unsync_relay",
+        "monitorPos": "tar_turbine_generator_a",
+        "breakerMonitorPos": "tar_turbine_generator_a_breaker",
+        "type": "turbine"
+      }
+    },
+    {
+      "id": "tg1_generator_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "generator_grid",
+        "owner": "tg1_generator",
+        "kind": "generator",
+        "maxMW": 480,
+        "monitorPos": "tar_turbine_generator_a_breaker"
+      }
+    },
+    {
+      "id": "edg1",
+      "type": "plant.diesel",
+      "config": {
+        "generator": "edg1_generator",
+        "fuelNetwork": "diesel_fuel",
+        "grid": "station_grid",
+        "breaker": "edg1_generator_breaker",
+        "ratedMW": 12,
+        "maxMW": 16,
+        "targetMW": 12,
+        "rampRateMW": 4,
+        "fuelTankCapacity": 200,
+        "fuelTankAmount": 25,
+        "refuelRate": 4,
+        "fuelConsumptionPerMWSecond": 0.02,
+        "idleFuelRate": 0.02,
+        "enabled": false,
+        "autoStart": true,
+        "breakerClosed": true,
+        "monitorPos": "tar_diesel_generator_a",
+        "generatorMonitorOffset": [
+          0,
+          0,
+          -32
+        ],
+        "breakerMonitorOffset": [
+          0,
+          0,
+          -64
+        ]
+      }
+    },
+    {
+      "id": "edg1_generator",
+      "type": "plant.generator",
+      "config": {
+        "type": "static",
+        "grid": "station_grid",
+        "breaker": "edg1_generator_breaker",
+        "ratedMW": 12,
+        "maxMW": 16,
+        "outputMW": 0,
+        "targetMW": 0,
+        "rampRateMW": 4,
+        "autoStart": true,
+        "enabled": false,
+        "closed": true,
+        "monitorPos": "tar_diesel_generator_a",
+        "monitorOffset": [
+          0,
+          0,
+          -32
+        ],
+        "breakerMonitorPos": "tar_diesel_generator_a",
+        "breakerMonitorOffset": [
+          0,
+          0,
+          -64
+        ]
+      }
+    },
+    {
+      "id": "edg1_generator_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "station_grid",
+        "owner": "edg1_generator",
+        "kind": "generator",
+        "closed": true,
+        "maxMW": 16,
+        "monitorPos": "tar_diesel_generator_a",
+        "monitorOffset": [
+          0,
+          0,
+          -64
+        ]
+      }
+    },
+    {
+      "id": "main_cooling_tower",
+      "type": "plant.cooling_tower",
+      "config": {
+        "output": "cooling_water",
+        "coolantNetwork": "cooling_water",
+        "basinMaxAmount": 150180.13686235138,
+        "basinMaxPressure": 20,
+        "basinAmount": 30000,
+        "basinTemperature": 40,
+        "maxRate": 8000,
+        "evaporationFraction": 0.001,
+        "enabled": true,
+        "outputTemperature": 20,
+        "workRelay": "cooling_tower_on",
+        "idleRelay": "cooling_tower_off",
+        "monitorPos": "tar_coolingtower_a"
+      }
+    },
+    {
+      "id": "main_condenser",
+      "type": "plant.condenser",
+      "config": {
+        "output": "hotwell",
+        "ratio": 400,
+        "maxRate": 200000,
+        "enabled": true,
+        "outputTemperature": 55,
+        "steamMaxAmount": 2130186.6781265107,
+        "steamHardMaxAmount": 4564685.738842523,
+        "steamMaxPressure": 5,
+        "steamVolume": 30431.23825895015,
+        "coolantNetwork": "cooling_water",
+        "effectiveness": 0.85,
+        "approachTemperature": 8,
+        "steamLatentHeatKJPerL": 2257,
+        "monitorPos": "tar_hotwell",
+        "monitorOffset": [
+          0,
+          0,
+          64
+        ]
+      }
+    },
+    {
+      "id": "main_deaerator",
+      "type": "plant.deaerator",
+      "config": {
+        "steamSource": "tg1",
+        "enabled": true,
+        "amount": 100120.09124156758,
+        "maxAmount": 150180.13686235138,
+        "hardMaxAmount": 157689.14370546897,
+        "maxPressure": 12,
+        "hardMaxPressure": 20,
+        "pressureFactor": 1,
+        "steamSpace": 7607.809564737538,
+        "steamMaxAmount": 45646.857388425226,
+        "temperature": 85,
+        "steamTemperature": 100,
+        "targetTemperature": 105,
+        "targetPressure": 6,
+        "highTemperature": 120,
+        "highPressure": 10,
+        "autoRegulator": false,
+        "maxSteamRate": 50000,
+        "maxReliefRate": 50000,
+        "floodedReliefFactor": 0.2,
+        "overflowValve": 1,
+        "overflowTarget": "hotwell",
+        "overflowLevelFraction": 0.7,
+        "overflowRate": 2000,
+        "steamToWaterRatio": 1600,
+        "monitorPos": [
+          352,
+          -576,
+          640
+        ]
+      }
+    },
+    {
+      "id": "main_steam_separator",
+      "type": "plant.separator",
+      "config": {
+        "drySteamNetwork": "main_steam",
+        "enabled": true,
+        "waterAmount": 120144.10948988111,
+        "maxWaterAmount": 180216.16423482166,
+        "hardMaxWaterAmount": 202743.1847641744,
+        "waterTemperature": 100,
+        "steamAmount": 0,
+        "maxSteamAmount": 2130186.6781265107,
+        "hardMaxSteamAmount": 4564685.738842523,
+        "steamVolume": 30431.23825895015,
+        "maxPressure": 70,
+        "hardMaxPressure": 150,
+        "outputMaxSteamRate": 500000,
+        "ratedOutputPressure": 10,
+        "outletValve": 1,
+        "separationEfficiency": 0.995,
+        "highLevelFraction": 0.85,
+        "lowLevelFraction": 0.15,
+        "steamRatio": 1600,
+        "steamLatentHeatKJPerL": 2257,
+        "monitorPos": [
+          352,
+          -672,
+          768
+        ]
+      }
+    },
+    {
+      "id": "main_steam",
+      "type": "plant.fluid",
+      "config": {
+        "type": "steamline",
+        "fluidType": "steam",
+        "amount": 0,
+        "volume": 15215.619129475075,
+        "maxAmount": 1065093.3390632553,
+        "hardMaxAmount": 2282342.8694212614,
+        "maxPressure": 150,
+        "temperature": 100,
+        "thermalEnergyKJ": 0,
+        "steamQuality": 1,
+        "wetCarryover": 0,
+        "thermalLossRate": 0.002,
+        "monitorPos": [
+          352,
+          -672,
+          672
+        ]
+      }
+    },
+    {
+      "id": "hotwell",
+      "type": "plant.fluid",
+      "config": {
+        "type": "simple",
+        "fluidType": "water",
+        "amount": 20000,
+        "maxAmount": 150180.13686235138,
+        "hardMaxAmount": 180216.16423482166,
+        "maxPressure": 20,
+        "temperature": 80,
+        "thermalLossRate": 0.001,
+        "serviceRate": 0,
+        "overflowEnabled": true,
+        "overflowTarget": "void",
+        "overflowLevelFraction": 0.99,
+        "overflowRate": 10000,
+        "monitorPos": "tar_hotwell"
+      }
+    },
+    {
+      "id": "cooling_water",
+      "type": "plant.fluid",
+      "config": {
+        "type": "coolant",
+        "fluidType": "coolant",
+        "coolingTower": "main_cooling_tower",
+        "amount": 60000,
+        "maxAmount": 60000,
+        "hardMaxAmount": 70000,
+        "maxPressure": 20,
+        "temperature": 35,
+        "coolantCoolingDelta": 1,
+        "coolantHighTemperature": 60,
+        "thermalLossRate": 0.001,
+        "serviceRate": 0,
+        "monitorPos": "tar_coolingtower_a",
+        "monitorOffset": [
+          0,
+          0,
+          64
+        ]
+      }
+    },
+    {
+      "id": "diesel_fuel",
+      "type": "plant.fluid",
+      "config": {
+        "type": "simple",
+        "fluidType": "diesel",
+        "amount": 500,
+        "maxAmount": 1000,
+        "serviceRate": 0,
+        "monitorPos": "tar_diesel_fuel"
+      }
+    },
+    {
+      "id": "recirc_drain_valve",
+      "type": "plant.valve",
+      "config": {
+        "a": "main_steam_separator",
+        "b": "void",
+        "maxFlow": 500,
+        "minFlowFraction": 0.2,
+        "open": false,
+        "bidirectional": false,
+        "monitorPos": [
+          352,
+          -288,
+          672
+        ]
+      }
+    },
+    {
+      "id": "hotwell_drain_valve",
+      "type": "plant.valve",
+      "config": {
+        "a": "hotwell",
+        "b": "void",
+        "maxFlow": 500,
+        "open": false,
+        "bidirectional": false,
+        "monitorPos": "tar_hotwell_drain"
+      }
+    },
+    {
+      "id": "feedwater_pump_a",
+      "type": "plant.pump",
+      "config": {
+        "source": "main_deaerator",
+        "target": "main_steam_separator",
+        "rate": 500,
+        "headPressure": 120,
+        "minFlowFraction": 0.25,
+        "regulate": true,
+        "regulationMode": "fill",
+        "regulationSensor": "main_steam_separator",
+        "regulationTarget": 0,
+        "regulationDeadband": 0.5,
+        "regulationGain": 0.3,
+        "regulationMinOutput": 0.1,
+        "speedLevels": [
+          0,
+          0.25,
+          0.5,
+          1
+        ],
+        "speedLevel": 1,
+        "enabled": true,
+        "grid": "station_grid",
+        "peakMW": 30,
+        "breaker": "feedwater_pump_a_breaker",
+        "breakerClosed": true,
+        "monitorPos": [
+          352,
+          -480,
+          672
+        ],
+        "breakerMonitorPos": [
+          352,
+          -416,
+          672
+        ]
+      }
+    },
+    {
+      "id": "feedwater_pump_a_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "station_grid",
+        "owner": "feedwater_pump_a",
+        "kind": "pump",
+        "closed": true,
+        "maxMW": 30,
+        "monitorPos": [
+          352,
+          -416,
+          672
+        ]
+      }
+    },
+    {
+      "id": "feedwater_pump_b",
+      "type": "plant.pump",
+      "config": {
+        "source": "main_deaerator",
+        "target": "main_steam_separator",
+        "rate": 500,
+        "headPressure": 120,
+        "minFlowFraction": 0.25,
+        "regulate": true,
+        "regulationMode": "fill",
+        "regulationSensor": "main_steam_separator",
+        "regulationTarget": 0,
+        "regulationDeadband": 0.5,
+        "regulationGain": 0.3,
+        "regulationMinOutput": 0.1,
+        "speedLevels": [
+          0,
+          0.25,
+          0.5,
+          1
+        ],
+        "speedLevel": 1,
+        "enabled": false,
+        "grid": "station_grid",
+        "peakMW": 30,
+        "breaker": "feedwater_pump_b_breaker",
+        "breakerClosed": true,
+        "monitorPos": [
+          352,
+          -480,
+          704
+        ],
+        "breakerMonitorPos": [
+          352,
+          -416,
+          704
+        ]
+      }
+    },
+    {
+      "id": "feedwater_pump_b_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "station_grid",
+        "owner": "feedwater_pump_b",
+        "kind": "pump",
+        "closed": true,
+        "maxMW": 30,
+        "monitorPos": [
+          352,
+          -416,
+          704
+        ]
+      }
+    },
+    {
+      "id": "main_circulation_pump_a",
+      "type": "plant.pump",
+      "config": {
+        "source": "main_steam_separator",
+        "target": "rbmk_recirc",
+        "rate": 8000,
+        "headPressure": 120,
+        "minFlowFraction": 0.25,
+        "speedLevels": [
+          0,
+          0.25,
+          0.5,
+          1
+        ],
+        "speedLevel": 2,
+        "enabled": true,
+        "grid": "station_grid",
+        "peakMW": 12,
+        "breaker": "main_circulation_pump_a_breaker",
+        "breakerClosed": true,
+        "monitorPos": [
+          352,
+          -352,
+          672
+        ],
+        "breakerMonitorPos": [
+          352,
+          -288,
+          672
+        ]
+      }
+    },
+    {
+      "id": "main_circulation_pump_a_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "station_grid",
+        "owner": "main_circulation_pump_a",
+        "kind": "pump",
+        "closed": true,
+        "maxMW": 12,
+        "monitorPos": [
+          352,
+          -288,
+          672
+        ]
+      }
+    },
+    {
+      "id": "main_circulation_pump_b",
+      "type": "plant.pump",
+      "config": {
+        "source": "main_steam_separator",
+        "target": "rbmk_recirc",
+        "rate": 8000,
+        "headPressure": 120,
+        "minFlowFraction": 0.25,
+        "speedLevels": [
+          0,
+          0.25,
+          0.5,
+          1
+        ],
+        "speedLevel": 2,
+        "enabled": true,
+        "grid": "station_grid",
+        "peakMW": 12,
+        "breaker": "main_circulation_pump_b_breaker",
+        "breakerClosed": true,
+        "monitorPos": [
+          352,
+          -352,
+          704
+        ],
+        "breakerMonitorPos": [
+          352,
+          -288,
+          704
+        ]
+      }
+    },
+    {
+      "id": "main_circulation_pump_b_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "station_grid",
+        "owner": "main_circulation_pump_b",
+        "kind": "pump",
+        "closed": true,
+        "maxMW": 12,
+        "monitorPos": [
+          352,
+          -288,
+          704
+        ]
+      }
+    },
+    {
+      "id": "condensate_pump_a1",
+      "type": "plant.pump",
+      "config": {
+        "source": "hotwell",
+        "target": "main_deaerator",
+        "rate": 1000,
+        "headPressure": 60,
+        "regulate": false,
+        "speedLevels": [
+          0,
+          0.25,
+          0.5,
+          1
+        ],
+        "speedLevel": 2,
+        "enabled": true,
+        "grid": "station_grid",
+        "peakMW": 30,
+        "breaker": "condensate_pump_a1_breaker",
+        "breakerClosed": true,
+        "monitorPos": "tar_condpump_a1",
+        "breakerMonitorPos": "tar_condpump_a1_breaker"
+      }
+    },
+    {
+      "id": "condensate_pump_a1_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "station_grid",
+        "owner": "condensate_pump_a1",
+        "kind": "pump",
+        "closed": true,
+        "maxMW": 30,
+        "monitorPos": "tar_condpump_a1_breaker"
+      }
+    },
+    {
+      "id": "hotwell_makeup_pump",
+      "type": "plant.pump",
+      "config": {
+        "source": "service",
+        "target": "hotwell",
+        "rate": 250,
+        "headPressure": 30,
+        "regulate": true,
+        "regulationMode": "fill",
+        "regulationSensor": "hotwell",
+        "regulationTarget": 0,
+        "regulationDeadband": 2,
+        "regulationGain": 0.08,
+        "regulationMinOutput": 0.1,
+        "speedLevels": [
+          0,
+          0.25,
+          0.5,
+          1
+        ],
+        "speedLevel": 4,
+        "enabled": false,
+        "grid": "station_grid",
+        "peakMW": 2,
+        "breaker": "hotwell_makeup_pump_breaker",
+        "breakerClosed": true,
+        "monitorPos": "tar_hotwell",
+        "monitorOffset": [
+          0,
+          0,
+          -64
+        ],
+        "breakerMonitorPos": "tar_hotwell",
+        "breakerMonitorOffset": [
+          0,
+          0,
+          -96
+        ]
+      }
+    },
+    {
+      "id": "hotwell_makeup_pump_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "station_grid",
+        "owner": "hotwell_makeup_pump",
+        "kind": "pump",
+        "closed": true,
+        "maxMW": 2,
+        "monitorPos": "tar_hotwell",
+        "monitorOffset": [
+          0,
+          0,
+          -96
+        ]
+      }
+    },
+    {
+      "id": "circulating_water_pump_a1",
+      "type": "plant.pump",
+      "config": {
+        "source": "cooling_water",
+        "target": "main_cooling_tower",
+        "rate": 8000,
+        "headPressure": 25,
+        "minFlowFraction": 0.25,
+        "speedLevels": [
+          0,
+          0.25,
+          0.5,
+          1
+        ],
+        "speedLevel": 2,
+        "enabled": true,
+        "grid": "station_grid",
+        "peakMW": 8,
+        "breaker": "circulating_water_pump_a1_breaker",
+        "breakerClosed": true,
+        "monitorPos": "tar_coolingtower_a",
+        "monitorOffset": [
+          0,
+          0,
+          -64
+        ],
+        "breakerMonitorPos": "tar_coolingtower_a",
+        "breakerMonitorOffset": [
+          0,
+          0,
+          -96
+        ]
+      }
+    },
+    {
+      "id": "circulating_water_pump_a1_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "station_grid",
+        "owner": "circulating_water_pump_a1",
+        "kind": "pump",
+        "closed": true,
+        "maxMW": 8,
+        "monitorPos": "tar_coolingtower_a",
+        "monitorOffset": [
+          0,
+          0,
+          -96
+        ]
+      }
+    },
+    {
+      "id": "cooling_water_makeup_pump",
+      "type": "plant.pump",
+      "config": {
+        "source": "service",
+        "target": "cooling_water",
+        "rate": 500,
+        "headPressure": 25,
+        "regulate": true,
+        "regulationMode": "fill",
+        "regulationSensor": "cooling_water",
+        "regulationTarget": 90,
+        "regulationDeadband": 2,
+        "regulationGain": 0.08,
+        "regulationMinOutput": 0.1,
+        "speedLevels": [
+          0,
+          0.25,
+          0.5,
+          1
+        ],
+        "speedLevel": 4,
+        "enabled": false,
+        "grid": "station_grid",
+        "peakMW": 2,
+        "breaker": "cooling_water_makeup_pump_breaker",
+        "breakerClosed": true,
+        "monitorPos": "tar_coolingtower_a",
+        "monitorOffset": [
+          0,
+          0,
+          -128
+        ],
+        "breakerMonitorPos": "tar_coolingtower_a",
+        "breakerMonitorOffset": [
+          0,
+          0,
+          -160
+        ]
+      }
+    },
+    {
+      "id": "cooling_water_makeup_pump_breaker",
+      "type": "plant.breaker",
+      "config": {
+        "grid": "station_grid",
+        "owner": "cooling_water_makeup_pump",
+        "kind": "pump",
+        "closed": true,
+        "maxMW": 2,
+        "monitorPos": "tar_coolingtower_a",
+        "monitorOffset": [
+          0,
+          0,
+          -160
+        ]
+      }
+    },
+    {
+      "id": "reactor_mwth",
+      "type": "instrument.seg7",
+      "config": [
+        "reactor_mwth_0",
+        "reactor_mwth_1",
+        "reactor_mwth_2",
+        "reactor_mwth_3",
+        "reactor_mwth_4"
+      ]
+    },
+    {
+      "id": "f1_coretemp",
+      "type": "instrument.seg7",
+      "config": [
+        "f1_coretemp_0",
+        "f1_coretemp_1",
+        "f1_coretemp_2",
+        "f1_coretemp_3",
+        "f1_coretemp_4"
+      ]
+    },
+    {
+      "id": "f1_skintemp",
+      "type": "instrument.seg7",
+      "config": [
+        "f1_skintemp_0",
+        "f1_skintemp_1",
+        "f1_skintemp_2",
+        "f1_skintemp_3"
+      ]
+    },
+    {
+      "id": "f1_coltemp",
+      "type": "instrument.seg7",
+      "config": [
+        "f1_coltemp_0",
+        "f1_coltemp_1",
+        "f1_coltemp_2",
+        "f1_coltemp_3"
+      ]
+    },
+    {
+      "id": "totalflux",
+      "type": "instrument.seg7",
+      "config": [
+        "flux_0",
+        "flux_1",
+        "flux_2",
+        "flux_3",
+        "flux_4"
+      ]
+    },
+    {
+      "id": "averageXenon",
+      "type": "instrument.seg7",
+      "config": [
+        "xenon_0",
+        "xenon_1",
+        "xenon_2"
+      ]
+    },
+    {
+      "id": "aprinsertion",
+      "type": "instrument.seg7",
+      "config": [
+        "aprinsertion_0",
+        "aprinsertion_1",
+        "aprinsertion_2"
+      ]
+    },
+    {
+      "id": "gauge_maxtemp",
+      "type": "instrument.gauge",
+      "config": {
+        "entity": "gauge_maxtemp",
+        "min": 0,
+        "max": 1600,
+        "speed": 18
+      }
+    },
+    {
+      "id": "gauge_waterlevel",
+      "type": "instrument.gauge",
+      "config": {
+        "entity": "gauge_waterlevel",
+        "min": 0,
+        "max": 100,
+        "speed": 18
+      }
+    },
+    {
+      "id": "gauge_steamlevel",
+      "type": "instrument.gauge",
+      "config": {
+        "entity": "gauge_steamlevel",
+        "min": 0,
+        "max": 100,
+        "speed": 18
+      }
+    },
+    {
+      "id": "gauge_steamline_pressure",
+      "type": "instrument.gauge",
+      "config": {
+        "entity": "gauge_steamline_pressure",
+        "min": 0,
+        "max": 1,
+        "speed": 18
+      }
+    },
+    {
+      "id": "gauge_rpvpressure",
+      "type": "instrument.gauge",
+      "config": {
+        "entity": "gauge_rpvpressure",
+        "min": 0,
+        "max": 100,
+        "speed": 18
+      }
+    },
+    {
+      "id": "gauge_hotwell",
+      "type": "instrument.gauge",
+      "config": {
+        "entity": "gauge_hotwell",
+        "min": 0,
+        "max": 100,
+        "speed": 18
+      }
+    },
+    {
+      "id": "gauge_hotwell_temp",
+      "type": "instrument.gauge",
+      "config": {
+        "entity": "gauge_hotwell_temp",
+        "min": 0,
+        "max": 140,
+        "speed": 18
+      }
+    },
+    {
+      "id": "fwlevelctrl",
+      "type": "instrument.seg7",
+      "config": [
+        "fwlevelctrl_0",
+        "fwlevelctrl_1",
+        "fwlevelctrl_2"
+      ]
+    },
+    {
+      "id": "hotwellctrl",
+      "type": "instrument.seg7",
+      "config": [
+        "hotwellctrl_0",
+        "hotwellctrl_1",
+        "hotwellctrl_2"
+      ]
+    },
+    {
+      "id": "rodctrl",
+      "type": "instrument.seg7",
+      "config": [
+        "rodctrl_0",
+        "rodctrl_1",
+        "rodctrl_2"
+      ]
+    },
+    {
+      "id": "aprctrl",
+      "type": "instrument.seg7",
+      "config": [
+        "aprctrl_0",
+        "aprctrl_1",
+        "aprctrl_2",
+        "aprctrl_3"
+      ]
+    }
+  ],
+  "providers": [
+    {
+      "id": "rbmk.fw_flow",
+      "metadata": {}
+    },
+    {
+      "id": "rbmk.cooling_loop",
+      "metadata": {}
+    },
+    {
+      "id": "rbmk.deaerator",
+      "metadata": {}
+    },
+    {
+      "id": "rbmk.rpv",
+      "metadata": {}
+    },
+    {
+      "id": "rbmk.tg1",
+      "metadata": {}
+    },
+    {
+      "id": "rbmk.graphs",
+      "metadata": {}
+    },
+    {
+      "id": "rbmk.electrical",
+      "metadata": {
+        "interval": 0.2
+      }
+    },
+    {
+      "id": "rbmk.annunciator",
+      "metadata": {
+        "interval": 0.5,
+        "label": "RBMK and balance-of-plant annunciator telemetry",
+        "fields": [
+          {
+            "path": "rpvPressure",
+            "type": "number",
+            "label": "RPV pressure"
+          },
+          {
+            "path": "rpvTemperature",
+            "type": "number",
+            "label": "Maximum channel temperature"
+          },
+          {
+            "path": "fuelChannelLeakCount",
+            "type": "number",
+            "label": "Fuel-channel leak count"
+          },
+          {
+            "path": "controlRodDemandMW",
+            "type": "number",
+            "label": "Control-rod demand"
+          },
+          {
+            "path": "controlRodsPowered",
+            "type": "boolean",
+            "label": "Control rods powered"
+          },
+          {
+            "path": "scramRodsStuck",
+            "type": "number",
+            "label": "Stuck SCRAM rod count"
+          },
+          {
+            "path": "integrity",
+            "type": "number",
+            "label": "Core integrity"
+          },
+          {
+            "path": "recirculationFlow",
+            "type": "number",
+            "label": "Effective core flow"
+          },
+          {
+            "path": "recirculationThreshold",
+            "type": "number",
+            "label": "Low-flow threshold"
+          },
+          {
+            "path": "thermalMW",
+            "type": "number",
+            "label": "Thermal power"
+          },
+          {
+            "path": "dryoutRisk",
+            "type": "number",
+            "label": "Dryout risk"
+          },
+          {
+            "path": "separatorPresent",
+            "type": "boolean",
+            "label": "Separator available"
+          },
+          {
+            "path": "separatorLevel",
+            "type": "number",
+            "label": "Separator level"
+          },
+          {
+            "path": "separatorPressure",
+            "type": "number",
+            "label": "Separator pressure"
+          },
+          {
+            "path": "separatorCarryover",
+            "type": "number",
+            "label": "Separator carryover"
+          },
+          {
+            "path": "turbineTripped",
+            "type": "boolean",
+            "label": "Turbine A tripped"
+          },
+          {
+            "path": "reversePowerTimer",
+            "type": "number",
+            "label": "Reverse-power timer"
+          },
+          {
+            "path": "gridPresent",
+            "type": "boolean",
+            "label": "Station grid available"
+          },
+          {
+            "path": "gridLoadMW",
+            "type": "number",
+            "label": "Station load"
+          },
+          {
+            "path": "gridOverloadThreshold",
+            "type": "number",
+            "label": "Grid overload threshold"
+          },
+          {
+            "path": "coolantPresent",
+            "type": "boolean",
+            "label": "Cooling-water network available"
+          },
+          {
+            "path": "coolantTemperature",
+            "type": "number",
+            "label": "Cooling-water temperature"
+          },
+          {
+            "path": "coolantTemperatureThreshold",
+            "type": "number",
+            "label": "Cooling-water temperature threshold"
+          },
+          {
+            "path": "coolantLevel",
+            "type": "number",
+            "label": "Cooling-water level"
+          },
+          {
+            "path": "deaeratorPresent",
+            "type": "boolean",
+            "label": "Deaerator available"
+          },
+          {
+            "path": "deaeratorPressure",
+            "type": "number",
+            "label": "Deaerator pressure"
+          },
+          {
+            "path": "deaeratorPressureThreshold",
+            "type": "number",
+            "label": "Deaerator pressure threshold"
+          },
+          {
+            "path": "deaeratorTemperature",
+            "type": "number",
+            "label": "Deaerator temperature"
+          },
+          {
+            "path": "deaeratorTemperatureThreshold",
+            "type": "number",
+            "label": "Deaerator temperature threshold"
+          },
+          {
+            "path": "deaeratorFlooded",
+            "type": "boolean",
+            "label": "Deaerator flooded"
+          },
+          {
+            "path": "deaeratorLevel",
+            "type": "number",
+            "label": "Deaerator level"
+          }
+        ]
+      }
+    }
+  ],
+  "bindings": {
+    "reactor_mwth": "seg7",
+    "f1_coretemp": "seg7",
+    "f1_skintemp": "seg7",
+    "f1_coltemp": "seg7",
+    "totalflux": "seg7",
+    "averageXenon": "seg7",
+    "aprinsertion": "seg7"
+  },
+  "intervals": {
+    "LUASQUARE_SEG7": 0.1,
+    "LUASQUARE_3D2D": 0.2,
+    "LUASQUARE_ANNUNCIATOR": 0.5,
+    "LUASQUARE_GAUGE": 0.2,
+    "LUASQUARE_FLUID": 0.1,
+    "LUASQUARE_VALVE": 0.1,
+    "LUASQUARE_PUMP": 0.1,
+    "LUASQUARE_HEATEXCHANGER": 0.1,
+    "LUASQUARE_POWERGRID": 0.1,
+    "LUASQUARE_CONDENSER": 0.1,
+    "LUASQUARE_DEAERATOR": 0.1,
+    "LUASQUARE_STEAMSEPARATOR": 0.1,
+    "LUASQUARE_TURBINE": 0.1,
+    "LUASQUARE_POWERGENERATOR": 0.1,
+    "LUASQUARE_DIESELGENERATOR": 0.1,
+    "LUASQUARE_COOLINGTOWER": 0.1
+  },
+  "core": {
+    "Id": "reference",
+    "Timers": {
+      "RBMK_Instance_9_reference_tick": true
+    },
+    "Debug": {
+      "ClientState": {
+        "Cells": {},
+        "FluxLines": {},
+        "VesselInfo": {}
+      }
+    },
+    "Rods": {
+      "U1": {
+        "type": 3,
+        "heat": 20,
+        "insertion": 1,
+        "targetInsertion": 1,
+        "lastInsertion": 1,
+        "inserting": false,
+        "stationaryTime": 0,
+        "movingTime": 0,
+        "moveSpeed": 0.005,
+        "visualEnt": "ctlRod_lid_U1",
+        "graphiteTip": true,
+        "reflector": false,
+        "autoRegulator": true,
+        "autoInsertion": 0,
+        "autoTargetInsertion": 0,
+        "autoMaxInsertion": 0.1,
+        "name": "U1",
+        "group": "red"
+      },
+      "U2": {
+        "type": 3,
+        "heat": 20,
+        "insertion": 1,
+        "targetInsertion": 1,
+        "lastInsertion": 1,
+        "inserting": false,
+        "stationaryTime": 0,
+        "movingTime": 0,
+        "moveSpeed": 0.005,
+        "visualEnt": "ctlRod_lid_U2",
+        "graphiteTip": true,
+        "reflector": false,
+        "autoRegulator": true,
+        "autoInsertion": 0,
+        "autoTargetInsertion": 0,
+        "autoMaxInsertion": 0.1,
+        "name": "U2",
+        "group": "red"
+      },
+      "U3": {
+        "type": 3,
+        "heat": 20,
+        "insertion": 1,
+        "targetInsertion": 1,
+        "lastInsertion": 1,
+        "inserting": false,
+        "stationaryTime": 0,
+        "movingTime": 0,
+        "moveSpeed": 0.005,
+        "visualEnt": "ctlRod_lid_U3",
+        "graphiteTip": true,
+        "reflector": false,
+        "autoRegulator": true,
+        "autoInsertion": 0,
+        "autoTargetInsertion": 0,
+        "autoMaxInsertion": 0.1,
+        "name": "U3",
+        "group": "red"
+      },
+      "U4": {
+        "type": 3,
+        "heat": 20,
+        "insertion": 1,
+        "targetInsertion": 1,
+        "lastInsertion": 1,
+        "inserting": false,
+        "stationaryTime": 0,
+        "movingTime": 0,
+        "moveSpeed": 0.005,
+        "visualEnt": "ctlRod_lid_U4",
+        "graphiteTip": true,
+        "reflector": false,
+        "autoRegulator": true,
+        "autoInsertion": 0,
+        "autoTargetInsertion": 0,
+        "autoMaxInsertion": 0.1,
+        "name": "U4",
+        "group": "red"
+      },
+      "R1": {
+        "type": 3,
+        "heat": 20,
+        "insertion": 1,
+        "targetInsertion": 1,
+        "lastInsertion": 1,
+        "inserting": false,
+        "stationaryTime": 0,
+        "movingTime": 0,
+        "moveSpeed": 0.005,
+        "visualEnt": "ctlRod_lid_R1",
+        "graphiteTip": true,
+        "reflector": false,
+        "autoRegulator": true,
+        "autoInsertion": 0,
+        "autoTargetInsertion": 0,
+        "autoMaxInsertion": 0.1,
+        "name": "R1",
+        "group": "yellow"
+      },
+      "R2": {
+        "type": 3,
+        "heat": 20,
+        "insertion": 1,
+        "targetInsertion": 1,
+        "lastInsertion": 1,
+        "inserting": false,
+        "stationaryTime": 0,
+        "movingTime": 0,
+        "moveSpeed": 0.005,
+        "visualEnt": "ctlRod_lid_R2",
+        "graphiteTip": true,
+        "reflector": false,
+        "autoRegulator": true,
+        "autoInsertion": 0,
+        "autoTargetInsertion": 0,
+        "autoMaxInsertion": 0.1,
+        "name": "R2",
+        "group": "yellow"
+      },
+      "R3": {
+        "type": 3,
+        "heat": 20,
+        "insertion": 1,
+        "targetInsertion": 1,
+        "lastInsertion": 1,
+        "inserting": false,
+        "stationaryTime": 0,
+        "movingTime": 0,
+        "moveSpeed": 0.005,
+        "visualEnt": "ctlRod_lid_R3",
+        "graphiteTip": true,
+        "reflector": false,
+        "autoRegulator": true,
+        "autoInsertion": 0,
+        "autoTargetInsertion": 0,
+        "autoMaxInsertion": 0.1,
+        "name": "R3",
+        "group": "yellow"
+      },
+      "R4": {
+        "type": 3,
+        "heat": 20,
+        "insertion": 1,
+        "targetInsertion": 1,
+        "lastInsertion": 1,
+        "inserting": false,
+        "stationaryTime": 0,
+        "movingTime": 0,
+        "moveSpeed": 0.005,
+        "visualEnt": "ctlRod_lid_R4",
+        "graphiteTip": true,
+        "reflector": false,
+        "autoRegulator": true,
+        "autoInsertion": 0,
+        "autoTargetInsertion": 0,
+        "autoMaxInsertion": 0.1,
+        "name": "R4",
+        "group": "yellow"
+      },
+      "R5": {
+        "type": 3,
+        "heat": 20,
+        "insertion": 1,
+        "targetInsertion": 1,
+        "lastInsertion": 1,
+        "inserting": false,
+        "stationaryTime": 0,
+        "movingTime": 0,
+        "moveSpeed": 0.005,
+        "visualEnt": "ctlRod_lid_R5",
+        "graphiteTip": true,
+        "reflector": false,
+        "autoRegulator": true,
+        "autoInsertion": 0,
+        "autoTargetInsertion": 0,
+        "autoMaxInsertion": 0.1,
+        "name": "R5",
+        "group": "yellow"
+      },
+      "R6": {
+        "type": 3,
+        "heat": 20,
+        "insertion": 1,
+        "targetInsertion": 1,
+        "lastInsertion": 1,
+        "inserting": false,
+        "stationaryTime": 0,
+        "movingTime": 0,
+        "moveSpeed": 0.005,
+        "visualEnt": "ctlRod_lid_R6",
+        "graphiteTip": true,
+        "reflector": false,
+        "autoRegulator": true,
+        "autoInsertion": 0,
+        "autoTargetInsertion": 0,
+        "autoMaxInsertion": 0.1,
+        "name": "R6",
+        "group": "yellow"
+      },
+      "R7": {
+        "type": 3,
+        "heat": 20,
+        "insertion": 1,
+        "targetInsertion": 1,
+        "lastInsertion": 1,
+        "inserting": false,
+        "stationaryTime": 0,
+        "movingTime": 0,
+        "moveSpeed": 0.005,
+        "visualEnt": "ctlRod_lid_R7",
+        "graphiteTip": true,
+        "reflector": false,
+        "autoRegulator": true,
+        "autoInsertion": 0,
+        "autoTargetInsertion": 0,
+        "autoMaxInsertion": 0.1,
+        "name": "R7",
+        "group": "yellow"
+      },
+      "R8": {
+        "type": 3,
+        "heat": 20,
+        "insertion": 1,
+        "targetInsertion": 1,
+        "lastInsertion": 1,
+        "inserting": false,
+        "stationaryTime": 0,
+        "movingTime": 0,
+        "moveSpeed": 0.005,
+        "visualEnt": "ctlRod_lid_R8",
+        "graphiteTip": true,
+        "reflector": false,
+        "autoRegulator": true,
+        "autoInsertion": 0,
+        "autoTargetInsertion": 0,
+        "autoMaxInsertion": 0.1,
+        "name": "R8",
+        "group": "yellow"
+      }
+    },
+    "CELL_FUEL": 1,
+    "CELL_STEAM": 2,
+    "CELL_CONTROL": 3,
+    "CELL_REFLECTOR": 4,
+    "CELL_BLANK": 5,
+    "CELL_AUTOROD": 6,
+    "CELL_SOURCE": 7,
+    "CELL_ABSORBER": 8,
+    "CELL_VOID": 9,
+    "CellSymbols": [
+      "F",
+      "S",
+      "C",
+      "RF",
+      "B",
+      "CA",
+      "NS",
+      "AB",
+      "X"
+    ],
+    "WorldOrigin": [
+      352,
+      -672,
+      448
+    ],
+    "CellSpacing": 64,
+    "TickInterval": 0.1,
+    "RPVHeatDiffusion": 0.05,
+    "FluxRange": 12,
+    "TotalFluxSubtractDefine": 0,
+    "ControlrodScramBoost": 2,
+    "RodMoveDistance": 64,
+    "FuelTypes": {
+      "EMPTY": {
+        "name": "Empty Fuel",
+        "description": "you are not supposed to see this",
+        "yield": 0,
+        "depletion": 0,
+        "meltingPoint": 6969,
+        "heatFactor": 0,
+        "diffusion": 0.02,
+        "fuelClass": "NONE"
+      },
+      "MEU": {
+        "name": "Medium Enriched Uranium Fuel",
+        "description": "20% U-235 fuel assembly, Reactor-Grade.",
+        "yield": 100000000,
+        "depletion": 0,
+        "meltingPoint": 2865,
+        "heatFactor": 0.65,
+        "diffusion": 0.02,
+        "fuelClass": "SAFE / Square-Root"
+      },
+      "MOX": {
+        "name": "Mixed Oxide Fuel",
+        "description": "Contains both Plutonium and Uranium oxide.",
+        "yield": 100000000,
+        "depletion": 0,
+        "meltingPoint": 2815,
+        "heatFactor": 1,
+        "diffusion": 0.02,
+        "fuelClass": "MODERATE / Square-Root"
+      },
+      "HEU": {
+        "name": "Highly Enriched Uranium Fuel",
+        "description": "80% U-235 fuel assembly, Reactor-Grade.",
+        "yield": 100000000,
+        "depletion": 0,
+        "meltingPoint": 2865,
+        "heatFactor": 1,
+        "diffusion": 0.02,
+        "fuelClass": "MODERATE / Square-Root"
+      },
+      "WGU": {
+        "name": "Weapon-Grade Uranium",
+        "description": ">90% U-235 fuel assembly...? Weapon-Grade.",
+        "yield": 100000000,
+        "depletion": 0,
+        "meltingPoint": 2865,
+        "heatFactor": 1.25,
+        "diffusion": 0.02,
+        "fuelClass": "CAUTION / Square-Root"
+      },
+      "XEN": {
+        "name": "Fissile Xen Crystals",
+        "description": "Highly compressed augmented Xen Crystals. Capable of Nuclear Fissile within cheap conventional Nuclear Reactors.",
+        "yield": 100000000,
+        "depletion": 0,
+        "meltingPoint": 4242,
+        "heatFactor": 1.33,
+        "diffusion": 0.02,
+        "fuelClass": "DANGEROUS / Linear"
+      },
+      "YME": {
+        "name": "Yaemikium-837 Experimental Fuel",
+        "description": "Yae Miko is not related to the production of these extremely powerful anomalous fuel that shouldnt ever be used in the first place.",
+        "yield": 100000000,
+        "depletion": 0,
+        "meltingPoint": 2995,
+        "heatFactor": 1.5,
+        "diffusion": 0.02,
+        "fuelClass": "DANGEROUS / Square-Root"
+      },
+      "YMX": {
+        "name": "Yaemikium-837-Xtreme Reactor Destroyer",
+        "description": "YME-837 fuel with added 99% fried tofu additives(4.4 Tonnes). Do not use in power reactors. Use it in some shrine instead.",
+        "yield": 100000000,
+        "depletion": 0,
+        "meltingPoint": 6780,
+        "heatFactor": 1.88,
+        "diffusion": 0.02,
+        "fuelClass": "DISASTER / CHAOS-QUADRATIC"
+      }
+    },
+    "Selector": {
+      "Selected": {},
+      "Indicators": {
+        "U1": "sel_U1",
+        "U2": "sel_U2",
+        "U3": "sel_U3",
+        "U4": "sel_U4",
+        "R1": "sel_R1",
+        "R2": "sel_R2",
+        "R3": "sel_R3",
+        "R4": "sel_R4",
+        "R5": "sel_R5",
+        "R6": "sel_R6",
+        "R7": "sel_R7",
+        "R8": "sel_R8"
+      }
+    },
+    "ModelName": "LRBMKP-400",
+    "Width": 13,
+    "Height": 13,
+    "Matrix": [
+      [
+        {
+          "type": 9
+        },
+        {
+          "type": 9
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 9
+        },
+        {
+          "type": 9
+        }
+      ],
+      [
+        {
+          "type": 9
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 4,
+          "reflectorIn": true,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 9
+        }
+      ],
+      [
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 7,
+          "heat": 20,
+          "flux": 0,
+          "lastFlux": 0,
+          "sourceStrength": 26,
+          "closedSource": true
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        }
+      ],
+      [
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 3,
+          "heat": 20,
+          "insertion": 1,
+          "targetInsertion": 1,
+          "lastInsertion": 1,
+          "inserting": false,
+          "stationaryTime": 0,
+          "movingTime": 0,
+          "moveSpeed": 0.005,
+          "visualEnt": "ctlRod_lid_R1",
+          "graphiteTip": true,
+          "reflector": false,
+          "autoRegulator": true,
+          "autoInsertion": 0,
+          "autoTargetInsertion": 0,
+          "autoMaxInsertion": 0.1,
+          "name": "R1",
+          "group": "yellow"
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 3,
+          "heat": 20,
+          "insertion": 1,
+          "targetInsertion": 1,
+          "lastInsertion": 1,
+          "inserting": false,
+          "stationaryTime": 0,
+          "movingTime": 0,
+          "moveSpeed": 0.005,
+          "visualEnt": "ctlRod_lid_R8",
+          "graphiteTip": true,
+          "reflector": false,
+          "autoRegulator": true,
+          "autoInsertion": 0,
+          "autoTargetInsertion": 0,
+          "autoMaxInsertion": 0.1,
+          "name": "R8",
+          "group": "yellow"
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        }
+      ],
+      [
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 4,
+          "reflectorIn": true,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 3,
+          "heat": 20,
+          "insertion": 1,
+          "targetInsertion": 1,
+          "lastInsertion": 1,
+          "inserting": false,
+          "stationaryTime": 0,
+          "movingTime": 0,
+          "moveSpeed": 0.005,
+          "visualEnt": "ctlRod_lid_R2",
+          "graphiteTip": true,
+          "reflector": false,
+          "autoRegulator": true,
+          "autoInsertion": 0,
+          "autoTargetInsertion": 0,
+          "autoMaxInsertion": 0.1,
+          "name": "R2",
+          "group": "yellow"
+        },
+        {
+          "type": 1,
+          "fuelType": "HEU",
+          "heat": 20,
+          "skinHeat": 20,
+          "coreHeat": 20,
+          "flux": 0,
+          "lastFlux": 0,
+          "xenon": 0
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 3,
+          "heat": 20,
+          "insertion": 1,
+          "targetInsertion": 1,
+          "lastInsertion": 1,
+          "inserting": false,
+          "stationaryTime": 0,
+          "movingTime": 0,
+          "moveSpeed": 0.005,
+          "visualEnt": "ctlRod_lid_U1",
+          "graphiteTip": true,
+          "reflector": false,
+          "autoRegulator": true,
+          "autoInsertion": 0,
+          "autoTargetInsertion": 0,
+          "autoMaxInsertion": 0.1,
+          "name": "U1",
+          "group": "red"
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 1,
+          "fuelType": "MOX",
+          "heat": 20,
+          "skinHeat": 20,
+          "coreHeat": 20,
+          "flux": 0,
+          "lastFlux": 0,
+          "xenon": 0
+        },
+        {
+          "type": 3,
+          "heat": 20,
+          "insertion": 1,
+          "targetInsertion": 1,
+          "lastInsertion": 1,
+          "inserting": false,
+          "stationaryTime": 0,
+          "movingTime": 0,
+          "moveSpeed": 0.005,
+          "visualEnt": "ctlRod_lid_R7",
+          "graphiteTip": true,
+          "reflector": false,
+          "autoRegulator": true,
+          "autoInsertion": 0,
+          "autoTargetInsertion": 0,
+          "autoMaxInsertion": 0.1,
+          "name": "R7",
+          "group": "yellow"
+        },
+        {
+          "type": 1,
+          "fuelType": "EMPTY",
+          "heat": 20,
+          "skinHeat": 20,
+          "coreHeat": 20,
+          "flux": 0,
+          "lastFlux": 0,
+          "xenon": 0
+        },
+        {
+          "type": 4,
+          "reflectorIn": true,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        }
+      ],
+      [
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        }
+      ],
+      [
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 3,
+          "heat": 20,
+          "insertion": 1,
+          "targetInsertion": 1,
+          "lastInsertion": 1,
+          "inserting": false,
+          "stationaryTime": 0,
+          "movingTime": 0,
+          "moveSpeed": 0.005,
+          "visualEnt": "ctlRod_lid_U2",
+          "graphiteTip": true,
+          "reflector": false,
+          "autoRegulator": true,
+          "autoInsertion": 0,
+          "autoTargetInsertion": 0,
+          "autoMaxInsertion": 0.1,
+          "name": "U2",
+          "group": "red"
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 3,
+          "heat": 20,
+          "insertion": 1,
+          "targetInsertion": 1,
+          "lastInsertion": 1,
+          "inserting": false,
+          "stationaryTime": 0,
+          "movingTime": 0,
+          "moveSpeed": 0.005,
+          "visualEnt": "ctlRod_lid_U4",
+          "graphiteTip": true,
+          "reflector": false,
+          "autoRegulator": true,
+          "autoInsertion": 0,
+          "autoTargetInsertion": 0,
+          "autoMaxInsertion": 0.1,
+          "name": "U4",
+          "group": "red"
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        }
+      ],
+      [
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        }
+      ],
+      [
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 4,
+          "reflectorIn": true,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 3,
+          "heat": 20,
+          "insertion": 1,
+          "targetInsertion": 1,
+          "lastInsertion": 1,
+          "inserting": false,
+          "stationaryTime": 0,
+          "movingTime": 0,
+          "moveSpeed": 0.005,
+          "visualEnt": "ctlRod_lid_R4",
+          "graphiteTip": true,
+          "reflector": false,
+          "autoRegulator": true,
+          "autoInsertion": 0,
+          "autoTargetInsertion": 0,
+          "autoMaxInsertion": 0.1,
+          "name": "R4",
+          "group": "yellow"
+        },
+        {
+          "type": 1,
+          "fuelType": "MOX",
+          "heat": 20,
+          "skinHeat": 20,
+          "coreHeat": 20,
+          "flux": 0,
+          "lastFlux": 0,
+          "xenon": 0
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 3,
+          "heat": 20,
+          "insertion": 1,
+          "targetInsertion": 1,
+          "lastInsertion": 1,
+          "inserting": false,
+          "stationaryTime": 0,
+          "movingTime": 0,
+          "moveSpeed": 0.005,
+          "visualEnt": "ctlRod_lid_U3",
+          "graphiteTip": true,
+          "reflector": false,
+          "autoRegulator": true,
+          "autoInsertion": 0,
+          "autoTargetInsertion": 0,
+          "autoMaxInsertion": 0.1,
+          "name": "U3",
+          "group": "red"
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 1,
+          "fuelType": "MOX",
+          "heat": 20,
+          "skinHeat": 20,
+          "coreHeat": 20,
+          "flux": 0,
+          "lastFlux": 0,
+          "xenon": 0
+        },
+        {
+          "type": 3,
+          "heat": 20,
+          "insertion": 1,
+          "targetInsertion": 1,
+          "lastInsertion": 1,
+          "inserting": false,
+          "stationaryTime": 0,
+          "movingTime": 0,
+          "moveSpeed": 0.005,
+          "visualEnt": "ctlRod_lid_R5",
+          "graphiteTip": true,
+          "reflector": false,
+          "autoRegulator": true,
+          "autoInsertion": 0,
+          "autoTargetInsertion": 0,
+          "autoMaxInsertion": 0.1,
+          "name": "R5",
+          "group": "yellow"
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 4,
+          "reflectorIn": true,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        }
+      ],
+      [
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 3,
+          "heat": 20,
+          "insertion": 1,
+          "targetInsertion": 1,
+          "lastInsertion": 1,
+          "inserting": false,
+          "stationaryTime": 0,
+          "movingTime": 0,
+          "moveSpeed": 0.005,
+          "visualEnt": "ctlRod_lid_R3",
+          "graphiteTip": true,
+          "reflector": false,
+          "autoRegulator": true,
+          "autoInsertion": 0,
+          "autoTargetInsertion": 0,
+          "autoMaxInsertion": 0.1,
+          "name": "R3",
+          "group": "yellow"
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 3,
+          "heat": 20,
+          "insertion": 1,
+          "targetInsertion": 1,
+          "lastInsertion": 1,
+          "inserting": false,
+          "stationaryTime": 0,
+          "movingTime": 0,
+          "moveSpeed": 0.005,
+          "visualEnt": "ctlRod_lid_R6",
+          "graphiteTip": true,
+          "reflector": false,
+          "autoRegulator": true,
+          "autoInsertion": 0,
+          "autoTargetInsertion": 0,
+          "autoMaxInsertion": 0.1,
+          "name": "R6",
+          "group": "yellow"
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        }
+      ],
+      [
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        }
+      ],
+      [
+        {
+          "type": 9
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 4,
+          "reflectorIn": true,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 4,
+          "reflectorIn": true,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 2,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 9
+        }
+      ],
+      [
+        {
+          "type": 9
+        },
+        {
+          "type": 9
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 5,
+          "heat": 20
+        },
+        {
+          "type": 9
+        },
+        {
+          "type": 9
+        }
+      ]
+    ],
+    "ColumnVolume": 1718.3082020864001,
+    "TotalVolume": 158084.35459194882,
+    "SteamSpace": 30431.23825895015,
+    "MinSteamSpace": 7904.217729597442,
+    "RPVMinSteamSpaceFraction": 0.05,
+    "SteamExpansionRatio": 1600,
+    "SteamPressureFactor": 1,
+    "Water": 127653.11633299867,
+    "WaterTemperature": 20,
+    "Steam": 0,
+    "SteamTemperature": 100,
+    "MaxWater": 150180.13686235138,
+    "MaxSteam": 2130186.6781265107,
+    "HardMaxSteam": 4564685.738842523,
+    "RPVPressure": 0,
+    "RPVMaxPressure": 70,
+    "RPVHardPressure": 150,
+    "RPVSteamReliefPressure": 5,
+    "PressureUnit": "bar",
+    "SteamOutletOpen": true,
+    "FeedwaterInletOpen": true,
+    "DrainValveOpen": false,
+    "SteamOutletFlowRate": 1.2,
+    "DrainFlowRate": 500,
+    "WaterSpecificHeatKJPerL": 4.186,
+    "WaterLatentHeatKJPerL": 2257,
+    "WaterBoilingTemperature": 100,
+    "WaterBoilingTemperatureBase": 100,
+    "WaterBoilingPressureFactor": 2.6,
+    "SteamReferenceTemperature": 100,
+    "SteamSpecificHeatKJPerUnitC": 0.002,
+    "CoolingOptimalWaterFraction": 0.8,
+    "CoolingLowWaterFraction": 0.1,
+    "CoolingLowEfficiency": 0.08,
+    "CoolingDryEfficiency": 0.02,
+    "ChannelThermalMassKJPerC": 250,
+    "ChannelBoilingHeatTransfer": 0.08,
+    "LastThermalMW": 0,
+    "LastFlashBoilMW": 0,
+    "LastSteamGenerated": 0,
+    "LastFlashSteamGenerated": 0,
+    "LastSteamExportFlow": 0,
+    "LastDrainFlow": 0,
+    "LastCoolingEfficiency": 1,
+    "LastBoilingTemperature": 100,
+    "PendingRecircWater": 0,
+    "RecirculationRatedFlow": 16000,
+    "NaturalCirculationFraction": 0.05,
+    "NaturalCirculationMinLevelFraction": 0.15,
+    "CoreHoldUpSeconds": 1.5,
+    "LastRecircFlow": 0,
+    "LastNaturalCirculationFlow": 0,
+    "LastEffectiveCoreFlow": 0,
+    "LastSteamQuality": 0,
+    "LastVoidFraction": 0,
+    "LastWetSteamReturned": 0,
+    "LastWetWaterReturned": 0,
+    "LastDryoutRisk": 0,
+    "AutoRegulatorEnabled": false,
+    "AutoRegulatorUsePID": true,
+    "AutoRegulatorTargetMW": 0,
+    "AutoRegulatorMaxInsertion": 0.1,
+    "AutoRegulatorTargetInsertion": 0,
+    "AutoRegulatorKp": 0.0002,
+    "AutoRegulatorKi": 0.00001,
+    "AutoRegulatorKd": 0.00005,
+    "AutoRegulatorIntegral": 0,
+    "AutoRegulatorLastError": 0,
+    "AutoRegulatorIntegralLimit": 10000,
+    "AutoRegulatorResponseRate": 0.03,
+    "ControlRodMWPerRod": 0.1,
+    "ControlRodPowerAllOrNothing": true,
+    "ControlRodPowerDemandMW": 0,
+    "ControlRodPowerAcceptedMW": 0,
+    "ControlRodPowered": true,
+    "ControlRodMovingCount": 0,
+    "ControlRodBlockedCount": 0,
+    "ControlRodStuckCount": 0,
+    "IntegrityDamage": 0,
+    "IntegrityScore": 1,
+    "IntegrityPressureDamageRate": 0.015,
+    "IntegrityTemperatureDamageStart": 900,
+    "IntegrityTemperatureSevere": 1800,
+    "IntegrityTemperatureDamageRate": 0.01,
+    "IntegrityLastDamage": 0,
+    "ScramStuckBaseChance": 0.01,
+    "ScramStuckDamageChance": 0.12,
+    "ScramStuckMaxChance": 0.25,
+    "ScramStuckEligibleMaxInsertion": 0.4,
+    "ScramStuckMinInsertion": 0.2,
+    "ScramStuckMaxInsertion": 0.35,
+    "EventState": {
+      "NextBlowout": 0,
+      "BlowoutValveCooldowns": {},
+      "NextLeakCheck": 0,
+      "Failed": false
+    },
+    "BlowoutEnabled": true,
+    "BlowoutPressure": 85,
+    "BlowoutCooldown": 0.05,
+    "BlowoutColumnCooldown": 1,
+    "BlowoutValvePrefix": "brush_rpv",
+    "BlowoutFallbackValveCount": 89,
+    "BlowoutValves": [
+      {
+        "key": "brush_rpv_0",
+        "targetName": "brush_rpv_0",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_1",
+        "targetName": "brush_rpv_1",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_2",
+        "targetName": "brush_rpv_2",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_3",
+        "targetName": "brush_rpv_3",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_4",
+        "targetName": "brush_rpv_4",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_5",
+        "targetName": "brush_rpv_5",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_6",
+        "targetName": "brush_rpv_6",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_7",
+        "targetName": "brush_rpv_7",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_8",
+        "targetName": "brush_rpv_8",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_9",
+        "targetName": "brush_rpv_9",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_10",
+        "targetName": "brush_rpv_10",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_11",
+        "targetName": "brush_rpv_11",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_12",
+        "targetName": "brush_rpv_12",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_13",
+        "targetName": "brush_rpv_13",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_14",
+        "targetName": "brush_rpv_14",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_15",
+        "targetName": "brush_rpv_15",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_16",
+        "targetName": "brush_rpv_16",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_17",
+        "targetName": "brush_rpv_17",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_18",
+        "targetName": "brush_rpv_18",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_19",
+        "targetName": "brush_rpv_19",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_20",
+        "targetName": "brush_rpv_20",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_21",
+        "targetName": "brush_rpv_21",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_22",
+        "targetName": "brush_rpv_22",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_23",
+        "targetName": "brush_rpv_23",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_24",
+        "targetName": "brush_rpv_24",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_25",
+        "targetName": "brush_rpv_25",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_26",
+        "targetName": "brush_rpv_26",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_27",
+        "targetName": "brush_rpv_27",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_28",
+        "targetName": "brush_rpv_28",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_29",
+        "targetName": "brush_rpv_29",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_30",
+        "targetName": "brush_rpv_30",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_31",
+        "targetName": "brush_rpv_31",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_32",
+        "targetName": "brush_rpv_32",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_33",
+        "targetName": "brush_rpv_33",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_34",
+        "targetName": "brush_rpv_34",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_35",
+        "targetName": "brush_rpv_35",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_36",
+        "targetName": "brush_rpv_36",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_37",
+        "targetName": "brush_rpv_37",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_38",
+        "targetName": "brush_rpv_38",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_39",
+        "targetName": "brush_rpv_39",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_40",
+        "targetName": "brush_rpv_40",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_41",
+        "targetName": "brush_rpv_41",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_42",
+        "targetName": "brush_rpv_42",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_43",
+        "targetName": "brush_rpv_43",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_44",
+        "targetName": "brush_rpv_44",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_45",
+        "targetName": "brush_rpv_45",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_46",
+        "targetName": "brush_rpv_46",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_47",
+        "targetName": "brush_rpv_47",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_48",
+        "targetName": "brush_rpv_48",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_49",
+        "targetName": "brush_rpv_49",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_50",
+        "targetName": "brush_rpv_50",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_51",
+        "targetName": "brush_rpv_51",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_52",
+        "targetName": "brush_rpv_52",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_53",
+        "targetName": "brush_rpv_53",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_54",
+        "targetName": "brush_rpv_54",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_55",
+        "targetName": "brush_rpv_55",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_56",
+        "targetName": "brush_rpv_56",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_57",
+        "targetName": "brush_rpv_57",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_58",
+        "targetName": "brush_rpv_58",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_59",
+        "targetName": "brush_rpv_59",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_60",
+        "targetName": "brush_rpv_60",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_61",
+        "targetName": "brush_rpv_61",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_62",
+        "targetName": "brush_rpv_62",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_63",
+        "targetName": "brush_rpv_63",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_64",
+        "targetName": "brush_rpv_64",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_65",
+        "targetName": "brush_rpv_65",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_66",
+        "targetName": "brush_rpv_66",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_67",
+        "targetName": "brush_rpv_67",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_68",
+        "targetName": "brush_rpv_68",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_69",
+        "targetName": "brush_rpv_69",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_70",
+        "targetName": "brush_rpv_70",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_71",
+        "targetName": "brush_rpv_71",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_72",
+        "targetName": "brush_rpv_72",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_73",
+        "targetName": "brush_rpv_73",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_74",
+        "targetName": "brush_rpv_74",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_75",
+        "targetName": "brush_rpv_75",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_76",
+        "targetName": "brush_rpv_76",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_77",
+        "targetName": "brush_rpv_77",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_78",
+        "targetName": "brush_rpv_78",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_79",
+        "targetName": "brush_rpv_79",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_80",
+        "targetName": "brush_rpv_80",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_81",
+        "targetName": "brush_rpv_81",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_82",
+        "targetName": "brush_rpv_82",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_83",
+        "targetName": "brush_rpv_83",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_84",
+        "targetName": "brush_rpv_84",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_85",
+        "targetName": "brush_rpv_85",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_86",
+        "targetName": "brush_rpv_86",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_87",
+        "targetName": "brush_rpv_87",
+        "resolved": false
+      },
+      {
+        "key": "brush_rpv_88",
+        "targetName": "brush_rpv_88",
+        "resolved": false
+      }
+    ],
+    "BlowoutMinColumnsPerPass": 1,
+    "BlowoutMaxColumnsPerPass": 4,
+    "BlowoutSteamLoss": 0.5,
+    "BlowoutMinSpeed": 64,
+    "BlowoutMaxSpeed": 320,
+    "BlowoutFallSpeed": 320,
+    "BlowoutMinDuration": 0.2,
+    "BlowoutMaxDuration": 1,
+    "CatastrophicPressure": 140,
+    "CatastrophicClearDelay": 5,
+    "FuelLeakCheckInterval": 30,
+    "FuelLeakTemperature": 1500,
+    "FuelLeakBaseChance": 5,
+    "FuelLeakChanceStep": 5,
+    "FuelLeakTemperatureStep": 50,
+    "FuelLeakHeatRate": 50,
+    "FuelMeltdownTemperature": 3000,
+    "FuelMeltdownDelay": 30,
+    "AverageHeat": 20,
+    "MaxHeat": 20,
+    "AverageXenon": 0,
+    "TotalFlux": 0,
+    "TotalFluxSubtracted": 0,
+    "EndpointPorts": {
+      "water": {},
+      "steam": {},
+      "recirculation": {},
+      "thermal": {}
+    },
+    "EndpointReleases": {},
+    "SteamOutletRatedPressureDelta": 5,
+    "CatastrophicFailureRelay": "explodetest",
+    "ControlRodPowerGrid": "station_grid",
+    "ControlRodPowerBreaker": "rbmk_control_rods_breaker",
+    "IntegrityPressureDamageStart": 70,
+    "IntegrityPressureSevere": 140,
+    "SteamSeparator": "main_steam_separator"
+  },
+  "indicators": {
+    "U1": "sel_U1",
+    "U2": "sel_U2",
+    "U3": "sel_U3",
+    "U4": "sel_U4",
+    "R1": "sel_R1",
+    "R2": "sel_R2",
+    "R3": "sel_R3",
+    "R4": "sel_R4",
+    "R5": "sel_R5",
+    "R6": "sel_R6",
+    "R7": "sel_R7",
+    "R8": "sel_R8"
+  }
+}

@@ -15,8 +15,8 @@ Luasquare began as an RBMK-style reactor experiment, but it is now a broader map
 | Balance of plant | Fluid networks, pumps, valves, heat exchangers, steam separators, condensers, deaerators, cooling towers, turbines, generators, diesel generators, electrical grids, breakers, and transformers |
 | Map modules | Source-driven Simple/Complex 3D2D displays; declarative annunciators; JSON choreography timelines and editor; synchronized music, PA, ambient audio, soundscapes, and subtitles; graphs, themes, raycast interaction; skin-based seven-segment displays; gauges; JSON-driven physical/virtual controls and numeric keypads; Source entity bindings; and movable-machinery helpers |
 | Dark Fusion Reactor | A staged reactor framework with startup controls, resource state, VMF bindings, machinery, independently animated core visuals, component-owned JSON timelines, six-catalyzer sequencing, telemetry, debug controls, and a guarded simulation tick |
-| Development tools | Client-side RBMK and plant overlays, DFR admin controls in the spawn menu, bundled annunciator/display assets, and asset-generation scripts |
-| Reference content | The playable `experiment_rbmk` BSP, its editable VMF source, an LRBMKP-400 layout, and a complete map-specific RBMK bootstrap |
+| Development tools | Contextual typed plant graph/cell editor with filtered orthogonal links, live editable bends, label-aware hit cycling, a separate binding/instrument manager, typed property windows, isolated draft preview, subscribed inspection, instance-addressed RBMK and plant overlays, subsystem editors and asset-generation scripts |
+| Reference content | The `experiment_rbmk` BSP/VMF, packed LRBMKP-400 and plant manifests, a cleanup-aware loader, and opt-in two-core/heat-exchanger fixtures |
 
 The simulation is gameplay-oriented and fictionalized. It borrows concepts from real plant systems and from other games such as Minecraft 1.12's HBM's Nuclear Tech Mod, but it is not an engineering model or an exact recreation of a real RBMK.
 
@@ -26,7 +26,7 @@ The RBMK and balance-of-plant code form the most complete demonstration in this 
 
 The Dark Fusion Reactor package is a foundation for the `gm_darkfusion_v2` project. Its binding, machinery, visual, startup, and debug layers exist, but the full reactor physics, procedures, faults, disasters, audio, subtitles, and facility simulation described in the design notes are not complete.
 
-There is currently no compatibility promise between revisions, no automated test suite, and no automatic dependency detection.
+There is no compatibility promise between revisions. Compiler/lifecycle, multi-core, separated-realm source transfer, Control and editor regression checks are available under `tools/`. The `experiment_rbmk` reference acceptance cycle passed after five remediation rounds; its multiplayer and fixture extensions remain deferred. DFR migration remains deferred at `foundation-0.1`.
 
 ## Installation
 
@@ -62,49 +62,18 @@ The editable map source is available at [`maps/experiment_rbmk.vmf`](maps/experi
 
 ## Integrating Luasquare into a map
 
-Luasquare does not automatically create a plant. A map owns a bootstrap script that:
+Maps select trusted packages and declare instances, configuration, physical bindings, links and existing JSON sources in `luasquare.map/v1` manifests and `luasquare.components/v1` packs. The loader compiles dependencies, registers instance-qualified capabilities, initializes the existing Control Layer and activates simulation transactionally. Plant changes require a map reload. See the [map source/editor guide](lua/luasquare_module/map/README.md) and [archived acceptance record](lua/luasquare_module/map/archive/ACCEPTANCE.md).
 
-1. Includes the reusable modules it needs.
-2. Configures tick rates and simulation constants.
-3. Registers reactor cells, fluid networks, machinery, grids, displays, alarms, and Hammer targetnames.
-4. Starts each registered system.
-5. Registers trusted Control Layer actions and loads map-owned control JSON; Hammer buttons report validated outputs through the named `lua_run`.
-
-A small server-side bootstrap has this general shape:
+A server bootstrap, invoked after Source entities initialize, has this shape:
 
 ```lua
 include('luasquare_module/cleanup.lua')
 
 if LUASQUARE_MY_MAP_SIM_INITIALIZED then return end
 
-include('luasquare_module/seg7display.lua')
-include('luasquare_module/3d2display/engine.lua')
-include('luasquare_module/timeline/engine.lua')
-include('luasquare_module/audio/engine.lua')
-include('luasquare_module/annunciator/engine.lua')
-include('luasquare_powerplant/init.lua')
-include('luasquare_rbmk/init.lua')
-
-RBMK.WorldOrigin = Vector(0, 0, 0)
-RBMK.CellSpacing = 64
-RBMK.CreateMatrix(3, 3)
-RBMK.SetCell(2, 2, RBMK.CreateFuelChannel('MEU'))
-RBMK.FillBlanksWithSteam()
-RBMK.AddInitialWater(80)
-
-LUASQUARE_FLUID.RegisterNetwork('main_steam', {
-    fluidType = 'steam',
-    amount = 0,
-    maxAmount = 10000,
-    pressure = 1,
-    temperature = 100
-})
-
-RBMK.SetSteamNetwork('main_steam')
-
-RBMK.Start()
-LUASQUARE_FLUID.Start()
-
+include('luasquare_module/map/engine.lua')
+local instance, err = LUASQUARE_MAP.Load('my_map/main.json')
+if not instance then ErrorNoHalt(tostring(err) .. '\n'); return end
 LUASQUARE_MY_MAP_SIM_INITIALIZED = true
 ```
 
@@ -119,9 +88,9 @@ Parameter:   LUASQUARE_CONTROL.ReportOutput('OnPressed',CALLER,ACTIVATOR)
 
 Framework-owned globals and map bootstrap guards should use a `LUASQUARE_`, `RBMK_`, or `DFR_` prefix so cleanup can remove them. A map can register an exceptional name with `LUASQUARE_CLEANUP.RegisterGlobal(name)`. Custom named timers should use the same prefixes, or register their prefix with `LUASQUARE_CLEANUP.RegisterTimerPrefix(prefix)`.
 
-Keep VMF targetnames and map coordinates in the map's bootstrap. Reusable behavior belongs in `luasquare_module`, `luasquare_powerplant`, or the relevant reactor package.
+Keep VMF targetnames and map coordinates in map-owned packed sources. Reusable behavior belongs in `luasquare_module`, `luasquare_powerplant`, or the relevant reactor package. Package IDs resolve trusted registrations; sources cannot select Lua files. Source-created cores are addressed through `LUASQUARE_RBMK.Get(coreId)`; there is no singleton server `RBMK`.
 
-For a real integration example, see [`lua/luasquare_rbmk/bootstrapper/experiment_rbmk.lua`](lua/luasquare_rbmk/bootstrapper/experiment_rbmk.lua). The reactor grid itself is defined separately in [`lua/luasquare_rbmk/layouts/LRBMKP-400.lua`](lua/luasquare_rbmk/layouts/LRBMKP-400.lua).
+For the cleanup-aware deferred loader, see [`experiment_rbmk.lua`](lua/luasquare_rbmk/bootstrapper/experiment_rbmk.lua). Its [manifest](data_static/luasquare/map/experiment_rbmk/main.json) selects the [core layout](data_static/luasquare/components/experiment_rbmk/core.json) and plant packs. The graph editor is `luasquare_map_editor`; exports are drafts for manual promotion. Neither test fixture loads by default.
 
 ## JSON-driven operator controls
 
@@ -200,7 +169,7 @@ Static compiled layouts are sent as compressed, revisioned chunks. Subsequent tr
 
 ### In-game display editor
 
-Open `Spawn Menu -> Options -> Luasquare -> 3D2D Display Editor`. It is available to single-player or admins and provides synchronized hierarchy/viewport selection, overlap cycling, context-menu clipboard and layer operations, Complex drag/resize placement, independent grid and sibling snapping, structured color/material/provider/action/variant controls, undo/redo, validation, theme simulation, and temporary runtime replacement. Optional per-line/title font scaling and hidden page tabs are supported by the same v1 source schema.
+Open `Spawn Menu -> Options -> Luasquare -> 3D2D Display Editor`. It is available to single-player or admins and provides synchronized hierarchy/viewport selection, overlap cycling, context-menu clipboard and layer operations, Complex drag/resize placement, independent grid and sibling snapping, structured color/material/provider/action/variant controls, undo/redo, validation, theme simulation, and temporary runtime replacement. Simple mode supports text, value, bar, phase and graph lines; dashboard grids use positioned Complex `LinePanel` elements instead of the retired simple `columns` line. Optional per-line/title font scaling and hidden page tabs are supported by the same v1 source schema.
 
 Packed `data_static` sources open read-only. **Save draft** writes canonical JSON to the exact path shown by the editor:
 

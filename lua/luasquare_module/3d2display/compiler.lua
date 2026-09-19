@@ -782,6 +782,11 @@ local function compileDisplay(source, origin, diagnostics)
 
     if mode == 'simple' then
         compiled.lines = normalizeLines(source.lines or {}, '$.lines', diagnostics)
+        for index, line in ipairs(compiled.lines) do
+            if line.type == 'columns' then
+                addDiagnostic(diagnostics, 'error', '$.lines[' .. index .. '].type', 'columns are not supported in simple build mode; use positioned LinePanel elements')
+            end
+        end
     else
         local pageIds = {}
         if source.pages ~= nil and not isArray(source.pages) then

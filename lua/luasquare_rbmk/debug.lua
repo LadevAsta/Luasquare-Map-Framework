@@ -1,4 +1,4 @@
-RBMK = RBMK or {}
+return function(RBMK)
 RBMK.Debug = RBMK.Debug or {}
 RBMK.Debug.ClientState = {
     Cells = {},
@@ -6,7 +6,7 @@ RBMK.Debug.ClientState = {
     VesselInfo = {}
 }
 
-local DEBUG_WIRE_VERSION = 3
+local DEBUG_WIRE_VERSION = 4
 local DEBUG_PACKET_VESSEL = 1
 local DEBUG_PACKET_CELLS = 2
 local DEBUG_PACKET_FLUX = 3
@@ -37,6 +37,7 @@ end
 local function startDebugPacket(packetType, sequence)
     net.Start('RBMK_DebugState')
     net.WriteUInt(DEBUG_WIRE_VERSION, 8)
+    net.WriteString(RBMK.Id)
     net.WriteUInt(packetType, 4)
     net.WriteUInt(sequence, 16)
 end
@@ -111,8 +112,10 @@ function RBMK.Debug.BuildCell(x, y, cell)
 end
 
 function RBMK.Debug.AddFluxLine(startPos, endPos, flux, dx, dy)
+    if not RBMK.Debug.Recipients or #RBMK.Debug.Recipients == 0 then return end
     RBMK.Debug.ClientState = RBMK.Debug.ClientState or {}
     RBMK.Debug.ClientState.FluxLines = RBMK.Debug.ClientState.FluxLines or {}
+    if #RBMK.Debug.ClientState.FluxLines >= 8192 then return end
     table.insert(RBMK.Debug.ClientState.FluxLines, {
         start = startPos,
         finish = endPos,
@@ -203,6 +206,15 @@ function RBMK.Debug.BuildVesselInfo()
 end
 
 function RBMK.Debug.Tick()
+    if CurTime() < (RBMK.Debug.NextUpdate or 0) then return end
+    RBMK.Debug.NextUpdate = CurTime() + 0.2
+    local recipients = {}
+    for _, actor in ipairs(player.GetAll()) do
+        if (game.SinglePlayer() or actor:IsAdmin()) and actor:GetInfoNum('luasquare_rbmk_debug_enabled', 0) == 1
+            and actor:GetInfo('luasquare_rbmk_debug_core') == RBMK.Id then recipients[#recipients + 1] = actor end
+    end
+    RBMK.Debug.Recipients = recipients
+    if #recipients == 0 then return end
     RBMK.Debug.BuildCells()
     --RBMK.Debug.BuildFluxLines()
     RBMK.Debug.BuildVesselInfo()
@@ -221,7 +233,7 @@ function RBMK.Debug.Broadcast()
     RBMK.Debug.BroadcastFluxChunks(sequence, fluxLines)
 
     startDebugPacket(DEBUG_PACKET_END, sequence)
-    net.Broadcast()
+    net.Send(RBMK.Debug.Recipients)
 end
 
 function RBMK.Debug.BroadcastVesselInfo(sequence, info)
@@ -295,7 +307,7 @@ function RBMK.Debug.BroadcastVesselInfo(sequence, info)
     net.WriteUInt(info.blowoutValveCount or 0, 16)
     writePoint(info.lastFuelLeak)
     writePoint(info.lastMeltdown)
-    net.Broadcast()
+    net.Send(RBMK.Debug.Recipients)
 end
 
 function RBMK.Debug.WriteCell(cell)
@@ -354,7 +366,7 @@ function RBMK.Debug.BroadcastCellChunks(sequence, cells)
         for i = startIndex, endIndex do
             RBMK.Debug.WriteCell(cells[i])
         end
-        net.Broadcast()
+        net.Send(RBMK.Debug.Recipients)
     end
 end
 
@@ -374,6 +386,7 @@ function RBMK.Debug.BroadcastFluxChunks(sequence, fluxLines)
         for i = startIndex, endIndex do
             RBMK.Debug.WriteFluxLine(fluxLines[i])
         end
-        net.Broadcast()
+        net.Send(RBMK.Debug.Recipients)
     end
+end
 end

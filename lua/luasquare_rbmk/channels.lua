@@ -1,4 +1,4 @@
-RBMK = RBMK or {}
+return function(RBMK)
 RBMK.Rods = RBMK.Rods or {}
 function RBMK.CreateBlank()
     return {
@@ -33,7 +33,7 @@ function RBMK.CreateControlRod(name, group, indicatorSpriteEnt, visualEnt, graph
     name = name or 'unnamed'
     group = group or 'nocolor'
     visualEnt = visualEnt
-    graphiteTip = graphiteTip or true
+    if graphiteTip == nil then graphiteTip = true end
     reflector = reflector or false
     local rod = {
         type = RBMK.CELL_CONTROL,
@@ -57,7 +57,7 @@ function RBMK.CreateControlRod(name, group, indicatorSpriteEnt, visualEnt, graph
     }
 
     RBMK.Rods[name] = rod
-    if indicatorSpriteEnt ~= nil then LUASQUARE_ROD_SELECTOR.RegisterIndicator(name, indicatorSpriteEnt) end
+    if indicatorSpriteEnt ~= nil then RBMK.Selector.RegisterIndicator(name, indicatorSpriteEnt) end
     return rod
 end
 
@@ -101,30 +101,25 @@ function RBMK.FillBlanksWithSteam(opts)
     local ignoreEdge = opts.ignoreEdge
     local ignoreNearVoid = opts.ignoreNearVoid
     local dirs4 = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}
+    local function fillCell(x, y)
+        local cell = RBMK.GetCell(x, y)
+        if not cell or cell.type ~= RBMK.CELL_BLANK then return end
+        -- Preserve the reference layout's historical edge selection.
+        if ignoreEdge and x == 1 or y == 1 or x == RBMK.Width or y == RBMK.Height then return end
+        if ignoreNearVoid then
+            for _, dir in ipairs(dirs4) do
+                local other = RBMK.GetCell(x + dir[1], y + dir[2])
+                if other and other.type == RBMK.CELL_VOID then return end
+            end
+        end
+        RBMK.SetCell(x, y, RBMK.CreateSteamChannel())
+    end
     for x = 1, RBMK.Width do
         for y = 1, RBMK.Height do
-            local cell = RBMK.GetCell(x, y)
-            if not cell then continue end
-            if cell.type ~= RBMK.CELL_BLANK then continue end
-            -- Ignore outer edge
-            if ignoreEdge and x == 1 or y == 1 or x == RBMK.Width or y == RBMK.Height then continue end
-            -- Ignore touching void
-            if ignoreNearVoid then
-                local touchingVoid = false
-                for _, dir in ipairs(dirs4) do
-                    local other = RBMK.GetCell(x + dir[1], y + dir[2])
-                    if other and other.type == RBMK.CELL_VOID then
-                        touchingVoid = true
-                        break
-                    end
-                end
-
-                if touchingVoid then continue end
-            end
-
-            RBMK.SetCell(x, y, RBMK.CreateSteamChannel())
+            fillCell(x, y)
         end
     end
 
     RBMK.RecalculatePools()
+end
 end

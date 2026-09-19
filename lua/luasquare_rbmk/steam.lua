@@ -1,4 +1,4 @@
-RBMK = RBMK or {}
+return function(RBMK)
 
 function RBMK.MixTemperature(currentAmount, currentTemperature, addedAmount, addedTemperature)
     currentAmount = math.max(tonumber(currentAmount) or 0, 0)
@@ -471,4 +471,5 @@ function RBMK.DoDrainStep()
     end
 
     RBMK.UpdateRPVPressure()
+end
 end

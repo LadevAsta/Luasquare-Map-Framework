@@ -921,9 +921,8 @@ function LUASQUARE_TURBINE.GetBoilerThermalMW(turbine)
     local boiler = turbine.boiler
     if not boiler then return nil end
 
-    if boiler == 'rbmk' then
-        if not RBMK then return nil end
-        return math.max((RBMK.LastThermalMW or 0) + (RBMK.LastFlashBoilMW or 0), 0)
+    if LUASQUARE_ENDPOINT and LUASQUARE_ENDPOINT.Get(boiler) then
+        return math.max(LUASQUARE_ENDPOINT.Read(boiler, 'thermalMW', 0), 0)
     end
 
     if type(boiler) == 'function' then return math.max(tonumber(boiler(turbine)) or 0, 0) end
@@ -939,7 +938,12 @@ function LUASQUARE_TURBINE.GetBoilerSteamUse(turbine)
 
     local total = 0
     for _, other in pairs(LUASQUARE_TURBINE.Turbines) do
-        if other.boiler == turbine.boiler then total = total + math.max(other.lastSteamUsed or 0, 0) end
+        local same = other.boiler == turbine.boiler
+        if not same and LUASQUARE_ENDPOINT then
+            local endpoint = LUASQUARE_ENDPOINT.Get(turbine.boiler)
+            same = endpoint ~= nil and endpoint == LUASQUARE_ENDPOINT.Get(other.boiler)
+        end
+        if same then total = total + math.max(other.lastSteamUsed or 0, 0) end
     end
 
     return math.max(total, turbine.lastSteamUsed or 0)

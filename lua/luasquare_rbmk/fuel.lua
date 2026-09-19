@@ -1,4 +1,4 @@
-RBMK = RBMK or {}
+return function(RBMK)
 -- Fuel Flux Function
 function RBMK.MEUFlux(x)
     return math.log(x + 1, 10) * 0.5 * 20
@@ -63,5 +63,6 @@ function RBMK.DoXenonStep()
             end
         end
     end
-    RBMK.AverageXenon = xenonSum / fuelrodCount
+    RBMK.AverageXenon = fuelrodCount > 0 and xenonSum / fuelrodCount or 0
+end
 end

@@ -265,7 +265,7 @@ local function execute(control, request, event)
     end
     local ok, result, detail = pcall(action.callback, request.context.actor, params, control, value, request.context)
     if not ok then return false, tostring(result) end
-    if result == false then return false, detail or 'action rejected' end
+    if result == false then return false, detail or 'action rejected', true end
     if event == 'submit' then
         control.acceptedValue = value
         control.buffer = control.clearOnSubmit == false and tostring(value) or ''
@@ -289,6 +289,23 @@ local function fault(control, request, reason)
     control.active, control.pending = nil, nil
     control.fault = reason
     control.recoveryTimedOut = nil
+    if IsValid(control.entity) and physicalState(control.entity) ~= control.acceptedPosition then
+        control.recovering = {position = control.acceptedPosition, deadline = CurTime() + CONTROL.AcknowledgementSeconds}
+        input(control.entity, 'Unlock')
+        input(control.entity, control.acceptedPosition == 'in' and 'PressIn' or 'PressOut')
+    end
+    sync(control)
+end
+
+local function reject(control, request, reason)
+    reason = string.sub(tostring(reason or 'action rejected'), 1, 1024)
+    finish(request, 'failed', reason)
+    if control.pending == request then control.pending = nil end
+    if control.active == request then control.active = nil end
+    control.recoveryTimedOut = nil
+    -- A valid action may reject an unsafe request (for example, attempting
+    -- synchronization outside tolerance). Restore physical toggles, but do
+    -- not convert that expected outcome into a persistent hardware fault.
     if IsValid(control.entity) and physicalState(control.entity) ~= control.acceptedPosition then
         control.recovering = {position = control.acceptedPosition, deadline = CurTime() + CONTROL.AcknowledgementSeconds}
         input(control.entity, 'Unlock')
@@ -331,8 +348,8 @@ function CONTROL.Dispatch(control, request)
     if not control.target then
         local event = control.kind == 'keypad' and 'submit' or control.kind == 'toggle'
             and (target or (control.acceptedPosition == 'in' and 'out' or 'in')) or 'press'
-        local ok, reason = execute(control, request, event)
-        if ok then finish(request, 'completed') else fault(control, request, reason) end
+        local ok, reason, expected = execute(control, request, event)
+        if ok then finish(request, 'completed') elseif expected then reject(control, request, reason) else fault(control, request, reason) end
     elseif target and physicalState(control.entity) == target then
         finish(request, 'completed')
     else
@@ -429,16 +446,16 @@ function CONTROL.ReportOutput(id, event, caller, activator)
         if request.pressed then return true end
         request.pressed = true
         if control.kind == 'momentary' then
-            local ok, reason = execute(control, request, 'press')
-            if not ok then fault(control, request, reason); return false end
+            local ok, reason, expected = execute(control, request, 'press')
+            if not ok then (expected and reject or fault)(control, request, reason); return false end
             request.actionExecuted = true
         end
         return true
     end
     if position ~= request.expectedPosition then return false end
     if control.kind == 'toggle' then
-        local ok, reason = execute(control, request, position)
-        if not ok then fault(control, request, reason); return false end
+        local ok, reason, expected = execute(control, request, position)
+        if not ok then (expected and reject or fault)(control, request, reason); return false end
     elseif not request.actionExecuted then return false end
     control.active = nil
     if control.kind == 'momentary' and position == 'in' then
@@ -571,18 +588,18 @@ function CONTROL.Stop()
     CONTROL.EntityControls, CONTROL.InternalInputs = {}, {}
 end
 
-function CONTROL.Start(mapName)
+function CONTROL.Start(mapName, validateOnly)
     mapName = mapName or game.GetMap()
     if not CONTROL.NormalizeId(mapName) then return false, 'invalid map name' end
     if CONTROL.Running then return false, 'control runtime already started' end
     local root = 'data_static/luasquare/control/' .. mapName .. '/'
-    local names = file.Find(root .. '*.json', 'GAME') or {}
+    local names = CONTROL.ManifestSources or file.Find(root .. '*.json', 'GAME') or {}
     table.sort(names)
     local definitions, sources, diagnostics, packs, targets, total = {}, {}, {}, {}, {}, 0
     if #names > 128 then return false, 'too many control packs' end
     for _, name in ipairs(names) do
-        local path = root .. name
-        if not string.match(name, '^[%w_%.%-]+%.json$') then return false, 'unsafe source path' end
+        local path = CONTROL.ManifestSources and name or root .. name
+        if not CONTROL.ManifestSources and not string.match(name, '^[%w_%.%-]+%.json$') then return false, 'unsafe source path' end
         if (file.Size(path, 'GAME') or -1) > CONTROL.MaxSourceBytes then return false, 'source too large: ' .. path end
         local bytes = file.Read(path, 'GAME')
         local source = bytes and #bytes <= CONTROL.MaxSourceBytes and util.JSONToTable(bytes, false, true)
@@ -639,6 +656,7 @@ function CONTROL.Start(mapName)
     CONTROL.SourceDiagnostics = diagnostics
     CONTROL.EditorSources = sources -- Read-only authoring does not require valid live entity bindings.
     if #diagnostics > 0 then print(CONTROL.DiagnosticsText(diagnostics)); return false, CONTROL.DiagnosticsText(diagnostics) end
+    if validateOnly then return true, definitions end
     CONTROL.Controls, CONTROL.Requests, CONTROL.RequestOrder, CONTROL.History = {}, {}, {}, {}
     CONTROL.Sources, CONTROL.EntityControls = sources, {}
     CONTROL.Revision = CONTROL.Revision + 1

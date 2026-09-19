@@ -229,7 +229,6 @@ function compactKeypads(source) {
 }
 
 if (require.main === module) {
-    migrate('experiment_rbmk', root, root);
-    migrate('gm_darkfusion_v2', external, stage);
+    throw Error('Historical Control Layer migration is retired. Current experiment_rbmk declarations are manifest-owned; use the editors and manual Hammer workflow.');
 }
 module.exports = {entities, reference, migrate, controlLabel, compactKeypads};

@@ -119,7 +119,9 @@ function LUASQUARE_FLUID.GetCoolantCirculationFlow(name)
     local flow = 0
     if LUASQUARE_PUMP then
         for _, pump in pairs(LUASQUARE_PUMP.Pumps or {}) do
-            if pump.source == name and (pump.target == name or pump.target == network.coolingTower) then
+            local source = type(pump.source) == 'table' and pump.source.component or pump.source
+            local target = type(pump.target) == 'table' and pump.target.component or pump.target
+            if source == name and (target == name or target == network.coolingTower) then
                 flow = flow + math.max(pump.lastFlow or 0, 0)
             end
         end
@@ -290,6 +292,8 @@ end
 
 function LUASQUARE_FLUID.AddToOverflowTarget(target, amount, temperature)
     amount = math.max(tonumber(amount) or 0, 0)
+    local endpoint = LUASQUARE_ENDPOINT and LUASQUARE_ENDPOINT.Get(target)
+    if endpoint then return endpoint.add and endpoint.add(amount, 0, temperature) or 0 end
     if target == 'void' or target == nil then return amount end
     if LUASQUARE_STEAMSEPARATOR and LUASQUARE_STEAMSEPARATOR.GetSteamSeparator(target) then
         return LUASQUARE_STEAMSEPARATOR.AddWater(target, amount, temperature)

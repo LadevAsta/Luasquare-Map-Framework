@@ -1,11 +1,31 @@
 {
-  "schema": "luasquare.3d2display/v1", "id": "condensate_pump_status_panel", "buildMode": "simple",
-  "target": "tar_display_coolingloop", "unitWidth": 54, "unitHeight": 33, "scale": 0.1,
-  "title": "COOLING LOOP", "themeGroup": "rbmk", "padding": 10, "lineHeight": 18, "titleHeight": 28,
-  "lines": [
-    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.cooling_loop", "path": "row1"}},
-    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.cooling_loop", "path": "row2"}},
-    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.cooling_loop", "path": "row3"}},
-    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.cooling_loop", "path": "row4"}}
+  "schema": "luasquare.3d2display/v1",
+  "id": "condensate_pump_status_panel",
+  "buildMode": "complex",
+  "target": "tar_display_coolingloop",
+  "unitWidth": 54,
+  "unitHeight": 33,
+  "scale": 0.1,
+  "themeGroup": "rbmk",
+  "defaultPage": "overview",
+  "showPageTabs": false,
+  "pages": [
+    {
+      "id": "overview",
+      "label": "COOLING LOOP",
+      "elements": [
+        {"id": "cond_pump", "type": "LinePanel", "x": 8, "y": 8, "width": 125, "height": 96, "title": "COND PUMP", "lines": [{"type": "value", "label": "FLOW", "value": {"provider": "reference.condensate_pump_a1", "path": "lastFlow"}, "decimals": 0, "unit": "/s"}]},
+        {"id": "hotwell_makeup", "type": "LinePanel", "x": 141, "y": 8, "width": 125, "height": 96, "title": "HW MAKEUP", "lines": [{"type": "value", "label": "FLOW", "value": {"provider": "reference.hotwell_makeup_pump", "path": "lastFlow"}, "decimals": 0, "unit": "/s"}]},
+        {"id": "deaerator", "type": "LinePanel", "x": 274, "y": 8, "width": 125, "height": 96, "title": "DEAERATOR", "lines": [{"type": "value", "label": "LEVEL", "value": {"provider": "reference.main_deaerator", "path": "levelPercent"}, "decimals": 0, "unit": "%"}]},
+        {"id": "hotwell", "type": "LinePanel", "x": 407, "y": 8, "width": 125, "height": 96, "title": "HOTWELL", "lines": [{"type": "value", "label": "LEVEL", "value": {"provider": "reference.hotwell", "path": "levelPercent"}, "decimals": 0, "unit": "%"}]},
+        {"id": "cw_pump", "type": "LinePanel", "x": 8, "y": 112, "width": 125, "height": 96, "title": "CW PUMP", "lines": [{"type": "value", "label": "FLOW", "value": {"provider": "reference.circulating_water_pump_a1", "path": "lastFlow"}, "decimals": 0, "unit": "/s"}]},
+        {"id": "cw_makeup", "type": "LinePanel", "x": 141, "y": 112, "width": 125, "height": 96, "title": "CW MAKEUP", "lines": [{"type": "value", "label": "FLOW", "value": {"provider": "reference.cooling_water_makeup_pump", "path": "lastFlow"}, "decimals": 0, "unit": "/s"}]},
+        {"id": "cw_loop", "type": "LinePanel", "x": 274, "y": 112, "width": 125, "height": 96, "title": "CW LOOP", "lines": [{"type": "value", "label": "TEMP", "value": {"provider": "reference.cooling_water", "path": "temperature"}, "decimals": 0, "unit": "C"}]},
+        {"id": "condenser", "type": "LinePanel", "x": 407, "y": 112, "width": 125, "height": 96, "title": "CONDENSER", "lines": [{"type": "value", "label": "HEAT", "value": {"provider": "reference.main_condenser", "path": "lastHeatRejectedMW"}, "decimals": 1, "unit": "MW"}]},
+        {"id": "tower", "type": "LinePanel", "x": 8, "y": 216, "width": 170, "height": 96, "title": "COOLING TOWER", "lines": [{"type": "value", "label": "HEAT", "value": {"provider": "reference.main_cooling_tower", "path": "lastHeatRemovedMW"}, "decimals": 1, "unit": "MW"}]},
+        {"id": "hotwell_drain", "type": "LinePanel", "x": 185, "y": 216, "width": 170, "height": 96, "title": "HOTWELL DRAIN", "lines": [{"type": "value", "label": "FLOW", "value": {"provider": "reference.hotwell_drain_valve", "path": "lastFlow"}, "decimals": 0, "unit": "/s"}]},
+        {"id": "recirc_drain", "type": "LinePanel", "x": 362, "y": 216, "width": 170, "height": 96, "title": "RECIRC DRAIN", "lines": [{"type": "value", "label": "FLOW", "value": {"provider": "reference.recirc_drain_valve", "path": "lastFlow"}, "decimals": 0, "unit": "/s"}]}
+      ]
+    }
   ]
 }

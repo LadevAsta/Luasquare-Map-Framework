@@ -1,0 +1,441 @@
+{
+  "schema": "luasquare.components/v1",
+  "id": "reference.instruments",
+  "components": [
+    {
+      "id": "reference.instrument.reactor_mwth",
+      "type": "instrument.seg7",
+      "config": {
+        "digits": [
+          "reactor_mwth_0",
+          "reactor_mwth_1",
+          "reactor_mwth_2",
+          "reactor_mwth_3",
+          "reactor_mwth_4"
+        ],
+        "interval": 0.1,
+        "input": {
+          "component": "reference",
+          "path": "thermalMW",
+          "round": "floor"
+        }
+      },
+      "editor": {
+        "x": 1200,
+        "y": 0,
+        "label": "REACTOR MWTH",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.instrument.f1_coretemp",
+      "type": "instrument.seg7",
+      "config": {
+        "digits": [
+          "f1_coretemp_0",
+          "f1_coretemp_1",
+          "f1_coretemp_2",
+          "f1_coretemp_3",
+          "f1_coretemp_4"
+        ],
+        "interval": 0.1,
+        "input": {
+          "component": "reference.fuel_5_5",
+          "path": "coreHeat",
+          "round": "floor"
+        }
+      },
+      "editor": {
+        "x": 1200,
+        "y": 96,
+        "label": "F1 CORETEMP",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.instrument.f1_skintemp",
+      "type": "instrument.seg7",
+      "config": {
+        "digits": [
+          "f1_skintemp_0",
+          "f1_skintemp_1",
+          "f1_skintemp_2",
+          "f1_skintemp_3"
+        ],
+        "interval": 0.1,
+        "input": {
+          "component": "reference.fuel_5_5",
+          "path": "skinHeat",
+          "round": "floor"
+        }
+      },
+      "editor": {
+        "x": 1200,
+        "y": 192,
+        "label": "F1 SKINTEMP",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.instrument.f1_coltemp",
+      "type": "instrument.seg7",
+      "config": {
+        "digits": [
+          "f1_coltemp_0",
+          "f1_coltemp_1",
+          "f1_coltemp_2",
+          "f1_coltemp_3"
+        ],
+        "interval": 0.1,
+        "input": {
+          "component": "reference.fuel_5_5",
+          "path": "heat",
+          "round": "floor"
+        }
+      },
+      "editor": {
+        "x": 1200,
+        "y": 288,
+        "label": "F1 COLTEMP",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.instrument.totalflux",
+      "type": "instrument.seg7",
+      "config": {
+        "digits": [
+          "flux_0",
+          "flux_1",
+          "flux_2",
+          "flux_3",
+          "flux_4"
+        ],
+        "interval": 0.1,
+        "input": {
+          "component": "reference",
+          "path": "TotalFluxSubtracted",
+          "round": "floor"
+        }
+      },
+      "editor": {
+        "x": 1200,
+        "y": 384,
+        "label": "TOTALFLUX",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.instrument.averagexenon",
+      "type": "instrument.seg7",
+      "config": {
+        "digits": [
+          "xenon_0",
+          "xenon_1",
+          "xenon_2"
+        ],
+        "interval": 0.1,
+        "input": {
+          "component": "reference",
+          "path": "AverageXenon",
+          "round": "floor"
+        }
+      },
+      "editor": {
+        "x": 1200,
+        "y": 480,
+        "label": "AVERAGEXENON",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.instrument.aprinsertion",
+      "type": "instrument.seg7",
+      "config": {
+        "digits": [
+          "aprinsertion_0",
+          "aprinsertion_1",
+          "aprinsertion_2"
+        ],
+        "interval": 0.1,
+        "input": {
+          "component": "reference",
+          "path": "aprPercent",
+          "round": "floor"
+        }
+      },
+      "editor": {
+        "x": 1200,
+        "y": 576,
+        "label": "APRINSERTION",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.instrument.gauge_maxtemp",
+      "type": "instrument.gauge",
+      "config": {
+        "entity": "gauge_maxtemp",
+        "min": 0,
+        "max": 1600,
+        "speed": 18,
+        "interval": 0.2,
+        "input": {
+          "component": "reference",
+          "path": "MaxHeat",
+          "round": "none"
+        }
+      },
+      "editor": {
+        "x": 1450,
+        "y": 0,
+        "label": "GAUGE MAXTEMP",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.instrument.gauge_waterlevel",
+      "type": "instrument.gauge",
+      "config": {
+        "entity": "gauge_waterlevel",
+        "min": 0,
+        "max": 100,
+        "speed": 18,
+        "interval": 0.2,
+        "input": {
+          "component": "reference.main_steam_separator",
+          "path": "levelPercent",
+          "round": "none"
+        }
+      },
+      "editor": {
+        "x": 1450,
+        "y": 96,
+        "label": "GAUGE WATERLEVEL",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.instrument.gauge_steamlevel",
+      "type": "instrument.gauge",
+      "config": {
+        "entity": "gauge_steamlevel",
+        "min": 0,
+        "max": 100,
+        "speed": 18,
+        "interval": 0.2,
+        "input": {
+          "component": "reference.main_steam_separator",
+          "path": "steamPercent",
+          "round": "none"
+        }
+      },
+      "editor": {
+        "x": 1450,
+        "y": 192,
+        "label": "GAUGE STEAMLEVEL",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.instrument.gauge_steamline_pressure",
+      "type": "instrument.gauge",
+      "config": {
+        "entity": "gauge_steamline_pressure",
+        "min": 0,
+        "max": 1,
+        "speed": 18,
+        "interval": 0.2,
+        "input": {
+          "component": "reference.main_steam",
+          "path": "pressureFraction",
+          "round": "none"
+        }
+      },
+      "editor": {
+        "x": 1450,
+        "y": 288,
+        "label": "GAUGE STEAMLINE PRESSURE",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.instrument.gauge_rpvpressure",
+      "type": "instrument.gauge",
+      "config": {
+        "entity": "gauge_rpvpressure",
+        "min": 0,
+        "max": 100,
+        "speed": 18,
+        "interval": 0.2,
+        "input": {
+          "component": "reference",
+          "path": "pressurePercent",
+          "round": "none"
+        }
+      },
+      "editor": {
+        "x": 1450,
+        "y": 384,
+        "label": "GAUGE RPVPRESSURE",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.instrument.gauge_hotwell",
+      "type": "instrument.gauge",
+      "config": {
+        "entity": "gauge_hotwell",
+        "min": 0,
+        "max": 100,
+        "speed": 18,
+        "interval": 0.2,
+        "input": {
+          "component": "reference.hotwell",
+          "path": "levelPercent",
+          "round": "none"
+        }
+      },
+      "editor": {
+        "x": 1450,
+        "y": 480,
+        "label": "GAUGE HOTWELL",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.instrument.gauge_hotwell_temp",
+      "type": "instrument.gauge",
+      "config": {
+        "entity": "gauge_hotwell_temp",
+        "min": 0,
+        "max": 140,
+        "speed": 18,
+        "interval": 0.2,
+        "input": {
+          "component": "reference.hotwell",
+          "path": "temperature",
+          "round": "none"
+        }
+      },
+      "editor": {
+        "x": 1450,
+        "y": 576,
+        "label": "GAUGE HOTWELL TEMP",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.instrument.fwlevelctrl",
+      "type": "instrument.seg7",
+      "config": {
+        "digits": [
+          "fwlevelctrl_0",
+          "fwlevelctrl_1",
+          "fwlevelctrl_2"
+        ],
+        "interval": 0.1
+      },
+      "editor": {
+        "x": 1200,
+        "y": 672,
+        "label": "FWLEVELCTRL",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.instrument.hotwellctrl",
+      "type": "instrument.seg7",
+      "config": {
+        "digits": [
+          "hotwellctrl_0",
+          "hotwellctrl_1",
+          "hotwellctrl_2"
+        ],
+        "interval": 0.1
+      },
+      "editor": {
+        "x": 1200,
+        "y": 768,
+        "label": "HOTWELLCTRL",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.instrument.rodctrl",
+      "type": "instrument.seg7",
+      "config": {
+        "digits": [
+          "rodctrl_0",
+          "rodctrl_1",
+          "rodctrl_2"
+        ],
+        "interval": 0.1
+      },
+      "editor": {
+        "x": 1200,
+        "y": 864,
+        "label": "RODCTRL",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.instrument.aprctrl",
+      "type": "instrument.seg7",
+      "config": {
+        "digits": [
+          "aprctrl_0",
+          "aprctrl_1",
+          "aprctrl_2",
+          "aprctrl_3"
+        ],
+        "interval": 0.1
+      },
+      "editor": {
+        "x": 1200,
+        "y": 960,
+        "label": "APRCTRL",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.feedwater_target",
+      "type": "control.target_group",
+      "config": {
+        "pumps": [
+          "reference.feedwater_pump_a",
+          "reference.feedwater_pump_b"
+        ],
+        "sensor": {
+          "component": "reference.main_steam_separator",
+          "port": "fluid"
+        }
+      },
+      "editor": {
+        "x": 1050,
+        "y": 0,
+        "label": "FEEDWATER TARGET",
+        "group": "instruments"
+      }
+    },
+    {
+      "id": "reference.hotwell_target",
+      "type": "control.target_group",
+      "config": {
+        "pumps": [
+          "reference.hotwell_makeup_pump"
+        ],
+        "sensor": {
+          "component": "reference.hotwell",
+          "port": "fluid"
+        }
+      },
+      "editor": {
+        "x": 1050,
+        "y": 96,
+        "label": "HOTWELL TARGET",
+        "group": "instruments"
+      }
+    }
+  ]
+}

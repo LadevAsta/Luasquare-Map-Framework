@@ -1,4 +1,5 @@
-RBMK = RBMK or {}
+LUASQUARE_RBMK_VIEW = LUASQUARE_RBMK_VIEW or {}
+local RBMK = LUASQUARE_RBMK_VIEW
 RBMK.Debug = RBMK.Debug or {}
 RBMK.Debug.ClientState = {
     Cells = {},
@@ -6,7 +7,7 @@ RBMK.Debug.ClientState = {
     VesselInfo = {}
 }
 
-local DEBUG_WIRE_VERSION = 3
+local DEBUG_WIRE_VERSION = 4
 local DEBUG_PACKET_VESSEL = 1
 local DEBUG_PACKET_CELLS = 2
 local DEBUG_PACKET_FLUX = 3
@@ -174,6 +175,9 @@ end
 function RBMK.Debug.ReceiveStatePacket()
     local version = net.ReadUInt(8)
     if version ~= DEBUG_WIRE_VERSION then return end
+    local coreId = net.ReadString()
+    local selected = GetConVar('luasquare_rbmk_debug_core')
+    if not selected or coreId ~= selected:GetString() then return end
 
     local packetType = net.ReadUInt(4)
     local sequence = net.ReadUInt(16)
@@ -181,25 +185,29 @@ function RBMK.Debug.ReceiveStatePacket()
     if packetType == DEBUG_PACKET_VESSEL then
         RBMK.Debug.PendingState = emptyClientState()
         RBMK.Debug.PendingState.Sequence = sequence
+        RBMK.Debug.PendingState.CoreId = coreId
         RBMK.Debug.PendingState.VesselInfo = readVesselInfo()
         return
     end
 
     local pending = RBMK.Debug.PendingState
-    if not pending or pending.Sequence ~= sequence then return end
+    if not pending or pending.Sequence ~= sequence or pending.CoreId ~= coreId then return end
 
     if packetType == DEBUG_PACKET_CELLS then
         local count = net.ReadUInt(16)
+        if #pending.Cells + count > 16384 then RBMK.Debug.PendingState = nil; return end
         for _ = 1, count do
             table.insert(pending.Cells, readCell())
         end
     elseif packetType == DEBUG_PACKET_FLUX then
         local count = net.ReadUInt(16)
+        if #pending.FluxLines + count > 8192 then RBMK.Debug.PendingState = nil; return end
         for _ = 1, count do
             table.insert(pending.FluxLines, readFluxLine())
         end
     elseif packetType == DEBUG_PACKET_END then
         RBMK.Debug.ClientState = pending
+        RBMK.Debug.LastReceive = CurTime()
         RBMK.Debug.PendingState = nil
     end
 end
@@ -238,12 +246,6 @@ RBMK.Debug.CellFilterSettings = {
 }
 
 -- Client Debug module
-timer.Simple(10, function()
-    if not GetGlobal2Bool('LUASQUARE_FRAMEWORK_INITIALIZED_GLOBAL', false) then
-        print('[Luasquare RBMK Debug Client] No RBMK detected after 10 seconds, terminating')
-        return
-    end
-
     net.Receive('RBMK_DebugState', function()
         RBMK = RBMK or {}
         RBMK.Debug = RBMK.Debug or {}
@@ -253,11 +255,15 @@ timer.Simple(10, function()
     hook.Add('PostDrawTranslucentRenderables', 'luasquareRBMK_DebugRender', function()
         if not RBMK.Debug then return end
         if not RBMK.Debug.ClientState then return end
+        if CurTime() - (RBMK.Debug.LastReceive or -10) > 2 then return end
+        if RBMK.Debug.ClientState.CoreId ~= GetConVar('luasquare_rbmk_debug_core'):GetString() then return end
         RBMK.Debug.RenderCells()
         RBMK.Debug.RenderFluxLines()
         RBMK.Debug.RenderVesselInfo()
     end)
-    print('[Luasquare RBMK Debug Client] Client initialized')
+hook.Add('PostCleanupMap', 'LUASQUARE_RBMK_ClearClientDebug', function()
+    RBMK.Debug.ClientState = emptyClientState()
+    RBMK.Debug.PendingState = nil
 end)
 
 function RBMK.Debug.GetSetting(name, default)

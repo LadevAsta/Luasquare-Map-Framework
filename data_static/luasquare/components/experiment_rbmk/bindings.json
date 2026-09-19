@@ -1,0 +1,737 @@
+{
+  "schema": "luasquare.components/v1",
+  "id": "reference.bindings",
+  "components": [
+    {
+      "id": "reference.binding.grid_generator_trip_relay",
+      "type": "source.binding",
+      "config": {
+        "profile": "relay",
+        "targets": [
+          "grid_generator_trip_relay"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 0,
+        "label": "GRID GENERATOR TRIP RELAY",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.grid_generator_reset_relay",
+      "type": "source.binding",
+      "config": {
+        "profile": "relay",
+        "targets": [
+          "grid_generator_reset_relay"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 96,
+        "label": "GRID GENERATOR RESET RELAY",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.grid_station_trip_relay",
+      "type": "source.binding",
+      "config": {
+        "profile": "relay",
+        "targets": [
+          "grid_station_trip_relay"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 192,
+        "label": "GRID STATION TRIP RELAY",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.grid_station_reset_relay",
+      "type": "source.binding",
+      "config": {
+        "profile": "relay",
+        "targets": [
+          "grid_station_reset_relay"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 288,
+        "label": "GRID STATION RESET RELAY",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.lightning_on_relay",
+      "type": "source.binding",
+      "config": {
+        "profile": "relay",
+        "targets": [
+          "lightning_on_relay"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 384,
+        "label": "LIGHTNING ON RELAY",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.lightning_off_relay",
+      "type": "source.binding",
+      "config": {
+        "profile": "relay",
+        "targets": [
+          "lightning_off_relay"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 480,
+        "label": "LIGHTNING OFF RELAY",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.tg1_turbine_sound",
+      "type": "source.binding",
+      "config": {
+        "profile": "sound",
+        "targets": [
+          "tg1_turbine_sound"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 576,
+        "label": "TG1 TURBINE SOUND",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.tg1_turbine_sound2",
+      "type": "source.binding",
+      "config": {
+        "profile": "sound",
+        "targets": [
+          "tg1_turbine_sound2"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 672,
+        "label": "TG1 TURBINE SOUND2",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.tg1_turbine_shake",
+      "type": "source.binding",
+      "config": {
+        "profile": "shake",
+        "targets": [
+          "tg1_turbine_shake"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 768,
+        "label": "TG1 TURBINE SHAKE",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.tg1_trip_relay",
+      "type": "source.binding",
+      "config": {
+        "profile": "relay",
+        "targets": [
+          "tg1_trip_relay"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 864,
+        "label": "TG1 TRIP RELAY",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.tg1_severe_trip_relay",
+      "type": "source.binding",
+      "config": {
+        "profile": "relay",
+        "targets": [
+          "tg1_severe_trip_relay"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 960,
+        "label": "TG1 SEVERE TRIP RELAY",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.tg1_severe_trip_stop_relay",
+      "type": "source.binding",
+      "config": {
+        "profile": "relay",
+        "targets": [
+          "tg1_severe_trip_stop_relay"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 1056,
+        "label": "TG1 SEVERE TRIP STOP RELAY",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.tg1_extreme_trip_relay",
+      "type": "source.binding",
+      "config": {
+        "profile": "relay",
+        "targets": [
+          "tg1_extreme_trip_relay"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 1152,
+        "label": "TG1 EXTREME TRIP RELAY",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.tg1_repair_relay",
+      "type": "source.binding",
+      "config": {
+        "profile": "relay",
+        "targets": [
+          "tg1_repair_relay"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 1248,
+        "label": "TG1 REPAIR RELAY",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.tg1_sync_relay",
+      "type": "source.binding",
+      "config": {
+        "profile": "relay",
+        "targets": [
+          "tg1_sync_relay"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 1344,
+        "label": "TG1 SYNC RELAY",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.tg1_unsync_relay",
+      "type": "source.binding",
+      "config": {
+        "profile": "relay",
+        "targets": [
+          "tg1_unsync_relay"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 1440,
+        "label": "TG1 UNSYNC RELAY",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.cooling_tower_on",
+      "type": "source.binding",
+      "config": {
+        "profile": "relay",
+        "targets": [
+          "cooling_tower_on"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 1536,
+        "label": "COOLING TOWER ON",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.cooling_tower_off",
+      "type": "source.binding",
+      "config": {
+        "profile": "relay",
+        "targets": [
+          "cooling_tower_off"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 1632,
+        "label": "COOLING TOWER OFF",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.sel_r1",
+      "type": "source.binding",
+      "config": {
+        "profile": "sprite",
+        "targets": [
+          "sel_R1"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 1728,
+        "label": "SEL R1",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.ctlrod_lid_r1",
+      "type": "source.binding",
+      "config": {
+        "profile": "mover",
+        "targets": [
+          "ctlRod_lid_R1"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 1824,
+        "label": "CTLROD LID R1",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.sel_r8",
+      "type": "source.binding",
+      "config": {
+        "profile": "sprite",
+        "targets": [
+          "sel_R8"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 1920,
+        "label": "SEL R8",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.ctlrod_lid_r8",
+      "type": "source.binding",
+      "config": {
+        "profile": "mover",
+        "targets": [
+          "ctlRod_lid_R8"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 2016,
+        "label": "CTLROD LID R8",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.sel_r2",
+      "type": "source.binding",
+      "config": {
+        "profile": "sprite",
+        "targets": [
+          "sel_R2"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 2112,
+        "label": "SEL R2",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.ctlrod_lid_r2",
+      "type": "source.binding",
+      "config": {
+        "profile": "mover",
+        "targets": [
+          "ctlRod_lid_R2"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 2208,
+        "label": "CTLROD LID R2",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.sel_u1",
+      "type": "source.binding",
+      "config": {
+        "profile": "sprite",
+        "targets": [
+          "sel_U1"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 2304,
+        "label": "SEL U1",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.ctlrod_lid_u1",
+      "type": "source.binding",
+      "config": {
+        "profile": "mover",
+        "targets": [
+          "ctlRod_lid_U1"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 2400,
+        "label": "CTLROD LID U1",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.sel_r7",
+      "type": "source.binding",
+      "config": {
+        "profile": "sprite",
+        "targets": [
+          "sel_R7"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 2496,
+        "label": "SEL R7",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.ctlrod_lid_r7",
+      "type": "source.binding",
+      "config": {
+        "profile": "mover",
+        "targets": [
+          "ctlRod_lid_R7"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 2592,
+        "label": "CTLROD LID R7",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.sel_u2",
+      "type": "source.binding",
+      "config": {
+        "profile": "sprite",
+        "targets": [
+          "sel_U2"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 2688,
+        "label": "SEL U2",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.ctlrod_lid_u2",
+      "type": "source.binding",
+      "config": {
+        "profile": "mover",
+        "targets": [
+          "ctlRod_lid_U2"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 2784,
+        "label": "CTLROD LID U2",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.sel_u4",
+      "type": "source.binding",
+      "config": {
+        "profile": "sprite",
+        "targets": [
+          "sel_U4"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 2880,
+        "label": "SEL U4",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.ctlrod_lid_u4",
+      "type": "source.binding",
+      "config": {
+        "profile": "mover",
+        "targets": [
+          "ctlRod_lid_U4"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 2976,
+        "label": "CTLROD LID U4",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.sel_r4",
+      "type": "source.binding",
+      "config": {
+        "profile": "sprite",
+        "targets": [
+          "sel_R4"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 3072,
+        "label": "SEL R4",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.ctlrod_lid_r4",
+      "type": "source.binding",
+      "config": {
+        "profile": "mover",
+        "targets": [
+          "ctlRod_lid_R4"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 3168,
+        "label": "CTLROD LID R4",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.sel_u3",
+      "type": "source.binding",
+      "config": {
+        "profile": "sprite",
+        "targets": [
+          "sel_U3"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 3264,
+        "label": "SEL U3",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.ctlrod_lid_u3",
+      "type": "source.binding",
+      "config": {
+        "profile": "mover",
+        "targets": [
+          "ctlRod_lid_U3"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 3360,
+        "label": "CTLROD LID U3",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.sel_r5",
+      "type": "source.binding",
+      "config": {
+        "profile": "sprite",
+        "targets": [
+          "sel_R5"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 3456,
+        "label": "SEL R5",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.ctlrod_lid_r5",
+      "type": "source.binding",
+      "config": {
+        "profile": "mover",
+        "targets": [
+          "ctlRod_lid_R5"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 3552,
+        "label": "CTLROD LID R5",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.sel_r3",
+      "type": "source.binding",
+      "config": {
+        "profile": "sprite",
+        "targets": [
+          "sel_R3"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 3648,
+        "label": "SEL R3",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.ctlrod_lid_r3",
+      "type": "source.binding",
+      "config": {
+        "profile": "mover",
+        "targets": [
+          "ctlRod_lid_R3"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 3744,
+        "label": "CTLROD LID R3",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.sel_r6",
+      "type": "source.binding",
+      "config": {
+        "profile": "sprite",
+        "targets": [
+          "sel_R6"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 3840,
+        "label": "SEL R6",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.ctlrod_lid_r6",
+      "type": "source.binding",
+      "config": {
+        "profile": "mover",
+        "targets": [
+          "ctlRod_lid_R6"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 3936,
+        "label": "CTLROD LID R6",
+        "group": "bindings"
+      }
+    },
+    {
+      "id": "reference.binding.explodetest",
+      "type": "source.binding",
+      "config": {
+        "profile": "relay",
+        "targets": [
+          "explodetest"
+        ],
+        "required": false
+      },
+      "editor": {
+        "x": -1800,
+        "y": 4032,
+        "label": "EXPLODETEST",
+        "group": "bindings"
+      }
+    }
+  ]
+}

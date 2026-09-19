@@ -598,6 +598,13 @@ end
 
 function DISPLAY.LoadMapSources(mapName)
     registerBuiltInTheme()
+    if DISPLAY.ManifestSources then
+        for _, path in ipairs(DISPLAY.ManifestSources) do
+            local ok, diagnostics = DISPLAY.LoadSource(path)
+            if not ok then return false, DISPLAY.DiagnosticsText(diagnostics) end
+        end
+        return #DISPLAY.ManifestSources
+    end
     local root = DISPLAY.SourceRoot
     local themeCount = loadSourceDirectory(root .. '/_themes')
     for group, pack in pairs(DISPLAY.RegisteredThemePacks) do
@@ -822,7 +829,8 @@ end
 
 function DISPLAY.Start()
     DISPLAY.RuntimeStarted = false
-    DISPLAY.ReloadSources()
+    local loaded, err = DISPLAY.ReloadSources()
+    if loaded == false then return false, err end
     DISPLAY.Update()
     DISPLAY.RuntimeStarted = true
     if DISPLAY.BroadcastSnapshot then DISPLAY.BroadcastSnapshot() end

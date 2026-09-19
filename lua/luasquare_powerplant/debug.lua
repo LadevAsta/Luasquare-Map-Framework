@@ -17,10 +17,20 @@ LUASQUARE_POWERPLANT.Debug.ClientState = {
     DieselGenerators = {}
 }
 
-local DEBUG_WIRE_VERSION = 10
+local DEBUG_WIRE_VERSION = 11
 local DEBUG_PACKET_START = 1
 local DEBUG_PACKET_CATEGORY = 2
 local DEBUG_PACKET_END = 3
+
+local function endpointLabel(value, defaultPort)
+    if type(value) == 'string' then
+        if value == '' or value:find('/', 1, true) or not defaultPort then return value end
+        return value .. '/' .. defaultPort
+    end
+    if type(value) ~= 'table' then return value end
+    if type(value.component) ~= 'string' or type(value.port) ~= 'string' then return nil end
+    return value.component .. '/' .. value.port
+end
 
 local DEBUG_CATEGORIES = {
     {name = 'Networks', chunkSize = 32, schema = {
@@ -207,7 +217,7 @@ function LUASQUARE_POWERPLANT.Debug.BuildNetworks()
                 coolantHighTemperature = network.coolantHighTemperature or 0,
                 coolantOverheated = network.coolantOverheated and true or false,
                 overflowEnabled = network.overflowEnabled and true or false,
-                overflowTarget = network.overflowTarget,
+                overflowTarget = endpointLabel(network.overflowTarget, 'fluid'),
                 overflowLevelFraction = network.overflowLevelFraction or 0,
                 lastOverflowFlow = network.lastOverflowFlow or 0,
                 ruptured = network.ruptured and true or false,
@@ -226,7 +236,7 @@ function LUASQUARE_POWERPLANT.Debug.BuildSteamSeparators()
         if pos then
             table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.SteamSeparators, {
                 name = name,
-                drySteamNetwork = separator.drySteamNetwork,
+                drySteamNetwork = endpointLabel(separator.drySteamNetwork, 'fluid'),
                 enabled = separator.enabled and true or false,
                 waterAmount = separator.waterAmount or 0,
                 maxWaterAmount = separator.maxWaterAmount or 0,
@@ -263,8 +273,8 @@ function LUASQUARE_POWERPLANT.Debug.BuildPumps()
         if pos then
             table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.Pumps, {
                 name = name,
-                source = pump.source,
-                target = pump.target,
+                source = endpointLabel(pump.source),
+                target = endpointLabel(pump.target),
                 rate = pump.rate or 0,
                 headPressure = pump.headPressure or 0,
                 enabled = pump.enabled and true or false,
@@ -295,8 +305,8 @@ function LUASQUARE_POWERPLANT.Debug.BuildValves()
         if pos then
             table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.Valves, {
                 name = name,
-                a = valve.a,
-                b = valve.b,
+                a = endpointLabel(valve.a),
+                b = endpointLabel(valve.b),
                 open = valve.open and true or false,
                 bidirectional = valve.bidirectional and true or false,
                 maxFlow = valve.maxFlow or 0,
@@ -315,11 +325,11 @@ function LUASQUARE_POWERPLANT.Debug.BuildCondensers()
         if pos then
             table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.Condensers, {
                 name = name,
-                input = condenser.input,
-                output = condenser.output,
+                input = endpointLabel(condenser.input, 'fluid'),
+                output = endpointLabel(condenser.output, 'fluid'),
                 ratio = condenser.ratio or 0,
-                coolantNetwork = condenser.coolantNetwork,
-                coolantPump = condenser.coolantPump,
+                coolantNetwork = endpointLabel(condenser.coolantNetwork, 'fluid'),
+                coolantPump = endpointLabel(condenser.coolantPump, 'instance'),
                 enabled = condenser.enabled and true or false,
                 godMode = condenser.godMode and true or false,
                 steamAmount = condenser.steamAmount or 0,
@@ -346,10 +356,10 @@ function LUASQUARE_POWERPLANT.Debug.BuildHeatExchangers()
         if pos then
             table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.HeatExchangers, {
                 name = name,
-                hotNetwork = exchanger.hotNetwork,
-                coldNetwork = exchanger.coldNetwork,
-                hotPump = exchanger.hotPump,
-                coldPump = exchanger.coldPump,
+                hotNetwork = endpointLabel(exchanger.hotNetwork, 'fluid'),
+                coldNetwork = endpointLabel(exchanger.coldNetwork, 'fluid'),
+                hotPump = endpointLabel(exchanger.hotPump, 'instance'),
+                coldPump = endpointLabel(exchanger.coldPump, 'instance'),
                 enabled = exchanger.enabled and true or false,
                 effectiveness = exchanger.effectiveness or 0,
                 approachTemperature = exchanger.approachTemperature or 0,
@@ -373,9 +383,9 @@ function LUASQUARE_POWERPLANT.Debug.BuildDeaerators()
         if pos then
             table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.Deaerators, {
                 name = name,
-                tankNetwork = deaerator.tankNetwork,
-                steamInput = deaerator.steamInput,
-                steamSource = deaerator.steamSource,
+                tankNetwork = endpointLabel(deaerator.tankNetwork, 'fluid'),
+                steamInput = endpointLabel(deaerator.steamInput, 'fluid'),
+                steamSource = endpointLabel(deaerator.steamSource, 'fluid'),
                 enabled = deaerator.enabled and true or false,
                 ruptured = deaerator.ruptured and true or false,
                 flooded = deaerator.flooded and true or false,
@@ -402,7 +412,7 @@ function LUASQUARE_POWERPLANT.Debug.BuildDeaerators()
                 lastSteamUsed = deaerator.lastSteamUsed or 0,
                 lastWaterMade = deaerator.lastWaterMade or 0,
                 overflowValve = deaerator.overflowValve or 0,
-                overflowTarget = deaerator.overflowTarget,
+                overflowTarget = endpointLabel(deaerator.overflowTarget, 'fluid'),
                 overflowLevelFraction = deaerator.overflowLevelFraction or 0,
                 lastOverflowFlow = deaerator.lastOverflowFlow or 0,
                 lastReliefFlow = deaerator.lastReliefFlow or 0,
@@ -422,13 +432,13 @@ function LUASQUARE_POWERPLANT.Debug.BuildTurbines()
         if pos then
             table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.Turbines, {
                 name = name,
-                input = turbine.input,
-                boiler = turbine.boiler,
-                output = turbine.output,
-                condenser = turbine.condenser,
-                bypassCondenser = turbine.bypassCondenser,
-                condenserOutput = turbine.condenserOutput,
-                bypassCondenserOutput = turbine.bypassCondenserOutput,
+                input = endpointLabel(turbine.input, 'fluid'),
+                boiler = endpointLabel(turbine.boiler),
+                output = endpointLabel(turbine.output, 'fluid'),
+                condenser = endpointLabel(turbine.condenser, 'instance'),
+                bypassCondenser = endpointLabel(turbine.bypassCondenser, 'instance'),
+                condenserOutput = endpointLabel(turbine.condenserOutput, 'fluid'),
+                bypassCondenserOutput = endpointLabel(turbine.bypassCondenserOutput, 'fluid'),
                 enabled = turbine.enabled and true or false,
                 tripped = turbine.tripped and true or false,
                 tripLevel = turbine.tripLevel,
@@ -493,10 +503,10 @@ function LUASQUARE_POWERPLANT.Debug.BuildCoolingTowers()
         if pos then
             table.insert(LUASQUARE_POWERPLANT.Debug.ClientState.CoolingTowers, {
                 name = name,
-                input = tower.input,
-                basin = tower.basin,
-                output = tower.output,
-                coolantNetwork = tower.coolantNetwork,
+                input = endpointLabel(tower.input, 'fluid'),
+                basin = endpointLabel(tower.basin, 'fluid'),
+                output = endpointLabel(tower.output, 'fluid'),
+                coolantNetwork = endpointLabel(tower.coolantNetwork, 'fluid'),
                 maxRate = tower.maxRate or 0,
                 enabled = tower.enabled and true or false,
                 working = tower.working and true or false,

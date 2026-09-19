@@ -5,6 +5,8 @@ component dispatch, availability, requests, keypad buffers/targets, and operator
 Map Lua registers trusted actions/predicates; map-owned JSON declares control instances.
 The editor and timeline adapters never execute source Lua.
 
+For [manifest-owned plants](../map/README.md), component adapters register instance-qualified actions/predicates and the loader initializes selected controls after all owners exist. `experiment_controls.lua` is retired. Physical control IDs and the v1 schema are unchanged; reference action/provider IDs are now `reference.*`. Paired-pump targets use `control.target_group`. DFR migration remains deferred. Run `node tools/check_control.js --map=experiment_rbmk` for the current reference VMF/BSP audit; the unfiltered audit also checks DFR and currently fails its `containment_lower` binding. The [archived migration acceptance](../map/archive/ACCEPTANCE.md) distinguishes static results from the completed in-game run.
+
 Packed sources: `data_static/luasquare/control/<map>/*.json`, loaded through `GAME`.
 Editor drafts: `garrysmod/data/luasquare/control/drafts/<map>/<pack>.json`, never loaded automatically.
 Schema: `luasquare.control/v1`. Limits: 1,024 controls per map, 512 KiB per pack,
@@ -49,8 +51,11 @@ LUASQUARE_CONTROL.RegisterPredicate('plant.ready', {
 Parameter metadata is an object keyed by parameter name. Supported types: `number`,
 `integer`, `boolean`, `string`; numeric `min`/`max`, string `maxLength`/`choices`,
 `default`, and `optional` are supported. Choices are a set such as `{open = true}`.
-Callbacks returning `false, reason` reject; errors reject. `nil` remains compatible
-with trusted methods that return no result. Predicates return `false, reason` to block.
+Callbacks returning `false, reason` produce a terminal expected rejection. The request
+fails and a physical toggle is restored, but the control does not acquire a persistent
+fault or lock. Lua errors, unavailable predicates, invalid physical input,
+acknowledgement timeouts and failed recovery are faults. `nil` remains compatible with
+trusted methods that return no result. Predicates return `false, reason` to block.
 Actions may declare `severity = 'critical'` for red accepted-action console logs,
 `diagnostic = true` for key diagnostics, and `getValue(params, control)` for measured
 old/new operator values. A keypad submit action can additionally declare
@@ -211,9 +216,11 @@ separates actual/accepted positions, pending/active requests, faults, locks, and
 state. `GetHistory()` returns bounded structured server `HH:MM:SS` logs with actor,
 control/action labels, old/new values, severity, outcome and diagnostic reasons.
 
-Rejected actions restore the last accepted physical position with Control Layer
-component dispatch suppressed; retained Hammer-native outputs still run. A fault
-blocks new interaction. `ResetFault(id)` requires a valid binding and matching actual/
+Expected action rejections restore the last accepted physical position with Control
+Layer component dispatch suppressed; retained Hammer-native outputs still run. They
+do not set `control.fault`, so a momentary sync button or keypad remains usable after
+the rejected request completes. A hardware/validation fault blocks new interaction.
+`ResetFault(id)` requires a valid binding and matching actual/
 accepted positions and preserves every owner lock. Recovery is internal reconciliation,
 never a public bypass operation.
 

@@ -2,5 +2,5 @@
   "schema": "luasquare.3d2display/v1", "id": "graph_rpv_pres", "buildMode": "simple",
   "target": "tar_display_graph_rpv_pres", "unitWidth": 34, "unitHeight": 19, "scale": 0.1,
   "themeGroup": "rbmk", "padding": 10, "lineHeight": 18,
-  "lines": [{"type": "graph", "id": "rpv_pressure", "label": "RPV PRESS", "value": {"provider": "rbmk.graphs", "path": "rpvPressure"}, "min": 0, "max": {"provider": "rbmk.graphs", "path": "catastrophicPressure"}, "seconds": 60, "height": 144, "decimals": 0, "unit": "bar", "color": [120, 220, 255, 255], "thresholds": {"provider": "rbmk.graphs", "path": "rpvThresholds"}}]
+  "lines": [{"type": "graph", "id": "rpv_pressure", "label": "RPV PRESS", "value": {"provider": "reference", "path": "RPVPressure"}, "min": 0, "max": {"provider": "reference", "path": "CatastrophicPressure"}, "seconds": 60, "height": 144, "decimals": 0, "unit": "bar", "color": [120, 220, 255, 255], "thresholds": [{"value": 70, "label": "MAX", "color": [255, 210, 70, 255]}, {"value": 85, "label": "VENT", "color": [255, 130, 80, 255]}, {"value": 140, "label": "FAIL", "color": [255, 90, 90, 255]}]}]
 }

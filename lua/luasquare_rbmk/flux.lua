@@ -1,4 +1,4 @@
-RBMK = RBMK or {}
+return function(RBMK)
 local dirs4 = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}
 RBMK.TotalFlux = 0
 RBMK.TotalFluxSubtracted = 0
@@ -134,4 +134,5 @@ function RBMK.CommitFlux()
             if cell then cell.lastFlux = cell.flux or 0 end
         end
     end
+end
 end

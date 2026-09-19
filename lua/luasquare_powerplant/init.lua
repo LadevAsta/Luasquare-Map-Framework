@@ -45,6 +45,7 @@ function LUASQUARE_POWERPLANT.ResolveMonitorPos(data)
     return pos + (data.monitorOffset or Vector(0, 0, 0))
 end
 
+include('luasquare_powerplant/endpoints.lua')
 include('luasquare_powerplant/fluidnetwork.lua')
 include('luasquare_powerplant/fluidvalve.lua')
 include('luasquare_powerplant/fluidpump.lua')

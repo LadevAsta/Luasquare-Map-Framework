@@ -1,4 +1,4 @@
-RBMK = RBMK or {}
+return function(RBMK)
 -- 8-direction offsets
 local dirs8 = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}}
 -- Delta buffer
@@ -34,4 +34,5 @@ function RBMK.DoHeatStep()
             if cell.type ~= RBMK.CELL_VOID then cell.heat = cell.heat + delta[x][y] end
         end
     end
+end
 end

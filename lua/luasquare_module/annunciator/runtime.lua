@@ -565,8 +565,9 @@ function ANN.ReloadSources(mapName)
     ANN.GlobalMutedUntil = 0
     local map = string.lower(tostring(mapName or game.GetMap() or ''))
     local loaded = 0
-    for _, path in ipairs(sourcePaths(ANN.SourceRoot .. '/' .. map)) do
-        if loadSource(path) then loaded = loaded + 1 end
+    for _, path in ipairs(ANN.ManifestSources or sourcePaths(ANN.SourceRoot .. '/' .. map)) do
+        local ok, err = loadSource(path)
+        if ok then loaded = loaded + 1 elseif ANN.ManifestSources then return false, err end
     end
     ANN.Revision = ANN.Revision + 1
     if ANN.BroadcastSnapshot then ANN.BroadcastSnapshot() end
@@ -752,7 +753,8 @@ function ANN.Start()
     if ANN.RuntimeStarted then return true end
     ANN.RuntimeStarted = true
     registerIntegrations()
-    ANN.ReloadSources(game.GetMap())
+    local loaded, err = ANN.ReloadSources(game.GetMap())
+    if loaded == false then ANN.Stop(); return false, err end
     timer.Create(ANN.TimerName, ANN.TickInterval, 0, ANN.Update)
     ANN.Update()
     return true

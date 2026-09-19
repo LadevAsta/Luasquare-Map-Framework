@@ -40,7 +40,7 @@
       "label": "RPV PRESSURE HIGH",
       "group": "reactor",
       "tier": 2,
-      "condition": {"provider": "rbmk.annunciator", "path": "rpvPressure", "op": "gt", "value": 60},
+      "condition": {"provider": "reference.presentation", "path": "alarms.rpvPressure", "op": "gt", "value": 60},
       "indicator": {
         "targetnames": ["ann_rpv_pressure_high"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -58,7 +58,7 @@
       "label": "RPV TEMPERATURE HIGH",
       "group": "reactor",
       "tier": 2,
-      "condition": {"provider": "rbmk.annunciator", "path": "rpvTemperature", "op": "gt", "value": 1100},
+      "condition": {"provider": "reference.presentation", "path": "alarms.rpvTemperature", "op": "gt", "value": 1100},
       "indicator": {
         "targetnames": ["ann_rpv_temperature_high"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -76,8 +76,8 @@
       "label": "FUEL CHANNEL LEAK",
       "group": "reactor",
       "tier": 3,
-      "condition": {"provider": "rbmk.annunciator", "path": "fuelChannelLeakCount", "op": "gt", "value": 0},
-      "message": {"provider": "rbmk.annunciator", "path": "messages.fuel_channel_leak"},
+      "condition": {"provider": "reference.presentation", "path": "alarms.fuelChannelLeakCount", "op": "gt", "value": 0},
+      "message": {"provider": "reference.presentation", "path": "alarms.messages.fuel_channel_leak"},
       "indicator": {
         "targetnames": ["ann_fuel_channel_leak"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -97,11 +97,11 @@
       "tier": 2,
       "condition": {
         "all": [
-          {"provider": "rbmk.annunciator", "path": "controlRodDemandMW", "op": "gt", "value": 0},
-          {"provider": "rbmk.annunciator", "path": "controlRodsPowered", "op": "eq", "value": false}
+          {"provider": "reference.presentation", "path": "alarms.controlRodDemandMW", "op": "gt", "value": 0},
+          {"provider": "reference.presentation", "path": "alarms.controlRodsPowered", "op": "eq", "value": false}
         ]
       },
-      "message": {"provider": "rbmk.annunciator", "path": "messages.control_rods_unpowered"},
+      "message": {"provider": "reference.presentation", "path": "alarms.messages.control_rods_unpowered"},
       "indicator": {
         "targetnames": ["ann_control_rods_unpowered"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -119,8 +119,8 @@
       "label": "SCRAM RODS STUCK",
       "group": "reactor",
       "tier": 3,
-      "condition": {"provider": "rbmk.annunciator", "path": "scramRodsStuck", "op": "gt", "value": 0},
-      "message": {"provider": "rbmk.annunciator", "path": "messages.scram_rods_stuck"},
+      "condition": {"provider": "reference.presentation", "path": "alarms.scramRodsStuck", "op": "gt", "value": 0},
+      "message": {"provider": "reference.presentation", "path": "alarms.messages.scram_rods_stuck"},
       "indicator": {
         "targetnames": ["ann_scram_rods_stuck"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -138,8 +138,8 @@
       "label": "RBMK INTEGRITY LOW",
       "group": "reactor",
       "tier": 3,
-      "condition": {"provider": "rbmk.annunciator", "path": "integrity", "op": "lte", "value": 0.75},
-      "message": {"provider": "rbmk.annunciator", "path": "messages.rbmk_integrity_low"},
+      "condition": {"provider": "reference.presentation", "path": "alarms.integrity", "op": "lte", "value": 0.75},
+      "message": {"provider": "reference.presentation", "path": "alarms.messages.rbmk_integrity_low"},
       "indicator": {
         "targetnames": ["ann_rbmk_integrity_low"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -160,15 +160,15 @@
       "condition": {
         "all": [
           {
-            "provider": "rbmk.annunciator",
-            "path": "recirculationFlow",
+            "provider": "reference.presentation",
+            "path": "alarms.recirculationFlow",
             "op": "lt",
-            "value": {"provider": "rbmk.annunciator", "path": "recirculationThreshold"}
+            "value": {"provider": "reference.presentation", "path": "alarms.recirculationThreshold"}
           },
-          {"provider": "rbmk.annunciator", "path": "thermalMW", "op": "gt", "value": 10}
+          {"provider": "reference.presentation", "path": "alarms.thermalMW", "op": "gt", "value": 10}
         ]
       },
-      "message": {"provider": "rbmk.annunciator", "path": "messages.recirculation_flow_low"},
+      "message": {"provider": "reference.presentation", "path": "alarms.messages.recirculation_flow_low"},
       "reAlarmSeconds": 0,
       "indicator": {
         "targetnames": ["ann_recirculation_flow_low"],
@@ -187,8 +187,8 @@
       "label": "RBMK DRYOUT RISK",
       "group": "reactor",
       "tier": 3,
-      "condition": {"provider": "rbmk.annunciator", "path": "dryoutRisk", "op": "gte", "value": 0.65},
-      "message": {"provider": "rbmk.annunciator", "path": "messages.rbmk_dryout_risk"},
+      "condition": {"provider": "reference.presentation", "path": "alarms.dryoutRisk", "op": "gte", "value": 0.65},
+      "message": {"provider": "reference.presentation", "path": "alarms.messages.rbmk_dryout_risk"},
       "reAlarmSeconds": 0,
       "indicator": {
         "targetnames": ["ann_rbmk_dryout_risk"],
@@ -209,11 +209,11 @@
       "tier": 2,
       "condition": {
         "all": [
-          {"provider": "rbmk.annunciator", "path": "separatorPresent", "op": "truthy"},
-          {"provider": "rbmk.annunciator", "path": "separatorLevel", "op": "lte", "value": 20}
+          {"provider": "reference.presentation", "path": "alarms.separatorPresent", "op": "truthy"},
+          {"provider": "reference.presentation", "path": "alarms.separatorLevel", "op": "lte", "value": 20}
         ]
       },
-      "message": {"provider": "rbmk.annunciator", "path": "messages.steam_separator_low_level"},
+      "message": {"provider": "reference.presentation", "path": "alarms.messages.steam_separator_low_level"},
       "indicator": {
         "targetnames": ["ann_steam_separator_low_level"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -233,11 +233,11 @@
       "tier": 2,
       "condition": {
         "all": [
-          {"provider": "rbmk.annunciator", "path": "separatorPresent", "op": "truthy"},
-          {"provider": "rbmk.annunciator", "path": "separatorLevel", "op": "gte", "value": 85}
+          {"provider": "reference.presentation", "path": "alarms.separatorPresent", "op": "truthy"},
+          {"provider": "reference.presentation", "path": "alarms.separatorLevel", "op": "gte", "value": 85}
         ]
       },
-      "message": {"provider": "rbmk.annunciator", "path": "messages.steam_separator_high_level"},
+      "message": {"provider": "reference.presentation", "path": "alarms.messages.steam_separator_high_level"},
       "indicator": {
         "targetnames": ["ann_steam_separator_high_level"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -257,11 +257,11 @@
       "tier": 2,
       "condition": {
         "all": [
-          {"provider": "rbmk.annunciator", "path": "separatorPresent", "op": "truthy"},
-          {"provider": "rbmk.annunciator", "path": "separatorPressure", "op": "gte", "value": 60}
+          {"provider": "reference.presentation", "path": "alarms.separatorPresent", "op": "truthy"},
+          {"provider": "reference.presentation", "path": "alarms.separatorPressure", "op": "gte", "value": 60}
         ]
       },
-      "message": {"provider": "rbmk.annunciator", "path": "messages.steam_separator_high_pressure"},
+      "message": {"provider": "reference.presentation", "path": "alarms.messages.steam_separator_high_pressure"},
       "indicator": {
         "targetnames": ["ann_steam_separator_high_pressure"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -281,11 +281,11 @@
       "tier": 2,
       "condition": {
         "all": [
-          {"provider": "rbmk.annunciator", "path": "separatorPresent", "op": "truthy"},
-          {"provider": "rbmk.annunciator", "path": "separatorCarryover", "op": "gt", "value": 0.5}
+          {"provider": "reference.presentation", "path": "alarms.separatorPresent", "op": "truthy"},
+          {"provider": "reference.presentation", "path": "alarms.separatorCarryover", "op": "gt", "value": 0.5}
         ]
       },
-      "message": {"provider": "rbmk.annunciator", "path": "messages.steam_wet_carryover"},
+      "message": {"provider": "reference.presentation", "path": "alarms.messages.steam_wet_carryover"},
       "indicator": {
         "targetnames": ["ann_steam_wet_carryover"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -303,7 +303,7 @@
       "label": "TURBINE A TRIP",
       "group": "turbine_a",
       "tier": 3,
-      "condition": {"provider": "rbmk.annunciator", "path": "turbineTripped", "op": "truthy"},
+      "condition": {"provider": "reference.presentation", "path": "alarms.turbineTripped", "op": "truthy"},
       "indicator": {
         "targetnames": ["ann_turbine_a_trip"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -321,7 +321,7 @@
       "label": "TURBINE A REVERSE POWER",
       "group": "turbine_a",
       "tier": 3,
-      "condition": {"provider": "rbmk.annunciator", "path": "reversePowerTimer", "op": "gt", "value": 0},
+      "condition": {"provider": "reference.presentation", "path": "alarms.reversePowerTimer", "op": "gt", "value": 0},
       "indicator": {
         "targetnames": ["ann_turbine_a_reversepower"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -341,16 +341,16 @@
       "tier": 3,
       "condition": {
         "all": [
-          {"provider": "rbmk.annunciator", "path": "gridPresent", "op": "truthy"},
+          {"provider": "reference.presentation", "path": "alarms.gridPresent", "op": "truthy"},
           {
-            "provider": "rbmk.annunciator",
-            "path": "gridLoadMW",
+            "provider": "reference.presentation",
+            "path": "alarms.gridLoadMW",
             "op": "gt",
-            "value": {"provider": "rbmk.annunciator", "path": "gridOverloadThreshold"}
+            "value": {"provider": "reference.presentation", "path": "alarms.gridOverloadThreshold"}
           }
         ]
       },
-      "message": {"provider": "rbmk.annunciator", "path": "messages.station_grid_overload"},
+      "message": {"provider": "reference.presentation", "path": "alarms.messages.station_grid_overload"},
       "indicator": {
         "targetnames": ["ann_station_grid_overload"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -370,16 +370,16 @@
       "tier": 2,
       "condition": {
         "all": [
-          {"provider": "rbmk.annunciator", "path": "coolantPresent", "op": "truthy"},
+          {"provider": "reference.presentation", "path": "alarms.coolantPresent", "op": "truthy"},
           {
-            "provider": "rbmk.annunciator",
-            "path": "coolantTemperature",
+            "provider": "reference.presentation",
+            "path": "alarms.coolantTemperature",
             "op": "gte",
-            "value": {"provider": "rbmk.annunciator", "path": "coolantTemperatureThreshold"}
+            "value": {"provider": "reference.presentation", "path": "alarms.coolantTemperatureThreshold"}
           }
         ]
       },
-      "message": {"provider": "rbmk.annunciator", "path": "messages.cooling_water_high_temperature"},
+      "message": {"provider": "reference.presentation", "path": "alarms.messages.cooling_water_high_temperature"},
       "indicator": {
         "targetnames": ["ann_cooling_water_high_temperature"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -399,11 +399,11 @@
       "tier": 2,
       "condition": {
         "all": [
-          {"provider": "rbmk.annunciator", "path": "coolantPresent", "op": "truthy"},
-          {"provider": "rbmk.annunciator", "path": "coolantLevel", "op": "lte", "value": 70}
+          {"provider": "reference.presentation", "path": "alarms.coolantPresent", "op": "truthy"},
+          {"provider": "reference.presentation", "path": "alarms.coolantLevel", "op": "lte", "value": 70}
         ]
       },
-      "message": {"provider": "rbmk.annunciator", "path": "messages.cooling_water_low_level"},
+      "message": {"provider": "reference.presentation", "path": "alarms.messages.cooling_water_low_level"},
       "indicator": {
         "targetnames": ["ann_cooling_water_low_level"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -423,16 +423,16 @@
       "tier": 2,
       "condition": {
         "all": [
-          {"provider": "rbmk.annunciator", "path": "deaeratorPresent", "op": "truthy"},
+          {"provider": "reference.presentation", "path": "alarms.deaeratorPresent", "op": "truthy"},
           {
-            "provider": "rbmk.annunciator",
-            "path": "deaeratorPressure",
+            "provider": "reference.presentation",
+            "path": "alarms.deaeratorPressure",
             "op": "gte",
-            "value": {"provider": "rbmk.annunciator", "path": "deaeratorPressureThreshold"}
+            "value": {"provider": "reference.presentation", "path": "alarms.deaeratorPressureThreshold"}
           }
         ]
       },
-      "message": {"provider": "rbmk.annunciator", "path": "messages.deaerator_high_pressure"},
+      "message": {"provider": "reference.presentation", "path": "alarms.messages.deaerator_high_pressure"},
       "indicator": {
         "targetnames": ["ann_deaerator_high_pressure"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -452,16 +452,16 @@
       "tier": 2,
       "condition": {
         "all": [
-          {"provider": "rbmk.annunciator", "path": "deaeratorPresent", "op": "truthy"},
+          {"provider": "reference.presentation", "path": "alarms.deaeratorPresent", "op": "truthy"},
           {
-            "provider": "rbmk.annunciator",
-            "path": "deaeratorTemperature",
+            "provider": "reference.presentation",
+            "path": "alarms.deaeratorTemperature",
             "op": "gte",
-            "value": {"provider": "rbmk.annunciator", "path": "deaeratorTemperatureThreshold"}
+            "value": {"provider": "reference.presentation", "path": "alarms.deaeratorTemperatureThreshold"}
           }
         ]
       },
-      "message": {"provider": "rbmk.annunciator", "path": "messages.deaerator_high_temperature"},
+      "message": {"provider": "reference.presentation", "path": "alarms.messages.deaerator_high_temperature"},
       "indicator": {
         "targetnames": ["ann_deaerator_high_temperature"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -481,11 +481,11 @@
       "tier": 3,
       "condition": {
         "all": [
-          {"provider": "rbmk.annunciator", "path": "deaeratorPresent", "op": "truthy"},
-          {"provider": "rbmk.annunciator", "path": "deaeratorFlooded", "op": "truthy"}
+          {"provider": "reference.presentation", "path": "alarms.deaeratorPresent", "op": "truthy"},
+          {"provider": "reference.presentation", "path": "alarms.deaeratorFlooded", "op": "truthy"}
         ]
       },
-      "message": {"provider": "rbmk.annunciator", "path": "messages.deaerator_flooded"},
+      "message": {"provider": "reference.presentation", "path": "alarms.messages.deaerator_flooded"},
       "indicator": {
         "targetnames": ["ann_deaerator_flooded"],
         "skins": {"off": 0, "fast_flash": 1, "on": 2, "slow_flash": 3}
@@ -505,8 +505,8 @@
       "tier": 2,
       "condition": {
         "all": [
-          {"provider": "rbmk.annunciator", "path": "deaeratorPresent", "op": "truthy"},
-          {"provider": "rbmk.annunciator", "path": "deaeratorLevel", "op": "lt", "value": 10}
+          {"provider": "reference.presentation", "path": "alarms.deaeratorPresent", "op": "truthy"},
+          {"provider": "reference.presentation", "path": "alarms.deaeratorLevel", "op": "lt", "value": 10}
         ]
       },
       "indicator": {
@@ -528,8 +528,8 @@
       "tier": 2,
       "condition": {
         "all": [
-          {"provider": "rbmk.annunciator", "path": "deaeratorPresent", "op": "truthy"},
-          {"provider": "rbmk.annunciator", "path": "deaeratorLevel", "op": "gt", "value": 80}
+          {"provider": "reference.presentation", "path": "alarms.deaeratorPresent", "op": "truthy"},
+          {"provider": "reference.presentation", "path": "alarms.deaeratorLevel", "op": "gt", "value": 80}
         ]
       },
       "indicator": {

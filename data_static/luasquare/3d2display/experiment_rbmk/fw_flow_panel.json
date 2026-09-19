@@ -1,10 +1,47 @@
 {
-  "schema": "luasquare.3d2display/v1", "id": "fw_flow_panel", "buildMode": "simple",
-  "target": "tar_display_feedwater", "unitWidth": 58, "unitHeight": 33, "scale": 0.1,
-  "title": "FEEDWATER", "themeGroup": "rbmk", "padding": 10, "lineHeight": 18, "titleHeight": 28,
-  "lines": [
-    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.fw_flow", "path": "row1"}},
-    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.fw_flow", "path": "row2"}},
-    {"type": "columns", "height": 64, "columns": {"provider": "rbmk.fw_flow", "path": "row3"}}
+  "schema": "luasquare.3d2display/v1",
+  "id": "fw_flow_panel",
+  "buildMode": "complex",
+  "target": "tar_display_feedwater",
+  "unitWidth": 58,
+  "unitHeight": 33,
+  "scale": 0.1,
+  "themeGroup": "rbmk",
+  "defaultPage": "overview",
+  "showPageTabs": false,
+  "pages": [
+    {
+      "id": "overview",
+      "label": "FEEDWATER",
+      "elements": [
+        {"id": "fw_a", "type": "LinePanel", "x": 10, "y": 10, "width": 180, "height": 145, "title": "FW PUMP A", "lines": [
+          {"type": "value", "label": "RUN", "value": {"provider": "reference.feedwater_pump_a", "path": "enabled"}},
+          {"type": "value", "label": "FLOW", "value": {"provider": "reference.feedwater_pump_a", "path": "lastFlow"}, "decimals": 0, "unit": "/s"},
+          {"type": "value", "label": "TARGET", "value": {"provider": "reference.feedwater_pump_a", "path": "regulationTarget"}, "decimals": 0, "unit": "%"}
+        ]},
+        {"id": "fw_b", "type": "LinePanel", "x": 200, "y": 10, "width": 180, "height": 145, "title": "FW PUMP B", "lines": [
+          {"type": "value", "label": "RUN", "value": {"provider": "reference.feedwater_pump_b", "path": "enabled"}},
+          {"type": "value", "label": "FLOW", "value": {"provider": "reference.feedwater_pump_b", "path": "lastFlow"}, "decimals": 0, "unit": "/s"},
+          {"type": "value", "label": "TARGET", "value": {"provider": "reference.feedwater_pump_b", "path": "regulationTarget"}, "decimals": 0, "unit": "%"}
+        ]},
+        {"id": "separator", "type": "LinePanel", "x": 390, "y": 10, "width": 180, "height": 145, "title": "SEPARATOR", "lines": [
+          {"type": "value", "label": "LEVEL", "value": {"provider": "reference.main_steam_separator", "path": "levelPercent"}, "decimals": 0, "unit": "%"},
+          {"type": "value", "label": "PRESS", "value": {"provider": "reference.main_steam_separator", "path": "pressure"}, "decimals": 1, "unit": "bar"},
+          {"type": "value", "label": "STEAM", "value": {"provider": "reference.main_steam_separator", "path": "lastDrySteamOut"}, "decimals": 0, "unit": "/s"}
+        ]},
+        {"id": "mcp_a", "type": "LinePanel", "x": 10, "y": 165, "width": 180, "height": 145, "title": "MCP A", "lines": [
+          {"type": "value", "label": "RUN", "value": {"provider": "reference.main_circulation_pump_a", "path": "enabled"}},
+          {"type": "value", "label": "FLOW", "value": {"provider": "reference.main_circulation_pump_a", "path": "lastFlow"}, "decimals": 0, "unit": "/s"}
+        ]},
+        {"id": "mcp_b", "type": "LinePanel", "x": 200, "y": 165, "width": 180, "height": 145, "title": "MCP B", "lines": [
+          {"type": "value", "label": "RUN", "value": {"provider": "reference.main_circulation_pump_b", "path": "enabled"}},
+          {"type": "value", "label": "FLOW", "value": {"provider": "reference.main_circulation_pump_b", "path": "lastFlow"}, "decimals": 0, "unit": "/s"}
+        ]},
+        {"id": "target", "type": "LinePanel", "x": 390, "y": 165, "width": 180, "height": 145, "title": "FEED TARGET", "lines": [
+          {"type": "value", "label": "TARGET", "value": {"provider": "reference.feedwater_target", "path": "target"}, "decimals": 0, "unit": "%"},
+          {"type": "value", "label": "LEVEL", "value": {"provider": "reference.feedwater_target", "path": "level"}, "decimals": 0, "unit": "%"}
+        ]}
+      ]
+    }
   ]
 }

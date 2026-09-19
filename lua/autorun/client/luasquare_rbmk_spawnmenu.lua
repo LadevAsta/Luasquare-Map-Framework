@@ -1,6 +1,4 @@
 if not CLIENT then return end
-RBMK = RBMK or {}
-RBMK.Debug = RBMK.Debug or {}
 hook.Add('PopulateToolMenu', 'LUASQUARE_RBMK_Menu', function()
     spawnmenu.AddToolMenuOption('Options', 'Luasquare', 'LuasquareRBMK', 'RBMK Framework', '', '', function(panel)
         panel:Clear()
@@ -9,6 +7,7 @@ hook.Add('PopulateToolMenu', 'LUASQUARE_RBMK_Menu', function()
         -- MASTER
         -- =========================================
         panel:CheckBox('Enable Debug', 'luasquare_rbmk_debug_enabled')
+        panel:TextEntry('Core instance ID', 'luasquare_rbmk_debug_core')
         panel:NumSlider('Infos', 'luasquare_rbmk_debug_textscale', 0.1, 2.0, 2)
         panel:NumSlider('Channels', 'luasquare_rbmk_debug_textscale_cell', 0.1, 2.0, 2)
         panel:NumSlider('Flux', 'luasquare_rbmk_debug_textscale_flux', 0.1, 2.0, 2)
@@ -35,7 +34,8 @@ end)
 -- =========================================
 -- CLIENT CONVARS
 -- =========================================
-CreateClientConVar('luasquare_rbmk_debug_enabled', '0', true, false)
+CreateClientConVar('luasquare_rbmk_debug_enabled', '0', true, true)
+CreateClientConVar('luasquare_rbmk_debug_core', 'reference', true, true)
 CreateClientConVar('luasquare_rbmk_debug_textscale', '0.2', true, false)
 CreateClientConVar('luasquare_rbmk_debug_textscale_cell', '0.2', true, false)
 CreateClientConVar('luasquare_rbmk_debug_textscale_flux', '0.1', true, false)

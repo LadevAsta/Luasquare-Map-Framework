@@ -1,4 +1,4 @@
-RBMK = RBMK or {}
+return function(RBMK)
 RBMK.ModelName = 'Unknown RBMK'
 RBMK.Width = 0
 RBMK.Height = 0
@@ -251,8 +251,9 @@ end
 
 -- Start loop
 function RBMK.Start()
-    if timer.Exists('RBMK_Tick') then timer.Remove('RBMK_Tick') end
-    timer.Create('RBMK_Tick', RBMK.TickInterval, 0, function() RBMK.Tick() end)
+    if RBMK.Destroyed then return false end
+    local name = RBMK.TimerName('tick')
+    timer.Create(name, RBMK.TickInterval, 0, function() RBMK.Tick() end)
     print('[' .. RBMK.ModelName .. '] Started')
 end
 
@@ -387,7 +388,7 @@ function RBMK.BlowoutSteam()
         if IsValid(ent) then
             ent:Fire('SetSpeed', tostring(speed))
             ent:Fire('Open')
-            local closeTimer = 'RBMK_BlowoutValve_' .. tostring(valve.key)
+            local closeTimer = RBMK.TimerName('blowout.' .. tostring(valve.key))
             local fallSpeed = RBMK.BlowoutFallSpeed
             if timer.Exists(closeTimer) then timer.Remove(closeTimer) end
             timer.Create(closeTimer, duration, 1, function()
@@ -487,7 +488,7 @@ function RBMK.FuelMeltdown(x, y, cell)
     RBMK.FireRelay(RBMK.FuelMeltdownRelay)
     print(string.format('[' .. RBMK.ModelName .. '] FUEL MELTDOWN STARTED! %d,%d', x or 0, y or 0))
 
-    local meltdownTimer = 'RBMK_FuelMeltdown_' .. tostring(x) .. '_' .. tostring(y)
+    local meltdownTimer = RBMK.TimerName('meltdown.' .. tostring(x) .. '.' .. tostring(y))
     if timer.Exists(meltdownTimer) then timer.Remove(meltdownTimer) end
     timer.Create(meltdownTimer, RBMK.FuelMeltdownDelay, 1, function()
         if RBMK and RBMK.EventState and not RBMK.EventState.Failed then
@@ -503,10 +504,10 @@ function RBMK.CatastrophicFailure(reason)
     RBMK.EventState.FailureReason = reason or 'unknown'
     RBMK.EventState.FailureTime = RBMK.GetTime()
     RBMK.FireRelay(RBMK.CatastrophicFailureRelay)
-    if timer.Exists('RBMK_Tick') then timer.Remove('RBMK_Tick') end
+    timer.Remove(RBMK.TimerName('tick'))
     print('[' .. RBMK.ModelName .. '] CATASTROPHIC FAILURE!!! :  ' .. tostring(RBMK.EventState.FailureReason))
-    if timer.Exists('RBMK_CatastrophicClear') then timer.Remove('RBMK_CatastrophicClear') end
-    timer.Create('RBMK_CatastrophicClear', RBMK.CatastrophicClearDelay, 1, function()
+    timer.Remove(RBMK.TimerName('catastrophic_clear'))
+    timer.Create(RBMK.TimerName('catastrophic_clear'), RBMK.CatastrophicClearDelay, 1, function()
         if RBMK then RBMK.ClearReactorData() end
     end)
     return true
@@ -629,4 +630,5 @@ function RBMK.GetFuelChannelLeakCount()
     end
 
     return count
+end
 end

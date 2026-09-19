@@ -4,6 +4,8 @@
 
 ## Source layout
 
+For [manifest-owned plants](../map/README.md), the manifest explicitly lists all required audio files, including shared buses, sounds and subtitle styles. The loader suppresses automatic discovery during package loading, preflights the selected sources, then starts audio. Cleanup resets playback/queues before owner destruction. Do not also load or start audio from that map's bootstrap. Non-manifest maps retain the standalone discovery workflow below.
+
 Include timeline first when audio actions should appear in choreography:
 
 ```lua

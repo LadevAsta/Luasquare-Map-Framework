@@ -36,14 +36,15 @@ When documentation and code disagree, establish what the runtime currently does 
 - Keep simulation state, operator controls, telemetry/presentation, developer debugging, and map bindings separate.
 - Do not move behavior into the RBMK package unless it is RBMK-specific. Do not refactor RBMK merely because adjacent shared or DFR code is being changed; touch it when a shared API change requires it.
 
-Most APIs live in persistent global namespaces such as `LUASQUARE_3D2D`, `LUASQUARE_TIMELINE`, `LUASQUARE_AUDIO`, `LUASQUARE_SOURCEBINDING`, `LUASQUARE_CONTROLBINDING`, `LUASQUARE_MACHINERY`, `LUASQUARE_*` power-plant namespaces, `RBMK`, and `DFR`. Add generic capabilities to the appropriate shared namespace and keep map instances/configuration in bootstraps.
+Most APIs live in persistent global namespaces such as `LUASQUARE_3D2D`, `LUASQUARE_TIMELINE`, `LUASQUARE_AUDIO`, `LUASQUARE_SOURCEBINDING`, `LUASQUARE_CONTROL`, `LUASQUARE_MACHINERY`, `LUASQUARE_MAP`, `LUASQUARE_*` power-plant namespaces, `LUASQUARE_RBMK`, and `DFR`. Add generic capabilities to the appropriate shared namespace and keep map instances/configuration in packed sources and trusted bootstraps.
 
 ## Current direction
 
 - The current DFR version is `foundation-0.1`. Do not bump it to `foundation-0.2` until the pass plan explicitly says its prerequisite migration passes are complete.
 - Source-driven 3D2D displays, JSON timelines, and source-driven audio are implemented. Extend their v1 schemas compatibly unless a deliberate schema migration is part of the task.
-- The declarative annunciator migration is implemented. The existing control-binding module is not the finished Control Layer described in the Planned section; do not mistake that prototype for completion of the later pass.
-- Near-term planned work includes the full control layer, a 3D2D logging element, display power/injection behavior, graph optimization, development-mode gating, broader JSON migration, and the revised catalyzer control flow. Do not select or bundle multiple passes without user direction.
+- The declarative annunciator and full JSON Control Layer are implemented. `control/` owns authoritative requests, locks, keypad handling, attribution and cleanup; the old control-binding prototype is not its active implementation.
+- Declarative migration 01–30 targets `experiment_rbmk`, including independent RBMK instances and graph authoring; its completed in-game acceptance record remains separate from static checks under `lua/luasquare_module/map/archive/`. DFR migration is deferred. See `lua/luasquare_module/map/README.md`.
+- Near-term separate work includes a 3D2D logging element, display power/injection behavior, graph optimization, development-mode gating, and the revised catalyzer control flow. Do not select or bundle unrelated passes without user direction.
 - The DFR remains incomplete. `lua/module_checklist.txt` defines the intended locations for future core physics, alarms, faults, resources, facility systems, hazards, and endings.
 
 ## Garry's Mod Lua and realm rules
@@ -69,6 +70,9 @@ Most APIs live in persistent global namespaces such as `LUASQUARE_3D2D`, `LUASQU
 ## Declarative source workflow
 
 - Packed, distributable sources live under:
+  - `data_static/luasquare/map/`
+  - `data_static/luasquare/components/`
+  - `data_static/luasquare/control/`
   - `data_static/luasquare/3d2display/`
   - `data_static/luasquare/timeline/`
   - `data_static/luasquare/audio/`
@@ -99,6 +103,7 @@ Most APIs live in persistent global namespaces such as `LUASQUARE_3D2D`, `LUASQU
 - To prevent subwindow being occluded by the main window when the main window is focused, make the subwindow focus itself when cursor is hovered above.
 - AVOID relying too much on freeform text input fields in editor such as JSON, or input fields that can obviously replaced with dropdowns for example, When choosing Enums, choosing cases, choosing type, choosing kind. This is to avoid author error.
 - Text fields that should only accept numbers should just use DNumberWang. If the value may be large, make it wide too.
+- Use tooltips to explain what this gui element do wherever possible and useful (Not entire background element or explaining the viewport itself).
 - Editor diagnostics and informational hints shall print to the console (and may also use a scrollable in-window status area); do not use notification or message popups which has been confirmed to be occluded by editor windows when testing. confirmation dialogs that require an explicit user choice remain appropriate. do note that console is only accessible after editor is closed. otherwise they are occluded as well. Important hints and diagnostics should use an in-window status area.
 
 ## Validation
